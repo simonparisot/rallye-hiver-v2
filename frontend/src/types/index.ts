@@ -44,6 +44,8 @@ export interface BackendEnigma {
   title: string;
   description?: string;
   pdfUrl: string;
+  hintPdfUrl?: string;  // Full URL for admin
+  hasHint?: boolean;    // Boolean for player (URL hidden)
   points: number;
   difficulty?: 'easy' | 'medium' | 'hard';
   isActive: boolean;
@@ -72,6 +74,8 @@ export interface TeamEnigmaProgress {
   attemptCount: number;
   lastAttemptAt?: string;
   firstAttemptAt?: string;
+  hintUsed?: boolean;     // Whether the team used the hint
+  hintUsedAt?: string;    // When the hint was used
   createdAt: string;
   updatedAt: string;
 }
@@ -147,6 +151,8 @@ export interface Enigma {
   solvedAt?: string;
   attemptCount?: number;
   difficulty?: 'easy' | 'medium' | 'hard';
+  hasHint?: boolean;      // Whether a hint is available
+  hintUsed?: boolean;     // Whether the team has used the hint
 }
 
 export interface Parcours {

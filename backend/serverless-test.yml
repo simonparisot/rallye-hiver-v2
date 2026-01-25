@@ -411,6 +411,18 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
+  # Hint endpoints
+  useHint:
+    handler: src/functions/hints/useHint.handler
+    events:
+      - http:
+          path: /hints/{enigmaId}/use
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
   # Game status endpoints
   getGameStatus:
     handler: src/functions/game/status.handler

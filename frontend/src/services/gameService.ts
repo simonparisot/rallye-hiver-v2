@@ -24,6 +24,8 @@ function transformEnigmaWithProgress(
     solvedAt: progress?.solvedAt,
     attemptCount: progress?.attemptCount || 0,
     difficulty: enigma.difficulty,
+    hasHint: enigma.hasHint || false,
+    hintUsed: progress?.hintUsed || false,
   };
 }
 

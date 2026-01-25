@@ -75,6 +75,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <span className="nav-icon">📝</span>
             <span>Tentatives</span>
           </Link>
+
+          <Link
+            to="/admin/hints"
+            className={`admin-nav-item ${isActive('/hints') ? 'active' : ''}`}
+          >
+            <span className="nav-icon">💡</span>
+            <span>Indices</span>
+          </Link>
         </nav>
 
         <div className="admin-user-info">

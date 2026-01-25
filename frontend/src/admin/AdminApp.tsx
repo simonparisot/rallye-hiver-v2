@@ -7,6 +7,7 @@ import AdminParcours from './pages/AdminParcours';
 import AdminTeams from './pages/AdminTeams';
 import AdminUsers from './pages/AdminUsers';
 import AdminAttempts from './pages/AdminAttempts';
+import AdminHintUsage from './pages/AdminHintUsage';
 import AdminLogin from './pages/AdminLogin';
 import { useAdminAuth } from './contexts/AdminAuthContext';
 import './AdminApp.css';
@@ -37,6 +38,7 @@ const AdminApp: React.FC = () => {
         <Route path="/teams" element={<AdminTeams />} />
         <Route path="/users" element={<AdminUsers />} />
         <Route path="/attempts" element={<AdminAttempts />} />
+        <Route path="/hints" element={<AdminHintUsage />} />
       </Routes>
     </AdminLayout>
   );

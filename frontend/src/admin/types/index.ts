@@ -53,6 +53,7 @@ export interface CreateEnigmaRequest {
   title: string;
   correctPassword: string;
   pdfUrl: string;  // TODO: Replace with file upload once S3 integration is ready
+  hintPdfUrl?: string;  // Optional hint PDF URL
   isActive: boolean;
 }
 

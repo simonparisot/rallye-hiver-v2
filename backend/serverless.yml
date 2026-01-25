@@ -503,6 +503,18 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
+  # Hint endpoints
+  useHint:
+    handler: src/functions/hints/useHint.handler
+    events:
+      - http:
+          path: /hints/{enigmaId}/use
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
   # Game status endpoints
   getGameStatus:
     handler: src/functions/game/status.handler
@@ -804,6 +816,17 @@ functions:
       - http:
           path: /admin/upload/generate-url
           method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminHintsUsage:
+    handler: src/functions/admin/hints/usage.handler
+    events:
+      - http:
+          path: /admin/hints/usage
+          method: get
           cors: true
           authorizer:
             name: authorizer
