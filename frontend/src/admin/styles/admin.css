@@ -1,0 +1,18 @@
+/**
+ * Admin Styles - Main Entry Point
+ *
+ * This file imports all admin-specific styles in the correct order.
+ * Import this file in AdminApp.tsx instead of individual CSS files.
+ */
+
+/* 1. Variables - Must be first */
+@import './_variables.css';
+
+/* 2. Core Components */
+@import './_components.css';
+@import './_stats.css';
+@import './_tables.css';
+@import './_forms.css';
+
+/* 3. Utilities - Last so they can override */
+@import './_utilities.css';

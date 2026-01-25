@@ -1,0 +1,725 @@
+service: rallye-hiver-backend-test
+
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: eu-west-1
+  stage: test
+  memorySize: 256
+  timeout: 30
+  apiGateway:
+    shouldStartNameWithService: true
+    minimumCompressionSize: 1024
+  # Enable API Gateway caching for performance-critical endpoints
+  # Cache reduces latency from ~800ms (cold start) to <10ms for cached responses
+  caching:
+    enabled: true
+    ttlInSeconds: 300  # 5 minutes - good balance for semi-static data
+  environment:
+    USERS_TABLE: ${self:service}-users
+    TEAMS_TABLE: ${self:service}-teams
+    ENIGMAS_TABLE: ${self:service}-enigmas
+    PARCOURS_TABLE: ${self:service}-parcours
+    TEAM_ENIGMA_PROGRESS_TABLE: ${self:service}-team-enigma-progress
+    PASSWORD_ATTEMPTS_TABLE: ${self:service}-password-attempts
+    TEAM_PARCOURS_ACCESS_TABLE: ${self:service}-team-parcours-access
+    GAME_STATUS_TABLE: ${self:service}-game-status
+    ENIGMA_DIFFICULTY_CACHE_TABLE: ${self:service}-enigma-difficulty-cache
+    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID}
+    COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
+    COGNITO_REGION: ${self:provider.region}
+    STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY}
+    STRIPE_WEBHOOK_SECRET: ${env:STRIPE_WEBHOOK_SECRET}
+    STRIPE_PRICE_ID: ${env:STRIPE_PRICE_ID, 'disabled'}
+    CORS_ORIGIN: ${env:CORS_ORIGIN, 'https://test.rallyehiver.fr'}
+    S3_ENIGMAS_BUCKET: ${env:S3_ENIGMAS_BUCKET, 'rallyehiver-enigmas-test'}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USERS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USERS_TABLE}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TEAMS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ENIGMAS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ENIGMAS_TABLE}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PARCOURS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PARCOURS_TABLE}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TEAM_ENIGMA_PROGRESS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TEAM_ENIGMA_PROGRESS_TABLE}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PASSWORD_ATTEMPTS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PASSWORD_ATTEMPTS_TABLE}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TEAM_PARCOURS_ACCESS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.GAME_STATUS_TABLE}
+        - Effect: Allow
+          Action:
+            - cognito-idp:AdminCreateUser
+            - cognito-idp:AdminSetUserPassword
+            - cognito-idp:AdminInitiateAuth
+            - cognito-idp:AdminGetUser
+            - cognito-idp:AdminDeleteUser
+          Resource:
+            - arn:aws:cognito-idp:${self:provider.region}:*:userpool/${env:COGNITO_USER_POOL_ID}
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:PutObjectAcl
+            - s3:GetObject
+          Resource:
+            - arn:aws:s3:::rallyehiver-enigmas-test/*
+
+build:
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: true
+    exclude:
+      - aws-sdk
+    target: node20
+    platform: node
+
+functions:
+  authorizer:
+    handler: src/functions/authorizer.handler
+
+  # Auth endpoints
+  signup:
+    handler: src/functions/auth/signup.handler
+    events:
+      - http:
+          path: /auth/signup
+          method: post
+          cors: true
+
+  login:
+    handler: src/functions/auth/login.handler
+    events:
+      - http:
+          path: /auth/login
+          method: post
+          cors: true
+
+  getMe:
+    handler: src/functions/auth/me.handler
+    events:
+      - http:
+          path: /auth/me
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  forgotPassword:
+    handler: src/functions/auth/forgotPassword.handler
+    events:
+      - http:
+          path: /auth/forgot-password
+          method: post
+          cors: true
+
+  resetPassword:
+    handler: src/functions/auth/resetPassword.handler
+    events:
+      - http:
+          path: /auth/reset-password
+          method: post
+          cors: true
+
+  refresh:
+    handler: src/functions/auth/refresh.handler
+    events:
+      - http:
+          path: /auth/refresh
+          method: post
+          cors: true
+
+  # User endpoints
+  getPendingRequests:
+    handler: src/functions/users/getPendingRequests.handler
+    events:
+      - http:
+          path: /users/pending-requests
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  # Team endpoints
+  createTeam:
+    handler: src/functions/teams/create.handler
+    events:
+      - http:
+          path: /teams
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  listTeams:
+    handler: src/functions/teams/list.handler
+    events:
+      - http:
+          path: /teams
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  getTeam:
+    handler: src/functions/teams/get.handler
+    events:
+      - http:
+          path: /teams/{teamId}
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  joinTeam:
+    handler: src/functions/teams/join.handler
+    events:
+      - http:
+          path: /teams/{teamId}/join
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  approveRequest:
+    handler: src/functions/teams/approve.handler
+    events:
+      - http:
+          path: /teams/{teamId}/approve/{userId}
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  rejectRequest:
+    handler: src/functions/teams/reject.handler
+    events:
+      - http:
+          path: /teams/{teamId}/reject/{userId}
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  removeMember:
+    handler: src/functions/teams/removeMember.handler
+    events:
+      - http:
+          path: /teams/{teamId}/members/{userId}
+          method: delete
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  cancelJoinRequest:
+    handler: src/functions/teams/cancelJoin.handler
+    events:
+      - http:
+          path: /teams/{teamId}/cancel-join
+          method: delete
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  getTeamStats:
+    handler: src/functions/teams/getStats.handler
+    events:
+      - http:
+          path: /teams/stats
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  # Payment endpoints - DISABLED for test environment
+  # createCheckout and stripeWebhook are removed
+
+  # Content endpoints
+  checkAccess:
+    handler: src/functions/content/checkAccess.handler
+    events:
+      - http:
+          path: /content/check-access
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  getEnigma:
+    handler: src/functions/content/enigma.handler
+    events:
+      - http:
+          path: /content/enigma
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  # Enigma endpoints (read-only for players)
+  listEnigmas:
+    handler: src/functions/enigmas/list.handler
+    events:
+      - http:
+          path: /enigmas
+          method: get
+          cors: true
+          caching:
+            enabled: true
+            ttlInSeconds: 300
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  getEnigmaById:
+    handler: src/functions/enigmas/get.handler
+    events:
+      - http:
+          path: /enigmas/{enigmaId}
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  getEnigmasByDifficulty:
+    handler: src/functions/enigmas/byDifficulty.handler
+    events:
+      - http:
+          path: /enigmas/by-difficulty
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  # Parcours endpoints (read-only for players)
+  listParcours:
+    handler: src/functions/parcours/list.handler
+    events:
+      - http:
+          path: /parcours
+          method: get
+          cors: true
+          caching:
+            enabled: true
+            ttlInSeconds: 300
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  getParcoursById:
+    handler: src/functions/parcours/get.handler
+    events:
+      - http:
+          path: /parcours/{parcoursId}
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  checkParcoursAccess:
+    handler: src/functions/parcours/checkAccess.handler
+    events:
+      - http:
+          path: /parcours/{parcoursId}/access
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  markParcoursCompleted:
+    handler: src/functions/parcours/markCompleted.handler
+    events:
+      - http:
+          path: /parcours/{parcoursId}/complete
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  unmarkParcoursCompleted:
+    handler: src/functions/parcours/unmarkCompleted.handler
+    events:
+      - http:
+          path: /parcours/{parcoursId}/complete
+          method: delete
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  # Progress and game endpoints
+  submitPasswordAttempt:
+    handler: src/functions/progress/submitAttempt.handler
+    events:
+      - http:
+          path: /progress/attempt
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  getTeamProgress:
+    handler: src/functions/progress/getProgress.handler
+    events:
+      - http:
+          path: /progress
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  getAccessibleParcours:
+    handler: src/functions/progress/getAccessibleParcours.handler
+    events:
+      - http:
+          path: /progress/parcours
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  # Game status endpoints
+  getGameStatus:
+    handler: src/functions/game/status.handler
+    events:
+      - http:
+          path: /game/status
+          method: get
+          cors: true
+
+resources:
+  Resources:
+    # DynamoDB Tables
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.USERS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: cognitoSub
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: cognitoSub-index
+            KeySchema:
+              - AttributeName: cognitoSub
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: email-index
+            KeySchema:
+              - AttributeName: email
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+
+    TeamsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TEAMS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: teamId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: teamId
+            KeyType: HASH
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+
+    EnigmasTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.ENIGMAS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: enigmaId
+            AttributeType: S
+          - AttributeName: enigmaNumber
+            AttributeType: N
+        KeySchema:
+          - AttributeName: enigmaId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: enigmaNumber-index
+            KeySchema:
+              - AttributeName: enigmaNumber
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+
+    ParcoursTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.PARCOURS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: parcoursId
+            AttributeType: S
+          - AttributeName: parcoursNumber
+            AttributeType: N
+        KeySchema:
+          - AttributeName: parcoursId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: parcoursNumber-index
+            KeySchema:
+              - AttributeName: parcoursNumber
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+
+    TeamEnigmaProgressTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TEAM_ENIGMA_PROGRESS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: teamId
+            AttributeType: S
+          - AttributeName: enigmaId
+            AttributeType: S
+          - AttributeName: solvedAt
+            AttributeType: S
+        KeySchema:
+          - AttributeName: teamId
+            KeyType: HASH
+          - AttributeName: enigmaId
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: enigmaId-solvedAt-index
+            KeySchema:
+              - AttributeName: enigmaId
+                KeyType: HASH
+              - AttributeName: solvedAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+
+    PasswordAttemptsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.PASSWORD_ATTEMPTS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: attemptId
+            AttributeType: S
+          - AttributeName: teamId
+            AttributeType: S
+          - AttributeName: enigmaId
+            AttributeType: S
+          - AttributeName: teamEnigmaKey
+            AttributeType: S
+          - AttributeName: attemptedAt
+            AttributeType: S
+        KeySchema:
+          - AttributeName: attemptId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: teamId-attemptedAt-index
+            KeySchema:
+              - AttributeName: teamId
+                KeyType: HASH
+              - AttributeName: attemptedAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: enigmaId-attemptedAt-index
+            KeySchema:
+              - AttributeName: enigmaId
+                KeyType: HASH
+              - AttributeName: attemptedAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: teamEnigma-index
+            KeySchema:
+              - AttributeName: teamEnigmaKey
+                KeyType: HASH
+              - AttributeName: attemptedAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+
+    TeamParcoursAccessTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TEAM_PARCOURS_ACCESS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: teamId
+            AttributeType: S
+          - AttributeName: parcoursId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: teamId
+            KeyType: HASH
+          - AttributeName: parcoursId
+            KeyType: RANGE
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+
+    GameStatusTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.GAME_STATUS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: gameId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: gameId
+            KeyType: HASH
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+
+    EnigmaDifficultyCacheTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.ENIGMA_DIFFICULTY_CACHE_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: cacheKey
+            AttributeType: S
+        KeySchema:
+          - AttributeName: cacheKey
+            KeyType: HASH
+
+    # Cognito User Pool
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: ${self:service}-user-pool
+        AutoVerifiedAttributes:
+          - email
+        UsernameAttributes:
+          - email
+        Schema:
+          - Name: email
+            AttributeDataType: String
+            Required: true
+            Mutable: true
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireUppercase: true
+            RequireLowercase: true
+            RequireNumbers: true
+            RequireSymbols: false
+        AccountRecoverySetting:
+          RecoveryMechanisms:
+            - Name: verified_email
+              Priority: 1
+        VerificationMessageTemplate:
+          DefaultEmailOption: CONFIRM_WITH_CODE
+          EmailSubject: "Rallye d'Hiver Test - Reinitialisation de votre mot de passe"
+          EmailMessage: |
+            Bonjour,
+
+            Vous avez demande la reinitialisation de votre mot de passe pour le Rallye d'Hiver (environnement test).
+
+            Votre code de verification est : {####}
+
+            Ce code est valide pendant 24 heures.
+
+            Si vous n'avez pas demande cette reinitialisation, vous pouvez ignorer ce message en toute securite.
+
+            Bonne chance pour le rallye !
+            L'equipe du Rallye d'Hiver
+
+    CognitoUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: ${self:service}-client
+        UserPoolId:
+          Ref: CognitoUserPool
+        ExplicitAuthFlows:
+          - ALLOW_ADMIN_USER_PASSWORD_AUTH
+          - ALLOW_USER_PASSWORD_AUTH
+          - ALLOW_REFRESH_TOKEN_AUTH
+          - ALLOW_USER_SRP_AUTH
+        GenerateSecret: false
+        AccessTokenValidity: 24
+        IdTokenValidity: 24
+        RefreshTokenValidity: 90
+        TokenValidityUnits:
+          AccessToken: hours
+          IdToken: hours
+          RefreshToken: days
+
+  Outputs:
+    UserPoolId:
+      Value:
+        Ref: CognitoUserPool
+      Export:
+        Name: ${self:service}-UserPoolId
+
+    UserPoolClientId:
+      Value:
+        Ref: CognitoUserPoolClient
+      Export:
+        Name: ${self:service}-UserPoolClientId
+
+    ServiceEndpoint:
+      Value:
+        Fn::Join:
+          - ''
+          - - 'https://'
+            - Ref: ApiGatewayRestApi
+            - '.execute-api.'
+            - ${self:provider.region}
+            - '.amazonaws.com/test'
+      Export:
+        Name: ${self:service}-ServiceEndpoint
+
+plugins:
+  - serverless-offline

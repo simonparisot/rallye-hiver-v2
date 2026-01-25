@@ -1,0 +1,16 @@
+/* Admin-specific CSS Variables */
+:root {
+  /* Admin Layout */
+  --admin-sidebar-width: 280px;
+  --admin-content-max-width: 1400px;
+
+  /* Admin Responsive Breakpoints */
+  --admin-breakpoint-mobile: 768px;
+  --admin-breakpoint-tablet: 1024px;
+  --admin-breakpoint-desktop: 1600px;
+
+  /* Admin Colors (extensions) */
+  --admin-sidebar-bg: var(--color-neutral-white);
+  --admin-sidebar-active: var(--color-primary-blue);
+  --admin-main-bg: var(--color-neutral-gray);
+}

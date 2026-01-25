@@ -1,0 +1,109 @@
+/* Admin Attempts Page - Specific Styles Only */
+/* Common components are now in src/admin/styles/ */
+
+.admin-attempts {
+  padding: var(--spacing-lg) 0;
+}
+
+/* Attempts-specific controls card */
+.attempts-controls {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-lg);
+}
+
+/* Attempts Table Specific */
+.attempts-table {
+  font-size: 0.875rem;
+}
+
+.attempts-table tbody tr.success-row {
+  background: rgba(209, 250, 229, 0.2);
+}
+
+.attempts-table tbody tr.fail-row {
+  background: rgba(254, 226, 226, 0.2);
+}
+
+.attempts-table tbody tr:hover {
+  filter: brightness(0.95);
+}
+
+.attempt-date {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.team-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.enigma-info .enigma-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.password-field code {
+  background: var(--color-neutral-gray);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: var(--color-neutral-black);
+  border: 1px solid #e5e7eb;
+}
+
+.attempt-status {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.attempt-status.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.attempt-status.failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.user-info {
+  font-size: 0.875rem;
+}
+
+.user-info div:first-child {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.user-email {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Load More */
+.attempts-list {
+  margin-top: var(--spacing-lg);
+}
+
+.load-more-container {
+  text-align: center;
+  margin-top: var(--spacing-xl);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .attempts-table {
+    font-size: 0.75rem;
+  }
+
+  .password-field code {
+    font-size: 0.7rem;
+  }
+}

@@ -1,0 +1,121 @@
+.team-container {
+  min-height: calc(100vh - 200px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 1.5rem;
+}
+
+.team-box {
+  background-color: var(--card-background);
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 500px;
+}
+
+.team-box h1 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.team-box form button {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+/* Browse Teams */
+.browse-teams {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.teams-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.team-card {
+  background-color: var(--card-background);
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s;
+}
+
+.team-card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.team-card h3 {
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.team-card button {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+/* Team Detail */
+.team-detail {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.team-status {
+  background-color: var(--card-background);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow);
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.team-section {
+  background-color: var(--card-background);
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 1.5rem;
+}
+
+.members-list,
+.requests-list {
+  list-style: none;
+}
+
+.members-list li,
+.requests-list li {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.members-list li:last-child,
+.requests-list li:last-child {
+  border-bottom: none;
+}
+
+.request-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .teams-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .teams-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "serverless deploy",
+    "remove": "serverless remove",
+    "offline": "serverless offline",
+    "logs": "serverless logs -f",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.157",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.9.2",
+    "esbuild": "^0.25.12",
+    "serverless": "^4.22.0",
+    "serverless-offline": "^14.4.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.922.0",
+    "@aws-sdk/client-dynamodb": "^3.922.0",
+    "@aws-sdk/client-s3": "^3.946.0",
+    "@aws-sdk/lib-dynamodb": "^3.922.0",
+    "@aws-sdk/s3-request-presigner": "^3.946.0",
+    "aws-jwt-verify": "^5.1.1",
+    "aws-sdk": "^2.1692.0",
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.2.0",
+    "stripe": "^19.2.0",
+    "uuid": "^13.0.0"
+  }
+}

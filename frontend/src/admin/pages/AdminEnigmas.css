@@ -1,0 +1,342 @@
+/* Admin Enigmas Page - Specific Styles Only */
+/* Common components are now in src/admin/styles/ */
+
+.admin-enigmas {
+  padding: var(--spacing-lg) 0;
+}
+
+/* Enigma Form Container */
+.enigma-form-container {
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-xl);
+}
+
+.enigma-form-container h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Toggle Switch */
+.toggle-container {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 28px;
+  margin: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.3s;
+  border-radius: 28px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #16a34a;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+.toggle-label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.toggle-label.active {
+  color: #16a34a;
+}
+
+.toggle-label.inactive {
+  color: #6b7280;
+}
+
+/* Table Specific Cells */
+.enigma-number {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.enigma-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.unpublished-label {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  font-weight: 400;
+  font-style: italic;
+  padding: 2px 6px;
+  background: #f3f4f6;
+  border-radius: 3px;
+}
+
+.enigma-stats {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+
+.no-stats {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.pdf-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--color-primary-blue);
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.pdf-link:hover {
+  background: var(--color-secondary-purple);
+}
+
+.no-pdf {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Difficulty Badges */
+.difficulty-badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.difficulty-badge.easy {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.difficulty-badge.medium {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.difficulty-badge.hard {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.status-badge.active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.inactive {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+/* Drag and Drop */
+.drag-handle {
+  cursor: grab;
+  color: #9ca3af;
+  text-align: center;
+  vertical-align: middle;
+  padding: var(--spacing-md) var(--spacing-sm) !important;
+  font-size: 1.2rem;
+  line-height: 1;
+  user-select: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.admin-table tbody tr.dragging {
+  background: var(--color-primary-blue);
+  opacity: 0.8;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.admin-table tbody tr.dragging td {
+  color: var(--color-neutral-white);
+  border-top: none;
+}
+
+.admin-table tbody tr.dragging .enigma-number {
+  color: var(--color-neutral-white);
+}
+
+.admin-table tbody tr.dragging .status-badge,
+.admin-table tbody tr.dragging .difficulty-badge {
+  opacity: 0.9;
+}
+
+/* Unpublished Enigmas */
+.admin-table tbody tr.unpublished {
+  opacity: 0.5;
+  background: #f9fafb;
+}
+
+.admin-table tbody tr.unpublished:hover {
+  opacity: 0.7;
+  background: #f3f4f6;
+}
+
+.admin-table tbody tr.unpublished .enigma-title,
+.admin-table tbody tr.unpublished .enigma-number {
+  color: #9ca3af;
+}
+
+/* PDF Upload */
+.pdf-upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.pdf-upload-container input[type="file"] {
+  padding: var(--spacing-sm);
+  border: 2px dashed var(--color-neutral-gray);
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.pdf-upload-container input[type="file"]:hover:not(:disabled) {
+  border-color: var(--color-primary-blue);
+  background: var(--color-neutral-gray);
+}
+
+.pdf-upload-container input[type="file"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.upload-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: #eff6ff;
+  border: 1px solid var(--color-primary-blue);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: var(--color-primary-blue);
+}
+
+.upload-progress .spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.pdf-url-display {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: #d1fae5;
+  border: 1px solid #10b981;
+  border-radius: 4px;
+}
+
+.pdf-success {
+  font-size: 0.875rem;
+  color: #065f46;
+  font-weight: 600;
+}
+
+.pdf-preview-link {
+  font-size: 0.75rem;
+  color: var(--color-primary-blue);
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.pdf-preview-link:hover {
+  color: var(--color-secondary-purple);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .actions {
+    flex-direction: column;
+  }
+
+  .actions .btn {
+    width: 100%;
+  }
+}

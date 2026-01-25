@@ -1,0 +1,74 @@
+.content {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.content h1 {
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.content-description {
+  text-align: center;
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  margin-bottom: 3rem;
+}
+
+.content-locked {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+  text-align: center;
+}
+
+.content-locked h1 {
+  color: var(--danger-color);
+  margin-bottom: 1rem;
+}
+
+.enigmas {
+  display: grid;
+  gap: 2rem;
+}
+
+.enigma-card {
+  background-color: var(--card-background);
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow);
+}
+
+.enigma-card h2 {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.enigma-content {
+  margin-bottom: 1.5rem;
+  line-height: 1.8;
+}
+
+.enigma-hint {
+  background-color: var(--background);
+  padding: 1rem;
+  border-radius: 0.375rem;
+  border-left: 4px solid var(--primary-color);
+}
+
+.enigma-hint summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--primary-color);
+  user-select: none;
+}
+
+.enigma-hint summary:hover {
+  opacity: 0.8;
+}
+
+.enigma-hint p {
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+}

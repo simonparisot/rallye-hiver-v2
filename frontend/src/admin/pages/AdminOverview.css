@@ -1,0 +1,396 @@
+/* Admin Overview Page - Specific Styles Only */
+/* Common components are now in src/admin/styles/ */
+
+.admin-overview {
+  padding: var(--spacing-lg) 0;
+}
+
+/* Timeline Chart Section */
+.timeline-chart-section {
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.timeline-chart-section h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  margin-bottom: var(--spacing-lg);
+  color: var(--color-neutral-black);
+}
+
+.timeline-chart {
+  height: 250px;
+  padding: var(--spacing-lg) var(--spacing-md);
+  background: linear-gradient(to top, #f9fafb 0%, transparent 100%);
+  border-radius: 8px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-grid {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 200px;
+  gap: 2px;
+  flex: 1;
+}
+
+.chart-bar-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  height: 100%;
+  position: relative;
+}
+
+.chart-bar {
+  width: 100%;
+  background: linear-gradient(to top, var(--color-primary-blue), var(--color-secondary-purple));
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 4px;
+}
+
+.chart-bar:hover {
+  background: linear-gradient(to top, var(--color-primary-red), var(--color-secondary-orange));
+  transform: scaleY(1.05);
+}
+
+.bar-value {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+}
+
+.chart-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: var(--spacing-xs);
+  text-align: center;
+  white-space: nowrap;
+  height: 20px;
+}
+
+/* Teams Progress Section */
+.teams-progress-section {
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.teams-progress-section h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-neutral-black);
+}
+
+.section-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.teams-grid-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 2px solid var(--color-neutral-black);
+}
+
+/* Teams Progress Table - Specific to overview */
+.teams-progress-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  font-size: 0.875rem;
+}
+
+.teams-progress-table thead {
+  background: var(--color-primary-blue);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.teams-progress-table th {
+  padding: var(--spacing-sm) var(--spacing-xs);
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.teams-progress-table th.team-name-col {
+  text-align: left;
+  padding-left: var(--spacing-md);
+  min-width: 150px;
+  position: sticky;
+  left: 0;
+  background: var(--color-primary-blue);
+  z-index: 11;
+}
+
+.teams-progress-table th.members-col,
+.teams-progress-table th.payment-col {
+  width: 35px;
+  position: sticky;
+  background: var(--color-primary-blue);
+  z-index: 11;
+}
+
+.teams-progress-table th.members-col {
+  left: 150px;
+}
+
+.teams-progress-table th.payment-col {
+  left: 185px;
+}
+
+.teams-progress-table th.enigmas-col,
+.teams-progress-table th.parcours-col {
+  border-left: 2px solid white;
+  padding: 0;
+}
+
+.header-label {
+  font-size: 0.75rem;
+  padding: var(--spacing-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.teams-progress-table tbody tr {
+  border-bottom: 1px solid var(--color-neutral-gray);
+  transition: background 0.2s ease;
+}
+
+.teams-progress-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.teams-progress-table tbody tr.inactive-team {
+  background: #f3f4f6;
+  opacity: 0.6;
+}
+
+.teams-progress-table tbody tr.inactive-team:hover {
+  background: #e5e7eb;
+  opacity: 0.8;
+}
+
+.teams-progress-table td {
+  padding: var(--spacing-sm) var(--spacing-xs);
+  text-align: center;
+  border-right: 1px solid #f3f4f6;
+}
+
+.team-name-cell {
+  position: sticky;
+  left: 0;
+  background: white;
+  text-align: left;
+  padding-left: var(--spacing-md) !important;
+  z-index: 9;
+  border-right: 2px solid var(--color-neutral-gray) !important;
+}
+
+.inactive-team .team-name-cell {
+  background: #f3f4f6;
+}
+
+.team-name-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.inactive-badge {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 3px;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.members-cell {
+  position: sticky;
+  left: 150px;
+  background: white;
+  z-index: 9;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.inactive-team .members-cell {
+  background: #f3f4f6;
+}
+
+.payment-cell {
+  position: sticky;
+  left: 185px;
+  background: white;
+  z-index: 9;
+  border-right: 2px solid var(--color-neutral-gray) !important;
+}
+
+.inactive-team .payment-cell {
+  background: #f3f4f6;
+}
+
+.paid-icon {
+  color: #16a34a;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.unpaid-icon {
+  color: #dc2626;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* Status boxes (enigmas and parcours) */
+.status-cell {
+  padding: 3px !important;
+  width: 22px;
+  min-width: 22px;
+  max-width: 22px;
+}
+
+.status-box {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  transition: all 0.2s ease;
+  border: 1px solid #e5e7eb;
+}
+
+.status-box.solved {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-color: #059669;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.status-box.unsolved {
+  background: white;
+  border-color: #d1d5db;
+}
+
+.inactive-team .status-box.unsolved {
+  background: #f9fafb;
+}
+
+.status-box .check {
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.status-box:hover {
+  transform: scale(1.15);
+  z-index: 5;
+}
+
+/* Responsive */
+@media (max-width: 1600px) {
+  .status-box {
+    width: 14px;
+    height: 14px;
+  }
+
+  .status-cell {
+    width: 20px;
+    min-width: 20px;
+    max-width: 20px;
+    padding: 2px !important;
+  }
+
+  .status-box .check {
+    font-size: 0.6rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .chart-grid {
+    gap: 1px;
+  }
+
+  .bar-value {
+    font-size: 0.6rem;
+  }
+
+  .chart-label {
+    font-size: 0.65rem;
+  }
+
+  .status-box {
+    width: 12px;
+    height: 12px;
+  }
+
+  .status-cell {
+    width: 18px;
+    min-width: 18px;
+    max-width: 18px;
+    padding: 2px !important;
+  }
+
+  .status-box .check {
+    font-size: 0.55rem;
+  }
+
+  .team-name-col {
+    min-width: 120px !important;
+  }
+
+  .members-cell {
+    left: 120px !important;
+  }
+
+  .payment-cell {
+    left: 155px !important;
+  }
+
+  th.members-col {
+    left: 120px !important;
+  }
+
+  th.payment-col {
+    left: 155px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .timeline-chart {
+    height: 200px;
+  }
+
+  .chart-grid {
+    height: 150px;
+  }
+
+  .bar-value {
+    display: none;
+  }
+
+  .teams-progress-section {
+    padding: var(--spacing-md);
+  }
+}

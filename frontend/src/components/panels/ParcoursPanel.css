@@ -1,0 +1,565 @@
+.parcours-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Loading and Error States */
+.loading-state,
+.error-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.error-state {
+  color: #dc3545;
+}
+
+/* Access Blocked Message */
+.access-blocked-message {
+  padding: 12px;
+  margin-bottom: 16px;
+  background-color: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 6px;
+  color: #856404;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* Compact view */
+.parcours-list-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.parcours-item-compact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  border: var(--border-width-thin) var(--border-style) var(--color-neutral-black);
+  background: var(--color-neutral-white);
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.parcours-item-compact:hover {
+  transform: translateY(-2px);
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.15);
+}
+
+.parcours-item-compact.completed {
+  background: rgba(40, 167, 69, 0.1);
+  border-left: 4px solid #28a745;
+  border-left-color: var(--color-neutral-black);
+}
+
+.parcours-item-compact.unlocked {
+  background: rgba(255, 140, 0, 0.1);
+  border-left: 4px solid var(--color-secondary-orange);
+}
+
+.parcours-item-compact.locked {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: #f5f5f5;
+}
+
+.parcours-item-compact.locked:hover {
+  transform: none;
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.1);
+}
+
+.parcours-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: var(--color-secondary-orange);
+  color: white;
+  border: var(--border-width-thin) var(--border-style) var(--color-neutral-black);
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 14px;
+  font-family: var(--font-display);
+  flex-shrink: 0;
+}
+
+.parcours-icon {
+  font-size: 18px;
+}
+
+.parcours-title-compact {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.completed-badge-small {
+  background: #28a745;
+  color: var(--color-neutral-white);
+  border: var(--border-width-thin) var(--border-style) var(--color-neutral-black);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Expanded view */
+.parcours-expanded-view {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 20px;
+  height: 100%;
+}
+
+.parcours-list-full {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.parcours-item {
+  padding: 15px;
+  border-radius: 10px;
+  border: var(--border-width-thin) var(--border-style) var(--color-neutral-black);
+  background: var(--color-neutral-white);
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.parcours-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.15);
+}
+
+.parcours-item.active {
+  background: var(--color-neutral-white);
+  border-color: var(--color-secondary-orange);
+  border-width: var(--border-width-medium);
+  box-shadow: 0 4px 12px rgba(255, 140, 0, 0.3);
+}
+
+.parcours-item.completed {
+  background: rgba(40, 167, 69, 0.1);
+  border-left: 4px solid #28a745;
+}
+
+.parcours-item.unlocked {
+  background: rgba(255, 140, 0, 0.1);
+  border-left: 4px solid var(--color-secondary-orange);
+}
+
+.parcours-item.locked {
+  opacity: 0.7;
+}
+
+.parcours-header-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.parcours-icon-large {
+  font-size: 28px;
+}
+
+.parcours-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.parcours-title {
+  flex: 1;
+  font-weight: 600;
+  color: var(--color-neutral-black);
+  font-size: 16px;
+}
+
+.parcours-download-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--color-secondary-orange);
+  transition: all 0.2s;
+  border-radius: 4px;
+  line-height: 1;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.parcours-download-btn svg {
+  width: 100%;
+  height: 100%;
+}
+
+.parcours-download-btn:hover {
+  background: var(--color-secondary-orange);
+  color: white;
+  transform: scale(1.15);
+}
+
+.parcours-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.completed-badge {
+  background: #28a745;
+  color: var(--color-neutral-white);
+  border: var(--border-width-thin) var(--border-style) var(--color-neutral-black);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.parcours-pages {
+  font-size: 12px;
+  color: #666;
+}
+
+.parcours-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #17a2b8 0%, #138496 100%);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.progress-text {
+  font-size: 12px;
+  color: #666;
+}
+
+/* Parcours viewer - Comic Book Style */
+.parcours-viewer {
+  background: var(--color-neutral-white);
+  border-radius: 10px;
+  border: var(--border-width-medium) var(--border-style) var(--color-neutral-black);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.parcours-details {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.parcours-header-detail {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 15px 20px;
+}
+
+.parcours-completion-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.btn-mark-completed {
+  padding: 8px 16px;
+  background: var(--color-primary-blue);
+  color: white;
+  border: var(--border-width-thin) var(--border-style) var(--color-neutral-black);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.1);
+}
+
+.btn-mark-completed:hover:not(:disabled) {
+  background: #5568d3;
+  transform: translateY(-1px);
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.15);
+}
+
+.btn-mark-completed:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.parcours-completed-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.parcours-completed-badge {
+  padding: 6px 12px;
+  background: #d4edda;
+  color: #155724;
+  border: 2px solid #28a745;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  display: inline-block;
+  flex: 1;
+  min-width: 180px;
+}
+
+.completed-date {
+  font-weight: 400;
+  font-size: 12px;
+  color: #155724;
+  opacity: 0.8;
+}
+
+.btn-unmark-completed {
+  padding: 6px 12px;
+  background: var(--color-neutral-white);
+  color: #dc3545;
+  border: var(--border-width-thin) var(--border-style) #dc3545;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  font-family: var(--font-display);
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 2px 2px 0px rgba(220, 53, 69, 0.1);
+  white-space: nowrap;
+}
+
+.btn-unmark-completed:hover:not(:disabled) {
+  background: #dc3545;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 3px 3px 0px rgba(220, 53, 69, 0.2);
+}
+
+.btn-unmark-completed:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.completion-message {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 12px;
+  animation: fadeIn 0.3s;
+  display: inline-block;
+  width: fit-content;
+}
+
+.completion-message.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.completion-message.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.parcours-pdf-container {
+  flex: 1;
+  min-height: 500px;
+  overflow: hidden;
+}
+
+.status-badge {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: var(--border-width-thin) var(--border-style) var(--color-neutral-black);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.unlocked {
+  background: var(--color-secondary-orange);
+  color: var(--color-neutral-white);
+}
+
+.status-badge.locked {
+  background: var(--color-secondary-purple);
+  color: var(--color-neutral-white);
+}
+
+.parcours-pdf-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border-radius: 8px;
+  min-height: 400px;
+}
+
+.pdf-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.pdf-note {
+  color: #666;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.parcours-locked-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.lock-icon {
+  font-size: 72px;
+  margin-bottom: 24px;
+  opacity: 0.5;
+}
+
+.parcours-locked-view h4 {
+  margin: 0 0 16px 0;
+  color: #333;
+  font-size: 24px;
+}
+
+.parcours-locked-view p {
+  color: #666;
+  font-size: 16px;
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.unlock-progress {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.unlock-progress-bar {
+  width: 100%;
+  height: 12px;
+  background: #e9ecef;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.unlock-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.3s ease;
+  border-radius: 6px;
+}
+
+.unlock-progress-text {
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+  font-weight: 600;
+}
+
+.parcours-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #999;
+  font-size: 18px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .parcours-expanded-view {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .parcours-list-full {
+    max-height: 300px;
+    padding-right: 8px;
+  }
+
+  .parcours-item {
+    padding: 12px;
+  }
+
+  .parcours-header-item {
+    gap: 8px;
+  }
+
+  .parcours-number {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+  }
+
+  .parcours-title {
+    font-size: 14px;
+  }
+
+  .parcours-pdf-container {
+    min-height: 400px;
+  }
+
+  .parcours-header-detail h3 {
+    font-size: 20px;
+  }
+}

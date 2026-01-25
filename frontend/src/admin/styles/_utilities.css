@@ -1,0 +1,65 @@
+/* Admin Utility Classes */
+
+/* Spacing Utilities */
+.admin-mb-xs { margin-bottom: var(--spacing-xs); }
+.admin-mb-sm { margin-bottom: var(--spacing-sm); }
+.admin-mb-md { margin-bottom: var(--spacing-md); }
+.admin-mb-lg { margin-bottom: var(--spacing-lg); }
+.admin-mb-xl { margin-bottom: var(--spacing-xl); }
+.admin-mb-2xl { margin-bottom: var(--spacing-2xl); }
+
+.admin-mt-xs { margin-top: var(--spacing-xs); }
+.admin-mt-sm { margin-top: var(--spacing-sm); }
+.admin-mt-md { margin-top: var(--spacing-md); }
+.admin-mt-lg { margin-top: var(--spacing-lg); }
+.admin-mt-xl { margin-top: var(--spacing-xl); }
+.admin-mt-2xl { margin-top: var(--spacing-2xl); }
+
+.admin-p-xs { padding: var(--spacing-xs); }
+.admin-p-sm { padding: var(--spacing-sm); }
+.admin-p-md { padding: var(--spacing-md); }
+.admin-p-lg { padding: var(--spacing-lg); }
+.admin-p-xl { padding: var(--spacing-xl); }
+.admin-p-2xl { padding: var(--spacing-2xl); }
+
+/* Text Utilities */
+.admin-text-center { text-align: center; }
+.admin-text-left { text-align: left; }
+.admin-text-right { text-align: right; }
+
+.admin-text-muted { color: var(--text-secondary); }
+.admin-text-primary { color: var(--color-primary-blue); }
+.admin-text-success { color: #16a34a; }
+.admin-text-warning { color: #f59e0b; }
+.admin-text-error { color: var(--color-primary-red); }
+
+/* Display Utilities */
+.admin-flex { display: flex; }
+.admin-flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.admin-flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-grid { display: grid; }
+
+.admin-hidden { display: none; }
+.admin-block { display: block; }
+.admin-inline { display: inline; }
+.admin-inline-block { display: inline-block; }
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+  .admin-mobile-hidden { display: none; }
+  .admin-mobile-block { display: block; }
+}
+
+@media (min-width: 769px) {
+  .admin-desktop-hidden { display: none; }
+  .admin-desktop-block { display: block; }
+}

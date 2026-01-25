@@ -1,0 +1,58 @@
+/* Admin Parcours Page - Specific Styles Only */
+/* Common components are now in src/admin/styles/ */
+
+.admin-parcours {
+  padding: var(--spacing-lg) 0;
+}
+
+/* Parcours Form Container */
+.parcours-form-container {
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-xl);
+}
+
+.parcours-form-container h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  margin-bottom: var(--spacing-lg);
+}
+
+/* Table Specific Cells */
+.parcours-number {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.parcours-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.parcours-stats {
+  font-size: 0.875rem;
+  vertical-align: middle;
+}
+
+/* Unpublished Parcours */
+.admin-table tbody tr.unpublished-row {
+  opacity: 0.5;
+  background: #f9fafb;
+}
+
+.admin-table tbody tr.unpublished-row:hover {
+  opacity: 0.7;
+  background: #f3f4f6;
+}
+
+/* Drag and Drop */
+.admin-table tbody tr.dragging {
+  background: #eff6ff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}

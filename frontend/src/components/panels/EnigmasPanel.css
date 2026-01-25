@@ -1,0 +1,462 @@
+.enigmas-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Loading and Error States */
+.loading-state,
+.error-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.error-state {
+  color: #dc3545;
+}
+
+/* Access Blocked Message */
+.access-blocked-message {
+  padding: 12px;
+  margin-bottom: 16px;
+  background-color: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 6px;
+  color: #856404;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* Compact view */
+.enigma-list-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.enigma-item-compact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  border: var(--border-width-thin) var(--border-style) var(--color-neutral-black);
+  background: var(--color-neutral-white);
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.enigma-item-compact:hover {
+  transform: translateY(-2px);
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.15);
+}
+
+.enigma-item-compact.solved {
+  background: rgba(40, 167, 69, 0.1);
+  border-left: 4px solid #28a745;
+  border-left-color: var(--color-neutral-black);
+}
+
+.enigma-item-compact.locked {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: #f5f5f5;
+}
+
+.enigma-item-compact.locked:hover {
+  transform: none;
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.1);
+}
+
+.enigma-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: var(--color-primary-blue);
+  color: white;
+  border: var(--border-width-thin) var(--border-style) var(--color-neutral-black);
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 14px;
+  font-family: var(--font-display);
+  flex-shrink: 0;
+}
+
+.enigma-title-compact {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.solved-icon {
+  color: #28a745;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.solved-badge-small {
+  background: #28a745;
+  color: var(--color-neutral-white);
+  border: var(--border-width-thin) var(--border-style) var(--color-neutral-black);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Expanded view */
+.enigma-expanded-view {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 20px;
+  height: 100%;
+}
+
+.enigma-list-full {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.enigma-item {
+  padding: 15px;
+  border-radius: 10px;
+  background: #f8f9fa;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.enigma-item:hover {
+  background: #e9ecef;
+  transform: translateX(4px);
+}
+
+.enigma-item.active {
+  background: white;
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.enigma-item.solved {
+  background: #d4edda;
+  border-left: 4px solid #28a745;
+}
+
+.enigma-item.solved.active {
+  border-color: #28a745;
+}
+
+.enigma-header-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.enigma-title {
+  flex: 1;
+  font-weight: 600;
+  color: #333;
+  font-size: 16px;
+}
+
+.enigma-download-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: #667eea;
+  transition: all 0.2s;
+  border-radius: 4px;
+  line-height: 1;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.enigma-download-btn svg {
+  width: 100%;
+  height: 100%;
+}
+
+.enigma-download-btn:hover {
+  background: #667eea;
+  color: white;
+  transform: scale(1.15);
+}
+
+.enigma-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.enigma-points {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.solved-badge {
+  background: var(--color-primary-yellow);
+  color: var(--color-neutral-black);
+  border: var(--border-width-thin) var(--border-style) var(--color-neutral-black);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Enigma viewer - Comic Book Style */
+.enigma-viewer {
+  background: var(--color-neutral-white);
+  border-radius: 10px;
+  border: var(--border-width-medium) var(--border-style) var(--color-neutral-black);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.enigma-details {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.enigma-pdf-container {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.enigma-solved-message {
+  padding: 15px;
+  background: #d4edda;
+  color: #155724;
+  border: 2px solid #28a745;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.enigma-solved-banner {
+  flex: 0 0 auto;
+  width: 100%;
+  padding: 12px 15px;
+  background: #d4edda;
+  color: #155724;
+  text-align: center;
+  font-weight: 700;
+  font-size: 14px;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.enigma-pdf-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  min-height: 400px;
+}
+
+.pdf-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.pdf-note {
+  color: #666;
+  text-align: center;
+  max-width: 400px;
+  margin-top: 10px;
+}
+
+.enigma-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #999;
+  font-size: 18px;
+}
+
+/* Password form */
+.password-form {
+  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 0 20px 20px 20px;
+}
+
+.password-form-compact {
+  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 15px;
+  background: #f8f9fa;
+}
+
+.password-form-compact .password-input {
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+}
+
+.password-form-compact .submit-btn {
+  padding: 6px 16px;
+  font-size: 14px;
+}
+
+.password-input {
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.password-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.submit-btn {
+  padding: 12px 24px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submit-btn:hover {
+  background: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.attempt-message {
+  flex: 0 0 auto;
+  width: 100%;
+  padding: 18px 15px;
+  text-align: center;
+  font-weight: 500;
+  font-size: 16px;
+  animation: fadeIn 0.3s;
+  line-height: 1.4;
+}
+
+.attempt-message.attempt-success {
+  background: #d4edda;
+  color: #155724;
+  font-weight: 600;
+}
+
+.attempt-message.attempt-error {
+  background: #f8d7da;
+  color: #721c24;
+  font-weight: 600;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .enigma-expanded-view {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .enigma-list-full {
+    max-height: 300px;
+    padding-right: 8px;
+  }
+
+  .enigma-item {
+    padding: 12px;
+  }
+
+  .enigma-header-item {
+    gap: 8px;
+  }
+
+  .enigma-number {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+  }
+
+  .enigma-title {
+    font-size: 14px;
+  }
+
+  .password-form-compact {
+    padding: 12px;
+    gap: 6px;
+  }
+
+  .password-form-compact .password-input {
+    font-size: 14px;
+    padding: 8px 10px;
+  }
+
+  .password-form-compact .submit-btn {
+    font-size: 13px;
+    padding: 8px 14px;
+  }
+
+  .attempt-message {
+    font-size: 11px;
+    padding: 8px 12px;
+  }
+}

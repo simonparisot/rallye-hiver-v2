@@ -1,0 +1,83 @@
+.pending-requests {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.pending-requests h3 {
+  margin: 0 0 10px 0;
+  color: #495057;
+  font-size: 1.2rem;
+}
+
+.pending-requests-description {
+  color: #6c757d;
+  margin-bottom: 15px;
+}
+
+.pending-requests-description em {
+  font-style: italic;
+  color: #dc3545;
+  font-size: 0.9rem;
+}
+
+.pending-requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pending-request-item {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: box-shadow 0.2s;
+}
+
+.pending-request-item:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pending-request-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pending-request-info strong {
+  font-size: 1.1rem;
+  color: #212529;
+}
+
+.pending-status {
+  color: #fd7e14;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.pending-requests-loading,
+.pending-requests-error {
+  padding: 20px;
+  text-align: center;
+  color: #6c757d;
+}
+
+.pending-requests-error {
+  color: #dc3545;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.875rem;
+}
+
+.pending-request-actions {
+  display: flex;
+  gap: 8px;
+}

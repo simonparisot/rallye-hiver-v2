@@ -1,0 +1,71 @@
+/* Admin Table Components */
+
+/**
+ * Admin Table
+ * Usage: Standard table for data display
+ */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-neutral-white);
+  border: var(--border-width-medium) var(--border-style) var(--color-neutral-black);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.admin-table thead {
+  background: var(--color-primary-blue);
+  color: var(--color-neutral-white);
+}
+
+.admin-table th {
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 400;
+}
+
+.admin-table td {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--color-neutral-gray);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  vertical-align: middle;
+}
+
+.admin-table tbody tr:hover {
+  background: var(--color-neutral-gray);
+}
+
+/* Table Modifiers */
+.admin-table--compact td,
+.admin-table--compact th {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.8rem;
+}
+
+.admin-table--striped tbody tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Responsive Tables */
+@media (max-width: 768px) {
+  .admin-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 1024px) {
+  .admin-table {
+    font-size: 0.8rem;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}

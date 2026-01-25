@@ -1,0 +1,130 @@
+/* Admin Reusable Components */
+
+/**
+ * Page Header
+ * Usage: Standard header for admin pages
+ */
+.admin-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-xl);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.admin-page-header h1 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--color-neutral-black);
+}
+
+.admin-page-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/**
+ * Card Component
+ * Usage: Standard card container for admin content
+ */
+.card {
+  background: var(--color-neutral-white);
+  border: var(--border-width-medium) var(--border-style) var(--color-neutral-black);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+/**
+ * Badges System
+ * Usage: Semantic status badges
+ */
+.admin-badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.admin-badge--success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.admin-badge--warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.admin-badge--error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.admin-badge--info {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.admin-badge--neutral {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/**
+ * Empty State
+ * Usage: Display when no data available
+ */
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  background: var(--color-neutral-white);
+  border: var(--border-width-medium) var(--border-style) var(--color-neutral-black);
+  border-radius: 12px;
+  margin-top: var(--spacing-lg);
+}
+
+.empty-state p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+/**
+ * Loading State
+ * Usage: Display during data loading
+ */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-2xl);
+  color: var(--text-secondary);
+}
+
+/**
+ * Error State
+ * Usage: Display error messages
+ */
+.error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: var(--color-primary-red);
+  font-size: 1rem;
+}

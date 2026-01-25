@@ -1,0 +1,120 @@
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import {
+  getUserById,
+  getTeamById,
+  getAllTeamProgress,
+  getAllTeamParcoursAccess,
+  getAllEnigmas,
+  getAllParcours,
+  getPasswordAttemptsByTeam,
+  getAllTeams,
+  dynamoDb,
+  PASSWORD_ATTEMPTS_TABLE
+} from '../../utils/dynamodb';
+import { ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { success, error } from '../../utils/response';
+
+/**
+ * Get team statistics including password attempts and comparative ranking
+ */
+export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    const userId = event.requestContext.authorizer?.userId;
+
+    if (!userId) {
+      return error('Unauthorized', 401);
+    }
+
+    // Get user to find team
+    const user = await getUserById(userId);
+    if (!user || !user.teamId) {
+      return error('User is not in a team', 403);
+    }
+
+    const teamId = user.teamId;
+
+    // Get team info
+    const team = await getTeamById(teamId);
+    if (!team) {
+      return error('Team not found', 404);
+    }
+
+    // Get all enigmas and parcours to calculate totals
+    const [allEnigmas, allParcours] = await Promise.all([
+      getAllEnigmas(),
+      getAllParcours(),
+    ]);
+
+    // Get team progress
+    const progress = await getAllTeamProgress(teamId);
+    const solvedEnigmas = progress.filter((p: any) => p.solved);
+
+    // Get parcours access/completion
+    const parcoursAccess = await getAllTeamParcoursAccess(teamId);
+    const completedParcours = parcoursAccess.filter((p: any) => p.completed);
+
+    // Calculate points
+    const totalPoints = solvedEnigmas.reduce((sum: number, p: any) => {
+      const enigma = allEnigmas.find((e: any) => e.enigmaId === p.enigmaId);
+      return sum + (enigma?.points || 0);
+    }, 0);
+
+    // Get password attempts for this team
+    const teamAttempts = await getPasswordAttemptsByTeam(teamId, 10000);
+    const passwordAttemptsCount = teamAttempts.length;
+
+    // Get all password attempts from all teams for comparative stats
+    const allAttemptsResult = await dynamoDb.send(
+      new ScanCommand({
+        TableName: PASSWORD_ATTEMPTS_TABLE,
+        ProjectionExpression: 'teamId',
+      })
+    );
+    const allAttempts = allAttemptsResult.Items || [];
+
+    // Count attempts per team
+    const attemptsByTeam = new Map<string, number>();
+    allAttempts.forEach((attempt: any) => {
+      const count = attemptsByTeam.get(attempt.teamId) || 0;
+      attemptsByTeam.set(attempt.teamId, count + 1);
+    });
+
+    // Calculate ranking (percentile)
+    // Lower attempts = better rank
+    const teamCounts = Array.from(attemptsByTeam.values()).sort((a, b) => a - b);
+    const teamPosition = teamCounts.findIndex(count => count >= passwordAttemptsCount);
+    const percentile = teamCounts.length > 0
+      ? Math.round(((teamPosition + 1) / teamCounts.length) * 100)
+      : 50;
+
+    // Determine ranking message in user-friendly language
+    let rankingMessage = '';
+    if (percentile <= 10) {
+      rankingMessage = 'Votre équipe fait partie des meilleures !';
+    } else if (percentile <= 25) {
+      rankingMessage = 'Votre équipe est dans le premier quart.';
+    } else if (percentile <= 50) {
+      rankingMessage = 'Votre équipe est dans la première moitié.';
+    } else if (percentile <= 75) {
+      rankingMessage = 'Votre équipe est dans la moyenne.';
+    } else {
+      rankingMessage = 'Votre équipe peut encore progresser !';
+    }
+
+    return success({
+      teamName: team.teamName,
+      memberCount: team.members?.length || 0,
+      enigmasSolved: solvedEnigmas.length,
+      totalEnigmas: allEnigmas.length,
+      parcoursCompleted: completedParcours.length,
+      totalParcours: allParcours.length,
+      totalPoints,
+      passwordAttemptsCount,
+      attemptsRanking: percentile,
+      attemptsRankingMessage: rankingMessage,
+    });
+  } catch (err: any) {
+    console.error('Error getting team stats:', err);
+    return error(err.message || 'Failed to get team stats');
+  }
+};

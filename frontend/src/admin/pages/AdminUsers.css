@@ -1,0 +1,175 @@
+/* Admin Users Page - Specific Styles Only */
+/* Common components are now in src/admin/styles/ */
+
+.admin-users {
+  padding: var(--spacing-lg) 0;
+}
+
+/* Users Filters Card */
+.users-filters {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-lg);
+}
+
+.users-filters .summary-stats {
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  border-top: 2px solid var(--color-neutral-gray);
+}
+
+.search-box {
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 2px solid var(--color-neutral-gray);
+}
+
+.search-box .admin-input {
+  font-size: 1.125rem;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: #f9fafb;
+  border: 2px solid var(--color-neutral-gray);
+}
+
+.search-box .admin-input:focus {
+  background: var(--color-neutral-white);
+  border-color: var(--color-primary-blue);
+}
+
+/* Backend Blocker Banner */
+.backend-blocker {
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+  border-radius: 8px;
+}
+
+.backend-blocker h3 {
+  margin: 0 0 var(--spacing-sm) 0;
+  color: #92400e;
+  font-size: 1rem;
+}
+
+.backend-blocker p {
+  margin: var(--spacing-sm) 0;
+  color: #78350f;
+  font-size: 0.875rem;
+}
+
+.backend-blocker code {
+  background: #fde68a;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.backend-blocker details {
+  margin-top: var(--spacing-md);
+}
+
+.backend-blocker summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #92400e;
+  padding: var(--spacing-sm);
+  background: #fde68a;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.backend-blocker summary:hover {
+  background: #fcd34d;
+}
+
+.backend-blocker ul {
+  margin-top: var(--spacing-sm);
+  padding-left: var(--spacing-lg);
+  color: #78350f;
+}
+
+/* User-Specific Table Cells */
+.user-name {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: 600;
+}
+
+.admin-row {
+  background: #faf5ff;
+}
+
+.user-email {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.date-cell {
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.never-logged {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 0.875rem;
+}
+
+.team-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.user-team-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.leader-badge {
+  font-size: 0.875rem;
+}
+
+.pending-team {
+  font-size: 0.875rem;
+  color: #f59e0b;
+  font-style: italic;
+}
+
+.no-team-text {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+/* Team Status Badges */
+.status-badge.member {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.no-team {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.attempts-cell {
+  text-align: center;
+}
+
+.attempts-count {
+  display: inline-block;
+  min-width: 30px;
+  padding: 4px 8px;
+  background: #eff6ff;
+  color: var(--color-primary-blue);
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
