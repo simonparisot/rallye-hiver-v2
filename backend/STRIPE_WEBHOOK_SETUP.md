@@ -131,7 +131,7 @@ AWS_PROFILE=claude-admin aws logs tail /aws/lambda/rallye-hiver-backend-prod-str
 
 **Current Environment Variables:**
 - `STRIPE_SECRET_KEY`: `rk_test_51SP2XeFujfDconi4...` (test mode)
-- `STRIPE_WEBHOOK_SECRET`: `whsec_2b3RvIbQDzOL66IEBOeNR4ZtYh8xlnTj` (updated 2025-11-16)
+- `STRIPE_WEBHOOK_SECRET`: `whsec_REDACTED` (updated 2025-11-16)
 - `STRIPE_PRICE_ID`: `price_1SP2YkFujfDconi4FUEsV6eq`
 
 ## What Happens When Webhook Fires

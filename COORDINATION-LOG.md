@@ -1052,7 +1052,7 @@ This file coordinates day-to-day work between frontend and backend agents. For c
 ### 2025-11-16 23:15
 **Backend → All**: ✅ **WEBHOOK SECRET UPDATED**
 - ✅ **Updated webhook signing secret to match Stripe Dashboard**
-- **New Secret**: `whsec_2b3RvIbQDzOL66IEBOeNR4ZtYh8xlnTj`
+- **New Secret**: `whsec_REDACTED`
 - **Updated Functions**:
   - `rallye-hiver-backend-prod-stripeWebhook`
   - `rallye-hiver-backend-prod-createCheckout`
@@ -1078,7 +1078,7 @@ This file coordinates day-to-day work between frontend and backend agents. For c
 - ✅ **Webhook endpoint added to Stripe Dashboard**
 - ✅ **Lambda environment updated with new signing secret**
 - **Webhook URL**: `https://rpg0alko8b.execute-api.eu-west-1.amazonaws.com/prod/payments/webhook`
-- **Signing Secret**: `whsec_MGnruzBJAXaLu0rKNjabexHsERSivYaS`
+- **Signing Secret**: `whsec_REDACTED`
 - **Listening for**: `checkout.session.completed`
 
 ### 2025-11-16 23:00
