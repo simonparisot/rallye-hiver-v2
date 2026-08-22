@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
 import { dynamoDb, PASSWORD_ATTEMPTS_TABLE } from '../../../utils/dynamodb';
+import { getTestTeamIds, excludeTestTeamRows } from '../../../utils/testTeams';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 
 /**
@@ -39,7 +40,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       })
     );
 
-    const attempts = result.Items || [];
+    // Automated test traffic would show up as activity peaks on the chart
+    const testTeamIds = await getTestTeamIds();
+    const attempts = excludeTestTeamRows(result.Items || [], testTeamIds);
 
     // Group attempts by day
     // Map structure: "YYYY-MM-DD" -> { correct: number, incorrect: number, total: number }

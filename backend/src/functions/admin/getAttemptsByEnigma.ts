@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getPasswordAttemptsByEnigma } from '../../utils/dynamodb';
+import { getTestTeamIds, excludeTestTeamRows } from '../../utils/testTeams';
 import { requireAdmin } from '../../utils/adminAuth';
 import { success, error } from '../../utils/response';
 
@@ -21,7 +22,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error('Missing enigmaId parameter', 400);
     }
 
-    const attempts = await getPasswordAttemptsByEnigma(enigmaId, limit);
+    const allAttempts = await getPasswordAttemptsByEnigma(enigmaId, limit);
+
+    // Attempts made by a test team must not show up in the enigma diagnosis
+    const testTeamIds = await getTestTeamIds();
+    const attempts = excludeTestTeamRows(allAttempts, testTeamIds);
 
     return success({
       enigmaId,

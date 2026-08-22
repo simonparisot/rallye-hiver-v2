@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getAllTeams, getUsersByIds } from '../../utils/dynamodb';
+import { excludeTestTeams } from '../../utils/testTeams';
 import { requireAdmin } from '../../utils/adminAuth';
 import { success, error } from '../../utils/response';
 
@@ -16,8 +17,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     const { items: teams } = await getAllTeams(100);
 
-    // Filter only teams that have paid
-    const paidTeams = teams.filter((team: any) => team.hasPaid);
+    // Filter only teams that have paid, test teams never enter the ranking
+    const paidTeams = excludeTestTeams(teams).filter((team: any) => team.hasPaid);
 
     // Sort by points (descending), then by solvedEnigmasCount, then by lastActivityAt
     paidTeams.sort((a: any, b: any) => {

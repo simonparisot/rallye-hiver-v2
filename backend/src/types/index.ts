@@ -25,6 +25,7 @@ export interface Team {
   solvedEnigmasCount?: number;
   lastActivityAt?: string;
   isBetaTeam?: boolean; // Beta team flag for early access before game starts
+  isTestTeam?: boolean; // Test team flag: excluded from every list and every statistic
 }
 
 export interface AuthUser {

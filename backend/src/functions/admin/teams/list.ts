@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getAllTeams, getAllTeamProgress, getUsersByIds } from '../../../utils/dynamodb';
 import { dynamoDb, TEAM_PARCOURS_ACCESS_TABLE, PASSWORD_ATTEMPTS_TABLE } from '../../../utils/dynamodb';
+import { excludeTestTeams } from '../../../utils/testTeams';
 import { QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
@@ -20,9 +21,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // Verify admin status
     await requireAdmin(userId);
 
-    // Get all teams
+    // Get all teams (test teams are hidden from the admin list as well)
     const teamsResult = await getAllTeams(10000); // High limit to get all teams
-    const teams = teamsResult.items || [];
+    const teams = excludeTestTeams(teamsResult.items || []);
 
     // Enhance each team with progress statistics
     const teamsWithProgress = await Promise.all(

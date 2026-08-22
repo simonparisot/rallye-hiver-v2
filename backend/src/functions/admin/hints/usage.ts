@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { dynamoDb, TEAM_ENIGMA_PROGRESS_TABLE, TEAMS_TABLE, ENIGMAS_TABLE } from '../../../utils/dynamodb';
+import { getTestTeamIds, excludeTestTeamRows } from '../../../utils/testTeams';
 import { ScanCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
@@ -36,7 +37,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       })
     );
 
-    const hintUsages = progressResult.Items || [];
+    // Filtering before the enrichment keeps the test teams out of both the
+    // detailed list and the statistics computed from it below
+    const testTeamIds = await getTestTeamIds();
+    const hintUsages = excludeTestTeamRows(progressResult.Items || [], testTeamIds);
 
     // Enrich with team and enigma details
     const enrichedUsages = await Promise.all(

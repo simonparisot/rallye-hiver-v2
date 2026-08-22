@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getAllEnigmasForAdmin } from '../../../utils/dynamodb';
 import { dynamoDb, PASSWORD_ATTEMPTS_TABLE, TEAM_ENIGMA_PROGRESS_TABLE } from '../../../utils/dynamodb';
+import { getTestTeamIds, excludeTestTeamRows } from '../../../utils/testTeams';
 import { QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
@@ -23,6 +24,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // Get all enigmas (including inactive ones for admin)
     const enigmas = await getAllEnigmasForAdmin();
 
+    // Test teams would inflate the per-enigma counters shown to the admin,
+    // including the "N equipes l'ont resolue" figure
+    const testTeamIds = await getTestTeamIds();
+
     // Enhance each enigma with statistics
     const enigmasWithStats = await Promise.all(
       enigmas.map(async (enigma: any) => {
@@ -37,7 +42,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
             },
           })
         );
-        const attempts = attemptsResult.Items || [];
+        const attempts = excludeTestTeamRows(attemptsResult.Items || [], testTeamIds);
         const totalAttempts = attempts.length;
         const successfulAttempts = attempts.filter((a: any) => a.success).length;
 
@@ -54,7 +59,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
             },
           })
         );
-        const teamsSolved = progressResult.Items?.length || 0;
+        const teamsSolved = excludeTestTeamRows(progressResult.Items || [], testTeamIds).length;
 
         return {
           ...enigma,
