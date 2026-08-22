@@ -42,7 +42,9 @@ export const ENVIRONMENTS = {
   prod: {
     name: 'prod',
     apiUrl: 'https://rpg0alko8b.execute-api.eu-west-1.amazonaws.com/prod',
-    siteUrl: 'https://rallyehiver.fr',
+    // L'application de jeu vit désormais sur le sous-domaine de son édition ;
+    // rallyehiver.fr sert le site vitrine, qui n'appelle aucune API.
+    siteUrl: 'https://2026.rallyehiver.fr',
     awsProfile: 'rallye',
     awsAccount: '388660028527',
     cognitoUserPoolId: 'eu-west-1_cRMw8lhM3',

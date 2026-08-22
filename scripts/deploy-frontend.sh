@@ -21,13 +21,14 @@ case "$ENVIRONNEMENT" in
     ;;
   prod)
     PROFIL="rallye"
-    # Nom historique : ce bucket sert bien rallyehiver.fr.
+    # Nom historique : ce bucket sert l'application de jeu, désormais
+    # exposée sur 2026.rallyehiver.fr. rallyehiver.fr sert le site vitrine.
     BUCKET="proto.rallyehiver.fr"
     DISTRIBUTION="E2M1D4SPTNMDIK"
     API_URL="https://rpg0alko8b.execute-api.eu-west-1.amazonaws.com/prod"
     POOL_ID="eu-west-1_cRMw8lhM3"
     CLIENT_ID="150sbtrvqtc885mpvp8i1sjck"
-    echo "⚠  Publication en PRODUCTION sur https://rallyehiver.fr"
+    echo "⚠  Publication en PRODUCTION sur https://2026.rallyehiver.fr"
     ;;
   *)
     echo "Usage : $0 test|prod" >&2
