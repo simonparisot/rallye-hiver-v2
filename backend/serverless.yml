@@ -27,12 +27,15 @@ provider:
     TEAM_PARCOURS_ACCESS_TABLE: ${self:service}-team-parcours-access
     GAME_STATUS_TABLE: ${self:service}-game-status
     ENIGMA_DIFFICULTY_CACHE_TABLE: ${self:service}-enigma-difficulty-cache
-    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID}
-    COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
+    # Secrets et identifiants lus dans SSM Parameter Store au moment du
+    # déploiement, sous /rallye-hiver/<stage>/. Plus rien n'a donc à être fourni
+    # en variables d'environnement pour déployer.
+    COGNITO_USER_POOL_ID: ${ssm:/rallye-hiver/${self:provider.stage}/cognito-user-pool-id}
+    COGNITO_CLIENT_ID: ${ssm:/rallye-hiver/${self:provider.stage}/cognito-client-id}
     COGNITO_REGION: ${self:provider.region}
-    STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY}
-    STRIPE_WEBHOOK_SECRET: ${env:STRIPE_WEBHOOK_SECRET}
-    STRIPE_PRICE_ID: ${env:STRIPE_PRICE_ID, 'price_1SOpLt2E4Pf8JclVHxFAvMeE'}
+    STRIPE_SECRET_KEY: ${ssm:/rallye-hiver/${self:provider.stage}/stripe-secret-key}
+    STRIPE_WEBHOOK_SECRET: ${ssm:/rallye-hiver/${self:provider.stage}/stripe-webhook-secret}
+    STRIPE_PRICE_ID: ${ssm:/rallye-hiver/${self:provider.stage}/stripe-price-id}
     CORS_ORIGIN: ${env:CORS_ORIGIN, 'http://localhost:3000'}
   iam:
     role:
@@ -67,7 +70,7 @@ provider:
             - cognito-idp:AdminGetUser
             - cognito-idp:AdminDeleteUser
           Resource:
-            - arn:aws:cognito-idp:${self:provider.region}:*:userpool/${env:COGNITO_USER_POOL_ID}
+            - arn:aws:cognito-idp:${self:provider.region}:*:userpool/${ssm:/rallye-hiver/${self:provider.stage}/cognito-user-pool-id}
         - Effect: Allow
           Action:
             - s3:PutObject
