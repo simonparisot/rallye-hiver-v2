@@ -107,14 +107,14 @@ const AdminOverview: React.FC = () => {
   const teamProgressGrid = getTeamProgressGrid();
 
   return (
-    <div className="admin-overview">
+    <div data-testid="admin-overview-page" className="admin-overview">
       <div className="admin-page-header">
         <h1>📊 Vue d'ensemble</h1>
         <p className="admin-page-subtitle">Activité et progression des équipes</p>
       </div>
 
       {/* Timeline Chart - Attempts per day (optimized backend endpoint) */}
-      <div className="timeline-chart-section card">
+      <div data-testid="admin-attempts-timeline" className="timeline-chart-section card">
         <h2>Tentatives de mots de passe (30 derniers jours)</h2>
         {timelineLoading ? (
           <div className="loading-state">
@@ -173,7 +173,7 @@ const AdminOverview: React.FC = () => {
           </div>
         ) : (
           <div className="teams-grid-wrapper">
-          <table className="teams-progress-table">
+          <table data-testid="admin-teams-progress-table" className="teams-progress-table">
             <thead>
               <tr>
                 <th className="team-name-col">Équipe</th>
@@ -189,7 +189,7 @@ const AdminOverview: React.FC = () => {
             </thead>
             <tbody>
               {teamProgressGrid.map((team: any) => (
-                <tr
+                <tr data-testid={`admin-teams-progress-row-${team.teamId}`}
                   key={team.teamId}
                   className={team.isInactive ? 'inactive-team' : ''}
                 >
@@ -251,7 +251,7 @@ const AdminOverview: React.FC = () => {
           </table>
 
           {teamProgressGrid.length === 0 && (
-            <div className="empty-state">
+            <div data-testid="admin-teams-progress-empty" className="empty-state">
               <p>Aucune équipe enregistrée</p>
             </div>
           )}

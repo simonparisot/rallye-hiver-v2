@@ -18,7 +18,7 @@ const AdminApp: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="admin-loading">
+      <div data-testid="admin-loading" className="admin-loading">
         <div className="loading-spinner">Chargement...</div>
       </div>
     );

@@ -20,15 +20,15 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const isActive = (path: string) => location.pathname.includes(path);
 
   return (
-    <div className="admin-layout">
-      <aside className="admin-sidebar">
+    <div data-testid="admin-layout" className="admin-layout">
+      <aside data-testid="admin-sidebar" className="admin-sidebar">
         <div className="admin-logo">
           <img src="/logo.png" alt="Rallye d'Hiver" className="admin-sidebar-logo" />
           <h2>Panneau Admin</h2>
         </div>
 
-        <nav className="admin-nav">
-          <Link
+        <nav data-testid="admin-nav" className="admin-nav">
+          <Link data-testid="admin-nav-overview"
             to="/admin/overview"
             className={`admin-nav-item ${isActive('/overview') ? 'active' : ''}`}
           >
@@ -36,7 +36,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <span>Vue d'ensemble</span>
           </Link>
 
-          <Link
+          <Link data-testid="admin-nav-enigmas"
             to="/admin/enigmas"
             className={`admin-nav-item ${isActive('/enigmas') ? 'active' : ''}`}
           >
@@ -44,7 +44,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <span>Énigmes</span>
           </Link>
 
-          <Link
+          <Link data-testid="admin-nav-parcours"
             to="/admin/parcours"
             className={`admin-nav-item ${isActive('/parcours') ? 'active' : ''}`}
           >
@@ -52,7 +52,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <span>Parcours</span>
           </Link>
 
-          <Link
+          <Link data-testid="admin-nav-teams"
             to="/admin/teams"
             className={`admin-nav-item ${isActive('/teams') ? 'active' : ''}`}
           >
@@ -60,7 +60,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <span>Équipes</span>
           </Link>
 
-          <Link
+          <Link data-testid="admin-nav-users"
             to="/admin/users"
             className={`admin-nav-item ${isActive('/users') ? 'active' : ''}`}
           >
@@ -68,7 +68,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <span>Utilisateurs</span>
           </Link>
 
-          <Link
+          <Link data-testid="admin-nav-attempts"
             to="/admin/attempts"
             className={`admin-nav-item ${isActive('/attempts') ? 'active' : ''}`}
           >
@@ -76,7 +76,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <span>Tentatives</span>
           </Link>
 
-          <Link
+          <Link data-testid="admin-nav-hints"
             to="/admin/hints"
             className={`admin-nav-item ${isActive('/hints') ? 'active' : ''}`}
           >
@@ -85,19 +85,19 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </Link>
         </nav>
 
-        <div className="admin-user-info">
+        <div data-testid="admin-user-info" className="admin-user-info">
           <div className="admin-user-details">
-            <p className="admin-user-name">{adminUser?.displayName}</p>
-            <p className="admin-user-email">{adminUser?.email}</p>
+            <p data-testid="admin-user-name" className="admin-user-name">{adminUser?.displayName}</p>
+            <p data-testid="admin-user-email" className="admin-user-email">{adminUser?.email}</p>
           </div>
-          <button onClick={handleLogout} className="btn btn-logout admin-logout-btn">
+          <button data-testid="admin-logout-button" onClick={handleLogout} className="btn btn-logout admin-logout-btn">
             Déconnexion
           </button>
         </div>
       </aside>
 
       <main className="admin-main">
-        <div className="admin-content">
+        <div data-testid="admin-content" className="admin-content">
           {children}
         </div>
       </main>

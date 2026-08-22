@@ -28,14 +28,14 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="auth-container">
+    <div data-testid="auth-login-page" className="auth-container">
       <div className="auth-box">
         <h1>Connexion</h1>
-        {error && <div className="error-message">{error}</div>}
-        <form onSubmit={handleSubmit}>
+        {error && <div data-testid="auth-login-error" className="error-message">{error}</div>}
+        <form data-testid="auth-login-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="email">Email</label>
-            <input
+            <input data-testid="auth-login-email-input"
               type="email"
               id="email"
               value={email}
@@ -46,7 +46,7 @@ const Login: React.FC = () => {
           </div>
           <div className="form-group">
             <label htmlFor="password">Mot de passe</label>
-            <input
+            <input data-testid="auth-login-password-input"
               type="password"
               id="password"
               value={password}
@@ -55,13 +55,13 @@ const Login: React.FC = () => {
               autoComplete="current-password"
             />
           </div>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
+          <button data-testid="auth-login-submit" type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
 
         <p className="auth-link">
-          Pas encore de compte ? <Link to="/signup">S'inscrire</Link>
+          Pas encore de compte ? <Link data-testid="auth-signup-link" to="/signup">S'inscrire</Link>
         </p>
       </div>
     </div>

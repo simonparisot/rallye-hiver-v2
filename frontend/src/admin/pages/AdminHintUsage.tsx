@@ -9,14 +9,14 @@ const AdminHintUsage: React.FC = () => {
     queryFn: adminHintsAPI.getUsage,
   });
 
-  if (isLoading) return <div className="loading">Chargement des utilisations d'indices...</div>;
-  if (error) return <div className="error">Erreur lors du chargement des utilisations d'indices</div>;
+  if (isLoading) return <div data-testid="admin-hints-loading" className="loading">Chargement des utilisations d'indices...</div>;
+  if (error) return <div data-testid="admin-hints-error" className="error">Erreur lors du chargement des utilisations d'indices</div>;
 
   const usages = data?.usages || [];
   const stats = data?.stats;
 
   return (
-    <div className="admin-hint-usage">
+    <div data-testid="admin-hints-page" className="admin-hint-usage">
       <div className="admin-page-header">
         <div>
           <h1>Utilisation des indices</h1>
@@ -48,7 +48,7 @@ const AdminHintUsage: React.FC = () => {
       )}
 
       <div className="hint-usage-list">
-        <table className="admin-table">
+        <table data-testid="admin-hints-table" className="admin-table">
           <thead>
             <tr>
               <th>Date/Heure</th>
@@ -59,7 +59,7 @@ const AdminHintUsage: React.FC = () => {
           </thead>
           <tbody>
             {usages.map((usage, index) => (
-              <tr key={`${usage.teamId}-${usage.enigmaId}-${index}`}>
+              <tr data-testid={`admin-hints-row-${usage.teamId}-${usage.enigmaId}`} key={`${usage.teamId}-${usage.enigmaId}-${index}`}>
                 <td className="usage-date">
                   {new Date(usage.hintUsedAt).toLocaleString('fr-FR', {
                     dateStyle: 'short',
@@ -90,7 +90,7 @@ const AdminHintUsage: React.FC = () => {
         </table>
 
         {usages.length === 0 && (
-          <div className="empty-state">
+          <div data-testid="admin-hints-empty" className="empty-state">
             <p>Aucun indice n'a encore ete utilise.</p>
           </div>
         )}

@@ -73,38 +73,38 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="dashboard">
+    <div data-testid="dashboard-page" className="dashboard">
       <h1>Tableau de bord</h1>
       <div className="welcome">
         <h2>Bienvenue, {user?.displayName} !</h2>
       </div>
 
       {!user?.teamId ? (
-        <div className="no-team">
+        <div data-testid="dashboard-no-team" className="no-team">
           <p>Vous n'êtes pas encore dans une équipe.</p>
 
           <PendingRequests />
 
-          <div className="dashboard-actions">
-            <Link to="/team/create" className="btn btn-primary">
+          <div data-testid="dashboard-actions" className="dashboard-actions">
+            <Link data-testid="team-create-link" to="/team/create" className="btn btn-primary">
               Créer une équipe
             </Link>
-            <Link to="/team/browse" className="btn btn-secondary">
+            <Link data-testid="team-browse-link" to="/team/browse" className="btn btn-secondary">
               Rejoindre une équipe
             </Link>
           </div>
         </div>
       ) : (
-        <div className="has-team">
+        <div data-testid="dashboard-has-team" className="has-team">
           <p>Vous êtes membre d'une équipe ({user.role})</p>
-          <div className="dashboard-actions">
-            <Link to={`/team/${user.teamId}`} className="btn btn-primary">
+          <div data-testid="dashboard-actions" className="dashboard-actions">
+            <Link data-testid="team-detail-link" to={`/team/${user.teamId}`} className="btn btn-primary">
               Voir mon équipe
             </Link>
-            <Link to="/content" className="btn btn-secondary">
+            <Link data-testid="nav-content-link" to="/content" className="btn btn-secondary">
               Accéder aux énigmes
             </Link>
-            <button
+            <button data-testid="dashboard-download-button"
               onClick={handleDownloadAllContent}
               className="btn btn-secondary"
               disabled={isDownloading}

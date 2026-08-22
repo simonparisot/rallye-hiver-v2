@@ -29,14 +29,14 @@ const Signup: React.FC = () => {
   };
 
   return (
-    <div className="auth-container">
+    <div data-testid="auth-signup-page" className="auth-container">
       <div className="auth-box">
         <h1>Inscription</h1>
-        {error && <div className="error-message">{error}</div>}
-        <form onSubmit={handleSubmit}>
+        {error && <div data-testid="auth-signup-error" className="error-message">{error}</div>}
+        <form data-testid="auth-signup-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="displayName">Nom d'affichage</label>
-            <input
+            <input data-testid="auth-signup-displayname-input"
               type="text"
               id="displayName"
               value={displayName}
@@ -46,7 +46,7 @@ const Signup: React.FC = () => {
           </div>
           <div className="form-group">
             <label htmlFor="email">Email</label>
-            <input
+            <input data-testid="auth-signup-email-input"
               type="email"
               id="email"
               value={email}
@@ -57,7 +57,7 @@ const Signup: React.FC = () => {
           </div>
           <div className="form-group">
             <label htmlFor="password">Mot de passe</label>
-            <input
+            <input data-testid="auth-signup-password-input"
               type="password"
               id="password"
               value={password}
@@ -68,13 +68,13 @@ const Signup: React.FC = () => {
             />
             <small>Au moins 8 caractères, avec majuscule, minuscule et chiffre</small>
           </div>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
+          <button data-testid="auth-signup-submit" type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? 'Inscription...' : 'S\'inscrire'}
           </button>
         </form>
 
         <p className="auth-link">
-          Déjà un compte ? <Link to="/login">Se connecter</Link>
+          Déjà un compte ? <Link data-testid="auth-login-link" to="/login">Se connecter</Link>
         </p>
       </div>
     </div>

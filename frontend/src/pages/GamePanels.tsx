@@ -55,8 +55,8 @@ const GamePanels: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="game-panels-container">
-        <div className="loading-overlay">
+      <div data-testid="nav-panels-container" className="game-panels-container">
+        <div data-testid="nav-loading" className="loading-overlay">
           <div className="loading-spinner">Chargement...</div>
         </div>
       </div>
@@ -64,20 +64,20 @@ const GamePanels: React.FC = () => {
   }
 
   return (
-    <div className="game-panels-container">
+    <div data-testid="nav-panels-container" className="game-panels-container">
       {/* Logo positioned at top right */}
-      <img src="/logo.png" alt="Rallye d'Hiver" className="rallye-logo" />
+      <img data-testid="nav-logo" src="/logo.png" alt="Rallye d'Hiver" className="rallye-logo" />
 
       {!user ? (
         // Unauthenticated State
         <>
           {/* Panel 1: Authentication */}
-          <div className="panel panel-1">
+          <div data-testid="nav-panel-auth" className="panel panel-1">
             <AuthPanel />
           </div>
 
           {/* Panel 2: General Information */}
-          <div className="panel panel-2">
+          <div data-testid="nav-panel-general-info" className="panel panel-2">
             <GeneralInfoPanel
               isExpanded={true}
               isCompact={false}
@@ -85,7 +85,7 @@ const GamePanels: React.FC = () => {
           </div>
 
           {/* Panel 3: Edition Information */}
-          <div className="panel panel-3">
+          <div data-testid="nav-panel-edition-info" className="panel panel-3">
             <EditionInfoPanel
               isExpanded={true}
               isCompact={false}
@@ -99,7 +99,7 @@ const GamePanels: React.FC = () => {
             // User with paid team
             <>
               {/* Panel 1: Stats & Dashboard */}
-              <div
+              <div data-testid="nav-panel-stats"
                 className={`panel panel-1 ${expandedPanel !== 'none' ? 'collapsed' : ''}`}
                 onClick={() => expandedPanel !== 'none' && handleClose()}
               >
@@ -107,14 +107,14 @@ const GamePanels: React.FC = () => {
               </div>
 
               {/* Panel 2: Enigmas OR Waiting State */}
-              <div
+              <div data-testid="nav-panel-enigmas"
                 className={`panel panel-2 ${
                   expandedPanel === 'panel1' ? 'expanded' : expandedPanel !== 'none' ? 'collapsed' : ''
                 } ${!gameStarted ? 'non-expandable' : ''}`}
                 onClick={() => expandedPanel !== 'panel1' && handlePanelClick('panel1')}
               >
                 {expandedPanel === 'panel1' && gameStarted && (
-                  <button className="panel-close-btn" onClick={(e) => { e.stopPropagation(); handleClose(); }}>
+                  <button data-testid="nav-panel-close-button" className="panel-close-btn" onClick={(e) => { e.stopPropagation(); handleClose(); }}>
                     ×
                   </button>
                 )}
@@ -131,14 +131,14 @@ const GamePanels: React.FC = () => {
 
               {/* Panel 3: Parcours (hidden when game hasn't started) */}
               {gameStarted && (
-                <div
+                <div data-testid="nav-panel-parcours"
                   className={`panel panel-3 ${
                     expandedPanel === 'panel2' ? 'expanded' : expandedPanel !== 'none' ? 'collapsed' : ''
                   }`}
                   onClick={() => expandedPanel !== 'panel2' && handlePanelClick('panel2')}
                 >
                   {expandedPanel === 'panel2' && (
-                    <button className="panel-close-btn" onClick={(e) => { e.stopPropagation(); handleClose(); }}>
+                    <button data-testid="nav-panel-close-button" className="panel-close-btn" onClick={(e) => { e.stopPropagation(); handleClose(); }}>
                       ×
                     </button>
                   )}
@@ -154,12 +154,12 @@ const GamePanels: React.FC = () => {
             // User without access (no team, pending request, or unpaid team) - show info panels
             <>
               {/* Panel 1: Stats & Dashboard (for team management) */}
-              <div className="panel panel-1">
+              <div data-testid="nav-panel-stats" className="panel panel-1">
                 <StatsPanel isCompact={false} hideStats={true} />
               </div>
 
               {/* Panel 2: General Information */}
-              <div className="panel panel-2">
+              <div data-testid="nav-panel-general-info" className="panel panel-2">
                 <GeneralInfoPanel
                   isExpanded={true}
                   isCompact={false}
@@ -167,7 +167,7 @@ const GamePanels: React.FC = () => {
               </div>
 
               {/* Panel 3: Edition Information */}
-              <div className="panel panel-3">
+              <div data-testid="nav-panel-edition-info" className="panel panel-3">
                 <EditionInfoPanel
                   isExpanded={true}
                   isCompact={false}

@@ -219,17 +219,17 @@ const AdminEnigmas: React.FC = () => {
     }
   };
 
-  if (isLoading) return <div className="loading">Chargement des énigmes...</div>;
-  if (error) return <div className="error">Échec du chargement des énigmes</div>;
+  if (isLoading) return <div data-testid="admin-enigmas-loading" className="loading">Chargement des énigmes...</div>;
+  if (error) return <div data-testid="admin-enigmas-error" className="error">Échec du chargement des énigmes</div>;
 
   return (
-    <div className="admin-enigmas">
+    <div data-testid="admin-enigmas-page" className="admin-enigmas">
       <div className="admin-page-header">
         <div>
           <h1>Gestion des énigmes</h1>
           <p className="admin-page-subtitle">Créer, modifier et gérer les énigmes du jeu</p>
         </div>
-        <button
+        <button data-testid="admin-enigmas-new-button"
           className="btn btn-primary"
           onClick={() => setShowForm(!showForm)}
         >
@@ -240,11 +240,11 @@ const AdminEnigmas: React.FC = () => {
       {showForm && (
         <div className="enigma-form-container card">
           <h2>{editingEnigma ? 'Modifier l\'énigme' : 'Créer une nouvelle énigme'}</h2>
-          <form onSubmit={handleSubmit} className="enigma-form">
+          <form data-testid="admin-enigmas-form" onSubmit={handleSubmit} className="enigma-form">
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="enigma-title">Nom de l'énigme *</label>
-                <input
+                <input data-testid="admin-enigmas-title-input"
                   id="enigma-title"
                   type="text"
                   value={formData.title}
@@ -257,7 +257,7 @@ const AdminEnigmas: React.FC = () => {
 
               <div className="form-group">
                 <label htmlFor="enigma-password">Mot de passe (solution) *</label>
-                <input
+                <input data-testid="admin-enigmas-password-input"
                   id="enigma-password"
                   type="text"
                   value={formData.correctPassword}
@@ -274,7 +274,7 @@ const AdminEnigmas: React.FC = () => {
               <div className="form-group">
                 <label htmlFor="enigma-pdf">Fichier PDF de l'énigme *</label>
                 <div className="pdf-upload-container">
-                  <input
+                  <input data-testid="admin-enigmas-pdf-input"
                     id="enigma-pdf-file"
                     type="file"
                     accept="application/pdf,.pdf"
@@ -302,7 +302,7 @@ const AdminEnigmas: React.FC = () => {
               <div className="form-group">
                 <label htmlFor="enigma-hint-pdf">PDF Indice (optionnel)</label>
                 <div className="pdf-upload-container">
-                  <input
+                  <input data-testid="admin-enigmas-hint-pdf-input"
                     id="enigma-hint-pdf-file"
                     type="file"
                     accept="application/pdf,.pdf"
@@ -333,7 +333,7 @@ const AdminEnigmas: React.FC = () => {
                 <label htmlFor="enigma-active">Statut de publication</label>
                 <div className="toggle-container">
                   <label className="toggle-switch">
-                    <input
+                    <input data-testid="admin-enigmas-active-toggle"
                       id="enigma-active"
                       type="checkbox"
                       checked={formData.isActive}
@@ -356,14 +356,14 @@ const AdminEnigmas: React.FC = () => {
             )}
 
             <div className="form-actions">
-              <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || uploadingPdf || uploadingHintPdf}>
+              <button data-testid="admin-enigmas-submit" type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || uploadingPdf || uploadingHintPdf}>
                 {editingEnigma ? '💾 Mettre à jour' : '✨ Créer l\'énigme'}
               </button>
-              <button type="button" className="btn btn-secondary" onClick={resetForm}>
+              <button data-testid="admin-enigmas-cancel" type="button" className="btn btn-secondary" onClick={resetForm}>
                 Annuler
               </button>
               {editingEnigma && (
-                <button
+                <button data-testid="admin-enigmas-delete"
                   type="button"
                   className="btn btn-danger"
                   onClick={() => {
@@ -380,7 +380,7 @@ const AdminEnigmas: React.FC = () => {
             </div>
 
             {(createMutation.isError || updateMutation.isError) && (
-              <div className="form-error">
+              <div data-testid="admin-enigmas-form-error" className="form-error">
                 Erreur: {(createMutation.error as any)?.response?.data?.error || 'Une erreur est survenue'}
               </div>
             )}
@@ -390,7 +390,7 @@ const AdminEnigmas: React.FC = () => {
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="enigmas-list">
-          <table className="admin-table">
+          <table data-testid="admin-enigmas-table" className="admin-table">
             <thead>
               <tr>
                 <th style={{ width: '30px' }}></th>
@@ -408,7 +408,7 @@ const AdminEnigmas: React.FC = () => {
                   {orderedEnigmas.map((enigma, index) => (
                     <Draggable key={enigma.enigmaId} draggableId={enigma.enigmaId} index={index}>
                       {(provided, snapshot) => (
-                        <tr
+                        <tr data-testid={`admin-enigmas-row-${enigma.enigmaId}`}
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           className={`${snapshot.isDragging ? 'dragging' : ''} ${!enigma.isActive ? 'unpublished' : ''}`}
@@ -460,7 +460,7 @@ const AdminEnigmas: React.FC = () => {
                             )}
                           </td>
                           <td className="actions">
-                            <button
+                            <button data-testid={`admin-enigmas-edit-button-${enigma.enigmaId}`}
                               className="btn btn-small btn-secondary"
                               onClick={() => handleEdit(enigma)}
                             >
@@ -478,7 +478,7 @@ const AdminEnigmas: React.FC = () => {
           </table>
 
           {orderedEnigmas.length === 0 && (
-            <div className="empty-state">
+            <div data-testid="admin-enigmas-empty" className="empty-state">
               <p>Aucune énigme créée pour le moment. Cliquez sur "Nouvelle énigme" pour commencer.</p>
             </div>
           )}

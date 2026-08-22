@@ -18,8 +18,8 @@ const AdminTeams: React.FC = () => {
     enabled: !!selectedTeam,
   });
 
-  if (isLoading) return <div className="loading">Chargement des équipes...</div>;
-  if (error) return <div className="error">Échec du chargement des équipes</div>;
+  if (isLoading) return <div data-testid="admin-teams-loading" className="loading">Chargement des équipes...</div>;
+  if (error) return <div data-testid="admin-teams-error" className="error">Échec du chargement des équipes</div>;
 
   const teams = data?.teams || [];
 
@@ -35,7 +35,7 @@ const AdminTeams: React.FC = () => {
   const avgMembers = totalTeams > 0 ? (totalMembers / totalTeams).toFixed(1) : 0;
 
   return (
-    <div className="admin-teams">
+    <div data-testid="admin-teams-page" className="admin-teams">
       <div className="admin-page-header">
         <div>
           <h1>Suivi des équipes</h1>
@@ -64,9 +64,9 @@ const AdminTeams: React.FC = () => {
         </div>
       </div>
 
-      <div className="teams-grid">
+      <div data-testid="admin-teams-list" className="teams-grid">
         {teams.map((team) => (
-          <div
+          <div data-testid={`admin-teams-row-${team.teamId}`}
             key={team.teamId}
             className={`team-card card ${selectedTeam === team.teamId ? 'selected' : ''}`}
             onClick={() => setSelectedTeam(team.teamId === selectedTeam ? null : team.teamId)}
@@ -174,7 +174,7 @@ const AdminTeams: React.FC = () => {
       </div>
 
       {teams.length === 0 && (
-        <div className="empty-state">
+        <div data-testid="admin-teams-empty" className="empty-state">
           <p>Aucune équipe inscrite pour le moment.</p>
         </div>
       )}

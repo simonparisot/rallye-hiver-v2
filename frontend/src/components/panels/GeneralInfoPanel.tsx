@@ -8,7 +8,7 @@ interface GeneralInfoPanelProps {
 
 const GeneralInfoPanel: React.FC<GeneralInfoPanelProps> = ({ isExpanded, isCompact }) => {
   return (
-    <div className={`info-panel ${isCompact ? 'panel-compact' : ''}`}>
+    <div data-testid="general-info-panel" className={`info-panel ${isCompact ? 'panel-compact' : ''}`}>
       <div className="panel-header">
         <h2>Le Rallye d'Hiver</h2>
       </div>

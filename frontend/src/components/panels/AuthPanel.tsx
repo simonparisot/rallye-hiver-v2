@@ -88,15 +88,16 @@ const AuthPanel: React.FC = () => {
   };
 
   return (
-    <div className="auth-panel">
+    <div className="auth-panel" data-testid="auth-panel">
       <div className="panel-header">
         <h2>{getTitle()}</h2>
       </div>
       <div className="panel-content">
         <div className="auth-container">
           {(mode === 'login' || mode === 'signup') && (
-            <div className="auth-tabs">
+            <div className="auth-tabs" data-testid="auth-tabs">
               <button
+                data-testid="auth-login-tab"
                 className={`auth-tab ${mode === 'login' ? 'active' : ''}`}
                 onClick={() => {
                   setMode('login');
@@ -107,6 +108,7 @@ const AuthPanel: React.FC = () => {
                 Connexion
               </button>
               <button
+                data-testid="auth-signup-tab"
                 className={`auth-tab ${mode === 'signup' ? 'active' : ''}`}
                 onClick={() => {
                   setMode('signup');
@@ -119,7 +121,7 @@ const AuthPanel: React.FC = () => {
             </div>
           )}
 
-          <form className="auth-form" onSubmit={handleSubmit}>
+          <form className="auth-form" data-testid="auth-form" onSubmit={handleSubmit}>
             {mode === 'login' && (
               <div className="auth-info-text">
                 Cette année, l'inscription est individuelle. Inscrivez-vous avec votre email personnel, vous pourrez ensuite créer ou rejoindre votre équipe.
@@ -137,6 +139,7 @@ const AuthPanel: React.FC = () => {
                     type="text"
                     id="displayName"
                     name="displayName"
+                    data-testid="auth-displayname-input"
                     value={formData.displayName}
                     onChange={handleChange}
                     required
@@ -154,6 +157,7 @@ const AuthPanel: React.FC = () => {
                   type="email"
                   id="email"
                   name="email"
+                  data-testid="auth-email-input"
                   value={formData.email}
                   onChange={handleChange}
                   required
@@ -169,6 +173,7 @@ const AuthPanel: React.FC = () => {
                   type="password"
                   id="password"
                   name="password"
+                  data-testid="auth-password-input"
                   value={formData.password}
                   onChange={handleChange}
                   required
@@ -189,6 +194,7 @@ const AuthPanel: React.FC = () => {
                     type="text"
                     id="code"
                     name="code"
+                    data-testid="auth-code-input"
                     value={formData.code}
                     onChange={handleChange}
                     required
@@ -205,6 +211,7 @@ const AuthPanel: React.FC = () => {
                     type="password"
                     id="newPassword"
                     name="newPassword"
+                    data-testid="auth-new-password-input"
                     value={formData.newPassword}
                     onChange={handleChange}
                     required
@@ -216,10 +223,10 @@ const AuthPanel: React.FC = () => {
               </>
             )}
 
-            {error && <div className="error-message">{error}</div>}
-            {success && <div className="success-message">{success}</div>}
+            {error && <div className="error-message" data-testid="auth-error">{error}</div>}
+            {success && <div className="success-message" data-testid="auth-success">{success}</div>}
 
-            <button type="submit" className="btn btn-primary btn-large" disabled={loading}>
+            <button type="submit" className="btn btn-primary btn-large" data-testid="auth-submit" disabled={loading}>
               {loading ? 'Chargement...' :
                mode === 'login' ? 'Se connecter' :
                mode === 'signup' ? 'S\'inscrire' :
@@ -236,6 +243,7 @@ const AuthPanel: React.FC = () => {
                 </p>
                 <p>
                   <button
+                    data-testid="auth-forgot-password-link"
                     className="link-button"
                     onClick={() => {
                       setMode('forgot-password');
@@ -256,6 +264,7 @@ const AuthPanel: React.FC = () => {
             {(mode === 'forgot-password' || mode === 'reset-password') && (
               <p>
                 <button
+                  data-testid="auth-back-to-login-link"
                   className="link-button"
                   onClick={() => {
                     setMode('login');

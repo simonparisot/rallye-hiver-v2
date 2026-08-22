@@ -8,7 +8,7 @@ interface EditionInfoPanelProps {
 
 const EditionInfoPanel: React.FC<EditionInfoPanelProps> = ({ isExpanded, isCompact }) => {
   return (
-    <div className={`info-panel ${isCompact ? 'panel-compact' : ''}`}>
+    <div data-testid="edition-info-panel" className={`info-panel ${isCompact ? 'panel-compact' : ''}`}>
       <div className="panel-header">
         <h2>Règles du jeu</h2>
       </div>

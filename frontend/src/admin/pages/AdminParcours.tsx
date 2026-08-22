@@ -145,19 +145,19 @@ const AdminParcours: React.FC = () => {
     }
   };
 
-  if (isLoading) return <div className="loading">Chargement des parcours...</div>;
-  if (error) return <div className="error">Échec du chargement des parcours</div>;
+  if (isLoading) return <div data-testid="admin-parcours-loading" className="loading">Chargement des parcours...</div>;
+  if (error) return <div data-testid="admin-parcours-error" className="error">Échec du chargement des parcours</div>;
 
   const parcoursList = data?.parcours || [];
 
   return (
-    <div className="admin-parcours">
+    <div data-testid="admin-parcours-page" className="admin-parcours">
       <div className="admin-page-header">
         <div>
           <h1>Gestion des parcours</h1>
           <p className="admin-page-subtitle">Créer, modifier et gérer les parcours du jeu</p>
         </div>
-        <button
+        <button data-testid="admin-parcours-new-button"
           className="btn btn-primary"
           onClick={() => setShowForm(!showForm)}
         >
@@ -168,10 +168,10 @@ const AdminParcours: React.FC = () => {
       {showForm && (
         <div className="parcours-form-container card">
           <h2>{editingParcours ? 'Modifier le parcours' : 'Ajouter un nouveau parcours'}</h2>
-          <form onSubmit={handleSubmit} className="parcours-form">
+          <form data-testid="admin-parcours-form" onSubmit={handleSubmit} className="parcours-form">
             <div className="form-group">
               <label>Titre du parcours *</label>
-              <input
+              <input data-testid="admin-parcours-title-input"
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -189,7 +189,7 @@ const AdminParcours: React.FC = () => {
                   </a>
                 </div>
               )}
-              <input
+              <input data-testid="admin-parcours-pdf-input"
                 type="file"
                 accept="application/pdf"
                 onChange={handlePdfUpload}
@@ -205,7 +205,7 @@ const AdminParcours: React.FC = () => {
             <div className="form-group toggle-group">
               <label>Statut de publication</label>
               <div className="toggle-switch">
-                <input
+                <input data-testid="admin-parcours-active-toggle"
                   type="checkbox"
                   id="parcours-active"
                   checked={formData.isActive}
@@ -221,14 +221,14 @@ const AdminParcours: React.FC = () => {
             </div>
 
             <div className="form-actions">
-              <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || uploadingPdf}>
+              <button data-testid="admin-parcours-submit" type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || uploadingPdf}>
                 {editingParcours ? 'Mettre à jour' : 'Créer'}
               </button>
-              <button type="button" className="btn btn-secondary" onClick={resetForm}>
+              <button data-testid="admin-parcours-cancel" type="button" className="btn btn-secondary" onClick={resetForm}>
                 Annuler
               </button>
               {editingParcours && (
-                <button
+                <button data-testid="admin-parcours-delete"
                   type="button"
                   className="btn btn-danger"
                   onClick={() => {
@@ -249,7 +249,7 @@ const AdminParcours: React.FC = () => {
 
       <div className="parcours-list">
         <DragDropContext onDragEnd={handleDragEnd}>
-          <table className="admin-table">
+          <table data-testid="admin-parcours-table" className="admin-table">
             <thead>
               <tr>
                 <th style={{ width: '30px' }}></th>
@@ -270,7 +270,7 @@ const AdminParcours: React.FC = () => {
                       index={index}
                     >
                       {(provided, snapshot) => (
-                        <tr
+                        <tr data-testid={`admin-parcours-row-${parcours.parcoursId}`}
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           className={`${!parcours.isActive ? 'unpublished-row' : ''} ${snapshot.isDragging ? 'dragging' : ''}`}
@@ -302,7 +302,7 @@ const AdminParcours: React.FC = () => {
                             )}
                           </td>
                           <td className="actions">
-                            <button className="btn btn-small btn-secondary" onClick={() => handleEdit(parcours)}>
+                            <button data-testid={`admin-parcours-edit-button-${parcours.parcoursId}`} className="btn btn-small btn-secondary" onClick={() => handleEdit(parcours)}>
                               Modifier
                             </button>
                           </td>
@@ -318,7 +318,7 @@ const AdminParcours: React.FC = () => {
         </DragDropContext>
 
         {parcoursList.length === 0 && (
-          <div className="empty-state">
+          <div data-testid="admin-parcours-empty" className="empty-state">
             <p>Aucun parcours créé pour le moment. Cliquez sur "+ Nouveau parcours" pour commencer.</p>
           </div>
         )}

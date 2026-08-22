@@ -92,8 +92,8 @@ const AdminUsers: React.FC = () => {
     return <span className="no-team-text">-</span>;
   };
 
-  if (isLoading) return <div className="loading">Chargement des utilisateurs...</div>;
-  if (error) return <div className="error">Échec du chargement des utilisateurs</div>;
+  if (isLoading) return <div data-testid="admin-users-loading" className="loading">Chargement des utilisateurs...</div>;
+  if (error) return <div data-testid="admin-users-error" className="error">Échec du chargement des utilisateurs</div>;
 
   // Calculate statistics
   const totalUsers = users.length;
@@ -107,7 +107,7 @@ const AdminUsers: React.FC = () => {
   }).length;
 
   return (
-    <div className="admin-users">
+    <div data-testid="admin-users-page" className="admin-users">
       <div className="admin-page-header">
         <div>
           <h1>Gestion des utilisateurs</h1>
@@ -120,7 +120,7 @@ const AdminUsers: React.FC = () => {
 
       <div className="users-filters card">
         <div className="search-box">
-          <input
+          <input data-testid="admin-users-search-input"
             type="text"
             placeholder="Rechercher par nom ou email..."
             value={searchTerm}
@@ -132,7 +132,7 @@ const AdminUsers: React.FC = () => {
         <div className="filter-controls">
           <div className="filter-group">
             <label>Statut d'inscription</label>
-            <select
+            <select data-testid="admin-users-status-filter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as TeamStatus)}
               className="admin-select"
@@ -146,7 +146,7 @@ const AdminUsers: React.FC = () => {
 
           <div className="filter-group">
             <label>Rôle</label>
-            <select
+            <select data-testid="admin-users-role-filter"
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value as UserRole)}
               className="admin-select"
@@ -176,7 +176,7 @@ const AdminUsers: React.FC = () => {
       </div>
 
       <div className="users-list">
-        <table className="admin-table">
+        <table data-testid="admin-users-table" className="admin-table">
           <thead>
             <tr>
               <th>Nom</th>
@@ -190,7 +190,7 @@ const AdminUsers: React.FC = () => {
           <tbody>
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="empty-state-cell">
+                <td data-testid="admin-users-empty" colSpan={6} className="empty-state-cell">
                   {searchTerm || statusFilter !== 'all' || roleFilter !== 'all' ? (
                     <p>Aucun utilisateur ne correspond aux filtres sélectionnés.</p>
                   ) : (
@@ -200,7 +200,7 @@ const AdminUsers: React.FC = () => {
               </tr>
             ) : (
               filteredUsers.map((user) => (
-                <tr key={user.userId} className={user.isAdmin ? 'admin-row' : ''}>
+                <tr data-testid={`admin-users-row-${user.userId}`} key={user.userId} className={user.isAdmin ? 'admin-row' : ''}>
                   <td>
                     <div className="user-name">
                       {user.displayName}
