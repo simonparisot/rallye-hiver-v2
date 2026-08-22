@@ -45,17 +45,30 @@ export const config = {
   apiUrl: env.apiUrl,
   siteUrl: env.siteUrl,
 
-  /** Comptes stables, pour les scénarios qui ne font que lire. */
+  /**
+   * Comptes stables du décor.
+   *
+   * Les adresses par défaut suivent le préfixe de l'environnement : en
+   * production, seules celles en `e2e-prod+…` franchissent le contrôle de
+   * confinement, si bien qu'un compte du décor ne peut jamais être confondu
+   * avec celui d'un participant.
+   */
   fixtureUsers: {
     leader: {
-      email: process.env.TEST_LEADER_EMAIL || 'e2e-leader@rallyehiver.fr',
-      password: process.env.TEST_LEADER_PASSWORD,
-      displayName: 'E2E Leader',
+      email: env.name === 'prod' ? 'e2e-prod@rallyehiver.fr' : 'e2e-leader@rallyehiver.fr',
+      // Mot de passe distinct par environnement : celui de production ne doit
+      // pas se retrouver dans un fichier partagé avec l'environnement de test.
+      password: env.name === 'prod'
+        ? process.env.TEST_PROD_PASSWORD
+        : process.env.TEST_LEADER_PASSWORD,
+      displayName: 'E2E Pilote',
     },
     member: {
-      email: process.env.TEST_MEMBER_EMAIL || 'e2e-member@rallyehiver.fr',
-      password: process.env.TEST_MEMBER_PASSWORD,
-      displayName: 'E2E Member',
+      email: env.name === 'prod' ? 'e2e-prod+member@rallyehiver.fr' : 'e2e-member@rallyehiver.fr',
+      password: env.name === 'prod'
+        ? process.env.TEST_PROD_PASSWORD
+        : process.env.TEST_MEMBER_PASSWORD,
+      displayName: 'E2E Second',
     },
     admin: {
       email: process.env.TEST_ADMIN_EMAIL,
@@ -69,8 +82,14 @@ export const config = {
     },
   },
 
-  /** Équipe de test permanente, cible de tous les scénarios authentifiés. */
-  teamId: process.env.TEST_TEAM_ID,
+  /**
+   * Équipe de test permanente, cible des scénarios authentifiés et seule équipe
+   * que le nettoyage est autorisé à toucher. Un identifiant par environnement :
+   * confondre les deux ferait viser une équipe réelle en production.
+   */
+  teamId: env.name === 'prod'
+    ? process.env.TEST_PROD_TEAM_ID
+    : process.env.TEST_TEAM_ID,
 
   /** Mot de passe des comptes jetables créés pendant un run. */
   ephemeralPassword: process.env.TEST_EPHEMERAL_PASSWORD || 'E2eRallye!2027',

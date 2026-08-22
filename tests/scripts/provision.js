@@ -54,25 +54,41 @@ async function ensureTeam(leader) {
   return teamId;
 }
 
-async function ensurePaid(teamId) {
+/**
+ * Pose en une seule écriture les trois marqueurs de l'équipe de test :
+ *
+ *  - hasPaid    : sans lui, aucune énigme ne peut être tentée. Le flux Stripe
+ *                 est hors périmètre des tests, le statut est donc posé
+ *                 directement.
+ *  - isTestTeam : retire l'équipe de toutes les listes et statistiques. Posé
+ *                 dans la foulée de la création, pour qu'elle ne soit jamais
+ *                 visible des participants, fût-ce quelques secondes.
+ *  - isBetaTeam : autorise le jeu avant l'ouverture du rallye, ce qui permettra
+ *                 de tester l'édition 2027 avant son lancement.
+ */
+async function ensureTeamFlags(teamId) {
   const current = await dynamo().send(new GetCommand({
     TableName: table(TABLES.teams),
     Key: { teamId },
   }));
 
-  if (current.Item?.hasPaid) {
-    console.log('  paiement         : déjà marqué');
+  const item = current.Item ?? {};
+  const dejaPose = item.hasPaid && item.isTestTeam && item.isBetaTeam;
+
+  if (dejaPose) {
+    console.log('  marqueurs        : déjà posés (payée, masquée, accès anticipé)');
     return;
   }
 
   await dynamo().send(new UpdateCommand({
     TableName: table(TABLES.teams),
     Key: { teamId },
-    UpdateExpression: 'SET hasPaid = :true, updatedAt = :now',
+    UpdateExpression:
+      'SET hasPaid = :true, isTestTeam = :true, isBetaTeam = :true, updatedAt = :now',
     ExpressionAttributeValues: { ':true': true, ':now': new Date().toISOString() },
   }));
 
-  console.log('  paiement         : marqué (le flux Stripe est hors périmètre)');
+  console.log('  marqueurs        : posés (payée, masquée des listes, accès anticipé)');
 }
 
 async function ensureMember(member, teamId, leader) {
@@ -112,7 +128,7 @@ async function main() {
   });
 
   const teamId = await ensureTeam(leader);
-  await ensurePaid(teamId);
+  await ensureTeamFlags(teamId);
 
   const member = await ensureAccount({
     email: config.fixtureUsers.member.email,

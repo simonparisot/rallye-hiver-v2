@@ -14,6 +14,28 @@ import { config } from '../config/test-config.js';
  * participant réel.
  */
 
+/**
+ * Parcourt un Scan ou un Query jusqu'au bout.
+ *
+ * DynamoDB borne chaque réponse à 1 Mo : sur une table volumineuse, se
+ * contenter de la première page laisse des éléments derrière soi. C'est ce qui
+ * est arrivé en production, où la table des tentatives dépasse 6 Mo — le
+ * nettoyage n'en voyait qu'une fraction alors qu'il paraissait complet sur
+ * l'environnement de test.
+ */
+async function parcourirTout(construireCommande) {
+  const items = [];
+  let clefDepart;
+
+  do {
+    const reponse = await dynamo().send(construireCommande(clefDepart));
+    items.push(...(reponse.Items ?? []));
+    clefDepart = reponse.LastEvaluatedKey;
+  } while (clefDepart);
+
+  return items;
+}
+
 /** Interdit toute opération sur une autre équipe que l'équipe de test. */
 function assertTestTeam(teamId) {
   if (!config.teamId) {
@@ -55,13 +77,14 @@ export async function deleteParticipant({ email, userId }) {
   }
 
   // 2. Table users — retrouvée par balayage, l'index est sur cognitoSub.
-  const users = await dynamo().send(new ScanCommand({
+  const users = await parcourirTout((clefDepart) => new ScanCommand({
     TableName: table(TABLES.users),
     FilterExpression: 'email = :email',
     ExpressionAttributeValues: { ':email': email },
+    ExclusiveStartKey: clefDepart,
   }));
 
-  for (const user of users.Items ?? []) {
+  for (const user of users) {
     assertScopedResource(user.email);
     await dynamo().send(new DeleteCommand({
       TableName: table(TABLES.users),
@@ -117,13 +140,14 @@ export async function resetTestTeamProgress() {
   const supprimes = { progress: 0, attempts: 0, parcoursAccess: 0 };
 
   // Progression par énigme
-  const progress = await dynamo().send(new QueryCommand({
+  const progress = await parcourirTout((clefDepart) => new QueryCommand({
     TableName: table(TABLES.progress),
     KeyConditionExpression: 'teamId = :t',
     ExpressionAttributeValues: { ':t': teamId },
+    ExclusiveStartKey: clefDepart,
   }));
 
-  for (const item of progress.Items ?? []) {
+  for (const item of progress) {
     await dynamo().send(new DeleteCommand({
       TableName: table(TABLES.progress),
       Key: { teamId: item.teamId, enigmaId: item.enigmaId },
@@ -132,13 +156,14 @@ export async function resetTestTeamProgress() {
   }
 
   // Tentatives de mot de passe — balayage filtré sur l'équipe de test.
-  const attempts = await dynamo().send(new ScanCommand({
+  const attempts = await parcourirTout((clefDepart) => new ScanCommand({
     TableName: table(TABLES.attempts),
     FilterExpression: 'teamId = :t',
     ExpressionAttributeValues: { ':t': teamId },
+    ExclusiveStartKey: clefDepart,
   }));
 
-  for (const item of attempts.Items ?? []) {
+  for (const item of attempts) {
     assertTestTeam(item.teamId);
     await dynamo().send(new DeleteCommand({
       TableName: table(TABLES.attempts),
@@ -148,13 +173,14 @@ export async function resetTestTeamProgress() {
   }
 
   // Accès aux parcours
-  const access = await dynamo().send(new QueryCommand({
+  const access = await parcourirTout((clefDepart) => new QueryCommand({
     TableName: table(TABLES.parcoursAccess),
     KeyConditionExpression: 'teamId = :t',
     ExpressionAttributeValues: { ':t': teamId },
+    ExclusiveStartKey: clefDepart,
   }));
 
-  for (const item of access.Items ?? []) {
+  for (const item of access) {
     await dynamo().send(new DeleteCommand({
       TableName: table(TABLES.parcoursAccess),
       Key: { teamId: item.teamId, parcoursId: item.parcoursId },
@@ -182,8 +208,9 @@ export async function sweepOrphanedParticipants({ olderThanMinutes = 60 } = {}) 
   const limite = Date.now() - olderThanMinutes * 60 * 1000;
   const supprimes = [];
 
-  const users = await dynamo().send(new ScanCommand({
+  const users = await parcourirTout((clefDepart) => new ScanCommand({
     TableName: table(TABLES.users),
+    ExclusiveStartKey: clefDepart,
   }));
 
   // Un compte jetable porte toujours un « + » après le préfixe de l'environnement.
@@ -191,7 +218,7 @@ export async function sweepOrphanedParticipants({ olderThanMinutes = 60 } = {}) 
   // rallyehiver.fr soit emporté par erreur.
   const motifJetable = new RegExp(`^${env.ephemeralEmailPrefix}\\+`);
 
-  for (const user of users.Items ?? []) {
+  for (const user of users) {
     if (!user.email) continue;
     if (!env.scopedEmailPattern.test(user.email)) continue;
     if (!motifJetable.test(user.email)) continue;

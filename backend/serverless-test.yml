@@ -850,6 +850,8 @@ resources:
     # DynamoDB Tables
     UsersTable:
       Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         TableName: ${self:provider.environment.USERS_TABLE}
         BillingMode: PAY_PER_REQUEST
@@ -881,6 +883,8 @@ resources:
 
     TeamsTable:
       Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         TableName: ${self:provider.environment.TEAMS_TABLE}
         BillingMode: PAY_PER_REQUEST
@@ -895,6 +899,8 @@ resources:
 
     EnigmasTable:
       Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         TableName: ${self:provider.environment.ENIGMAS_TABLE}
         BillingMode: PAY_PER_REQUEST
@@ -918,6 +924,8 @@ resources:
 
     ParcoursTable:
       Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         TableName: ${self:provider.environment.PARCOURS_TABLE}
         BillingMode: PAY_PER_REQUEST
@@ -941,6 +949,8 @@ resources:
 
     TeamEnigmaProgressTable:
       Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         TableName: ${self:provider.environment.TEAM_ENIGMA_PROGRESS_TABLE}
         BillingMode: PAY_PER_REQUEST
@@ -970,6 +980,8 @@ resources:
 
     PasswordAttemptsTable:
       Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         TableName: ${self:provider.environment.PASSWORD_ATTEMPTS_TABLE}
         BillingMode: PAY_PER_REQUEST
@@ -1017,6 +1029,8 @@ resources:
 
     TeamParcoursAccessTable:
       Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         TableName: ${self:provider.environment.TEAM_PARCOURS_ACCESS_TABLE}
         BillingMode: PAY_PER_REQUEST
@@ -1035,6 +1049,8 @@ resources:
 
     GameStatusTable:
       Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         TableName: ${self:provider.environment.GAME_STATUS_TABLE}
         BillingMode: PAY_PER_REQUEST
@@ -1049,6 +1065,8 @@ resources:
 
     EnigmaDifficultyCacheTable:
       Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         TableName: ${self:provider.environment.ENIGMA_DIFFICULTY_CACHE_TABLE}
         BillingMode: PAY_PER_REQUEST
@@ -1062,6 +1080,8 @@ resources:
     # Cognito User Pool
     CognitoUserPool:
       Type: AWS::Cognito::UserPool
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         UserPoolName: ${self:service}-user-pool
         AutoVerifiedAttributes:

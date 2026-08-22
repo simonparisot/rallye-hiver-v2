@@ -10,23 +10,45 @@ set -euo pipefail
 
 ENVIRONNEMENT="${1:-}"
 
-if [ "$ENVIRONNEMENT" != "test" ]; then
-  echo "Usage : $0 test" >&2
-  echo "Seul l'environnement de test est publiable par ce script." >&2
-  exit 1
-fi
+case "$ENVIRONNEMENT" in
+  test)
+    PROFIL="rallye-test"
+    BUCKET="test.rallyehiver.fr"
+    DISTRIBUTION="E104E5O2KDVFJN"
+    API_URL="https://010h0tev7c.execute-api.eu-west-1.amazonaws.com/test"
+    POOL_ID="eu-west-1_Sxj76KSAf"
+    CLIENT_ID="76s9a0gtb59bem03urs771tovt"
+    ;;
+  prod)
+    PROFIL="rallye"
+    # Nom historique : ce bucket sert bien rallyehiver.fr.
+    BUCKET="proto.rallyehiver.fr"
+    DISTRIBUTION="E2M1D4SPTNMDIK"
+    API_URL="https://rpg0alko8b.execute-api.eu-west-1.amazonaws.com/prod"
+    POOL_ID="eu-west-1_cRMw8lhM3"
+    CLIENT_ID="150sbtrvqtc885mpvp8i1sjck"
+    echo "⚠  Publication en PRODUCTION sur https://rallyehiver.fr"
+    ;;
+  *)
+    echo "Usage : $0 test|prod" >&2
+    exit 1
+    ;;
+esac
 
-PROFIL="rallye-test"
-BUCKET="test.rallyehiver.fr"
-DISTRIBUTION="E104E5O2KDVFJN"
 RACINE="$(cd "$(dirname "$0")/.." && pwd)"
 
 cd "$RACINE/frontend"
 
+# Réinstallation stricte depuis le fichier de verrouillage : sans elle, un
+# npm install antérieur peut avoir fait glisser des versions, et le bundle
+# publié ne correspondrait plus à ce que décrit le dépôt.
+echo "→ Installation des dépendances (npm ci)"
+npm ci --silent
+
 echo "→ Construction du frontend pour « $ENVIRONNEMENT »"
-REACT_APP_API_URL="https://010h0tev7c.execute-api.eu-west-1.amazonaws.com/test" \
-REACT_APP_COGNITO_USER_POOL_ID="eu-west-1_Sxj76KSAf" \
-REACT_APP_COGNITO_CLIENT_ID="76s9a0gtb59bem03urs771tovt" \
+REACT_APP_API_URL="$API_URL" \
+REACT_APP_COGNITO_USER_POOL_ID="$POOL_ID" \
+REACT_APP_COGNITO_CLIENT_ID="$CLIENT_ID" \
 REACT_APP_COGNITO_REGION="eu-west-1" \
 CI=false \
 npm run build
