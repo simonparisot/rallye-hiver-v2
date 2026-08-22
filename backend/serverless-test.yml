@@ -1,3 +1,12 @@
+# Configuration de l'environnement de test.
+#
+# Généré à partir de serverless.yml pour rester aligné sur la production :
+# la version précédente ne déclarait que 32 fonctions sur les 68 existantes,
+# et un déploiement aurait supprimé 11 lambdas en service (dont adminLogin
+# et adminVerify). Seuls changent ici le nom du service, le stage, l'origine
+# CORS et le bucket des énigmes ; les ressources restent celles déjà
+# déployées, pour ne pas modifier le pool Cognito existant.
+
 service: rallye-hiver-backend-test
 
 frameworkVersion: '4'
@@ -30,8 +39,12 @@ provider:
     COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID}
     COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
     COGNITO_REGION: ${self:provider.region}
-    STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY}
-    STRIPE_WEBHOOK_SECRET: ${env:STRIPE_WEBHOOK_SECRET}
+    # Le paiement est hors périmètre sur cet environnement : les tests ne
+    # sollicitent ni Stripe ni le webhook. Ces valeurs neutres évitent d'avoir à
+    # exposer les clés de production pour déployer. Renseigner les variables
+    # correspondantes si l'on veut un jour exercer le flux de paiement ici.
+    STRIPE_SECRET_KEY: ${env:STRIPE_SECRET_KEY, 'sk_test_indisponible_sur_cet_environnement'}
+    STRIPE_WEBHOOK_SECRET: ${env:STRIPE_WEBHOOK_SECRET, 'whsec_indisponible_sur_cet_environnement'}
     STRIPE_PRICE_ID: ${env:STRIPE_PRICE_ID, 'disabled'}
     CORS_ORIGIN: ${env:CORS_ORIGIN, 'https://test.rallyehiver.fr'}
     S3_ENIGMAS_BUCKET: ${env:S3_ENIGMAS_BUCKET, 'rallyehiver-enigmas-test'}
@@ -255,8 +268,24 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
-  # Payment endpoints - DISABLED for test environment
-  # createCheckout and stripeWebhook are removed
+  # Payment endpoints
+  createCheckout:
+    handler: src/functions/payments/createCheckout.handler
+    events:
+      - http:
+          path: /payments/create-checkout
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  stripeWebhook:
+    handler: src/functions/payments/webhook.handler
+    events:
+      - http:
+          path: /payments/webhook
+          method: post
 
   # Content endpoints
   checkAccess:
@@ -281,7 +310,18 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
-  # Enigma endpoints (read-only for players)
+  # Enigma management endpoints (admin)
+  createEnigma:
+    handler: src/functions/enigmas/create.handler
+    events:
+      - http:
+          path: /enigmas
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
   listEnigmas:
     handler: src/functions/enigmas/list.handler
     events:
@@ -291,7 +331,7 @@ functions:
           cors: true
           caching:
             enabled: true
-            ttlInSeconds: 300
+            ttlInSeconds: 300  # 5 min cache - enigmas rarely change
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
@@ -318,7 +358,51 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
-  # Parcours endpoints (read-only for players)
+  updateEnigma:
+    handler: src/functions/enigmas/update.handler
+    events:
+      - http:
+          path: /enigmas/{enigmaId}
+          method: put
+          cors:
+            origin: 'https://rallyehiver.fr'
+            headers:
+              - Content-Type
+              - Authorization
+              - X-Amz-Date
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Requested-With
+            allowCredentials: true
+            maxAge: 3600
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  deleteEnigma:
+    handler: src/functions/enigmas/delete.handler
+    events:
+      - http:
+          path: /enigmas/{enigmaId}
+          method: delete
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  # Parcours management endpoints (admin)
+  createParcours:
+    handler: src/functions/parcours/create.handler
+    events:
+      - http:
+          path: /parcours
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
   listParcours:
     handler: src/functions/parcours/list.handler
     events:
@@ -328,7 +412,7 @@ functions:
           cors: true
           caching:
             enabled: true
-            ttlInSeconds: 300
+            ttlInSeconds: 300  # 5 min cache - parcours rarely change
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
@@ -350,6 +434,28 @@ functions:
       - http:
           path: /parcours/{parcoursId}/access
           method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  updateParcours:
+    handler: src/functions/parcours/update.handler
+    events:
+      - http:
+          path: /parcours/{parcoursId}
+          method: put
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  deleteParcours:
+    handler: src/functions/parcours/delete.handler
+    events:
+      - http:
+          path: /parcours/{parcoursId}
+          method: delete
           cors: true
           authorizer:
             name: authorizer
@@ -431,6 +537,314 @@ functions:
           path: /game/status
           method: get
           cors: true
+
+  # Admin endpoints
+  adminStartGame:
+    handler: src/functions/admin/game/start.handler
+    events:
+      - http:
+          path: /admin/game/start
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminLogin:
+    handler: src/functions/admin/auth/login.handler
+    events:
+      - http:
+          path: /admin/auth/login
+          method: post
+          cors: true
+
+  adminVerify:
+    handler: src/functions/admin/auth/verify.handler
+    events:
+      - http:
+          path: /admin/auth/verify
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminForgotPassword:
+    handler: src/functions/admin/auth/forgotPassword.handler
+    events:
+      - http:
+          path: /admin/auth/forgot-password
+          method: post
+          cors: true
+
+  adminResetPassword:
+    handler: src/functions/admin/auth/resetPassword.handler
+    events:
+      - http:
+          path: /admin/auth/reset-password
+          method: post
+          cors: true
+
+  adminRefresh:
+    handler: src/functions/admin/auth/refresh.handler
+    events:
+      - http:
+          path: /admin/auth/refresh
+          method: post
+          cors: true
+
+  adminStatsOverview:
+    handler: src/functions/admin/stats/overview.handler
+    events:
+      - http:
+          path: /admin/stats/overview
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminPasswordAttemptsTimeline:
+    handler: src/functions/admin/stats/passwordAttemptsTimeline.handler
+    events:
+      - http:
+          path: /admin/stats/password-attempts-timeline
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminListTeams:
+    handler: src/functions/admin/teams/list.handler
+    events:
+      - http:
+          path: /admin/teams
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminTeamsProgressGrid:
+    handler: src/functions/admin/teams/progressGrid.handler
+    events:
+      - http:
+          path: /admin/teams/progress-grid
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminListUsers:
+    handler: src/functions/admin/users/list.handler
+    events:
+      - http:
+          path: /admin/users
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminListAllUsers:
+    handler: src/functions/admin/users/listAll.handler
+    events:
+      - http:
+          path: /admin/users/all
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminGetTeam:
+    handler: src/functions/admin/teams/get.handler
+    events:
+      - http:
+          path: /admin/teams/{teamId}
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminGetTeamProgress:
+    handler: src/functions/admin/teams/getProgress.handler
+    events:
+      - http:
+          path: /admin/teams/{teamId}/progress
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminListEnigmas:
+    handler: src/functions/admin/enigmas/list.handler
+    events:
+      - http:
+          path: /admin/enigmas
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminCreateEnigma:
+    handler: src/functions/enigmas/create.handler
+    events:
+      - http:
+          path: /admin/enigmas
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminUpdateEnigma:
+    handler: src/functions/admin/enigmas/update.handler
+    events:
+      - http:
+          path: /admin/enigmas/{enigmaId}
+          method: put
+          cors:
+            origin: 'https://rallyehiver.fr'
+            headers:
+              - Content-Type
+              - Authorization
+              - X-Amz-Date
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Requested-With
+            allowCredentials: true
+            maxAge: 3600
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminGetEnigmasByDifficulty:
+    handler: src/functions/admin/enigmas/byDifficulty.handler
+    events:
+      - http:
+          path: /admin/enigmas/by-difficulty
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminListParcours:
+    handler: src/functions/admin/parcours/list.handler
+    events:
+      - http:
+          path: /admin/parcours
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminCreateParcours:
+    handler: src/functions/parcours/create.handler
+    events:
+      - http:
+          path: /admin/parcours
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminUpdateParcours:
+    handler: src/functions/parcours/update.handler
+    events:
+      - http:
+          path: /admin/parcours/{parcoursId}
+          method: put
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminDeleteParcours:
+    handler: src/functions/parcours/delete.handler
+    events:
+      - http:
+          path: /admin/parcours/{parcoursId}
+          method: delete
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminListAttempts:
+    handler: src/functions/admin/attempts/list.handler
+    events:
+      - http:
+          path: /admin/attempts
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  getAttemptsByTeam:
+    handler: src/functions/admin/getAttemptsByTeam.handler
+    events:
+      - http:
+          path: /admin/attempts/team/{teamId}
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  getAttemptsByEnigma:
+    handler: src/functions/admin/getAttemptsByEnigma.handler
+    events:
+      - http:
+          path: /admin/attempts/enigma/{enigmaId}
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  getLeaderboard:
+    handler: src/functions/admin/getLeaderboard.handler
+    events:
+      - http:
+          path: /admin/leaderboard
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminGenerateUploadUrl:
+    handler: src/functions/admin/upload/generatePresignedUrl.handler
+    events:
+      - http:
+          path: /admin/upload/generate-url
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminHintsUsage:
+    handler: src/functions/admin/hints/usage.handler
+    events:
+      - http:
+          path: /admin/hints/usage
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
 
 resources:
   Resources:
