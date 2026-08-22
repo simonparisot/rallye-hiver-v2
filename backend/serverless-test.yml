@@ -45,7 +45,7 @@ provider:
     STRIPE_SECRET_KEY: ${ssm:/rallye-hiver/${self:provider.stage}/stripe-secret-key}
     STRIPE_WEBHOOK_SECRET: ${ssm:/rallye-hiver/${self:provider.stage}/stripe-webhook-secret}
     STRIPE_PRICE_ID: ${ssm:/rallye-hiver/${self:provider.stage}/stripe-price-id}
-    CORS_ORIGIN: ${env:CORS_ORIGIN, 'https://test.rallyehiver.fr'}
+    CORS_ORIGIN: ${ssm:/rallye-hiver/${self:provider.stage}/cors-origin}
     S3_ENIGMAS_BUCKET: ${env:S3_ENIGMAS_BUCKET, 'rallyehiver-enigmas-test'}
   iam:
     role:

@@ -36,7 +36,7 @@ provider:
     STRIPE_SECRET_KEY: ${ssm:/rallye-hiver/${self:provider.stage}/stripe-secret-key}
     STRIPE_WEBHOOK_SECRET: ${ssm:/rallye-hiver/${self:provider.stage}/stripe-webhook-secret}
     STRIPE_PRICE_ID: ${ssm:/rallye-hiver/${self:provider.stage}/stripe-price-id}
-    CORS_ORIGIN: ${env:CORS_ORIGIN, 'http://localhost:3000'}
+    CORS_ORIGIN: ${ssm:/rallye-hiver/${self:provider.stage}/cors-origin}
   iam:
     role:
       statements:

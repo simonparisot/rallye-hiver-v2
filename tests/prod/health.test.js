@@ -73,6 +73,73 @@ describe(`Santé [${process.env.TEST_ENV || 'test'}]`, () => {
     });
   });
 
+  describe('Partage entre origines', () => {
+    /**
+     * CORS n'est appliqué que par le navigateur : une requête d'API réussit
+     * parfaitement alors que le site est inutilisable. C'est arrivé — un
+     * déploiement a laissé CORS_ORIGIN sur sa valeur de repli `localhost`, et
+     * les 41 tests de santé sont restés au vert pendant que plus personne ne
+     * pouvait se connecter.
+     */
+    test('l\'API autorise l\'origine du site', async () => {
+      const response = await axios.get(`${config.apiUrl}/game/status`, {
+        headers: { Origin: config.siteUrl },
+        timeout: 15000,
+        validateStatus: () => true,
+      });
+
+      const autorisee = response.headers['access-control-allow-origin'];
+
+      expect(autorisee).toBeDefined();
+      expect([config.siteUrl, '*']).toContain(autorisee);
+    });
+
+    test('la requête préparatoire du navigateur est acceptée', async () => {
+      // Avant un POST, le navigateur émet un OPTIONS : s'il échoue, aucune
+      // écriture n'est possible depuis le site.
+      const response = await axios.request({
+        method: 'OPTIONS',
+        url: `${config.apiUrl}/auth/login`,
+        headers: {
+          Origin: config.siteUrl,
+          'Access-Control-Request-Method': 'POST',
+          'Access-Control-Request-Headers': 'content-type',
+        },
+        timeout: 15000,
+        validateStatus: () => true,
+      });
+
+      expect(response.status).toBeLessThan(400);
+      expect(response.headers['access-control-allow-origin']).toBeDefined();
+    });
+
+    test.failing('[défaut connu] un endpoint authentifié annonce lui aussi l\'origine du site', async () => {
+      // Les refus émis par l'authorizer d'API Gateway ne portent pas les
+      // en-têtes CORS : ils sont produits avant la lambda, et aucune
+      // GatewayResponse n'est déclarée dans serverless.yml.
+      //
+      // Conséquence pour un participant : à l'expiration de son jeton, au bout
+      // d'une heure, le navigateur bloque la réponse 401 au lieu de la
+      // transmettre. L'application ne voit pas « session expirée » mais une
+      // panne réseau — d'où le « Failed to load user » observé.
+      //
+      // Défaut antérieur à nos travaux : les deux environnements se comportent
+      // de la même façon. Se corrige en déclarant DEFAULT_4XX et DEFAULT_5XX
+      // dans les resources.
+
+      const response = await axios.get(`${config.apiUrl}/auth/me`, {
+        headers: { Origin: config.siteUrl },
+        timeout: 15000,
+        validateStatus: () => true,
+      });
+
+      // La requête est refusée faute de jeton, mais l'en-tête doit être présent :
+      // sans lui, le navigateur masque la réponse et l'application croit à une panne.
+      const autorisee = response.headers['access-control-allow-origin'];
+      expect([config.siteUrl, '*']).toContain(autorisee);
+    });
+  });
+
   describe('Contrôle des accès', () => {
     // Le contrat de sécurité le plus important : aucune donnée de participant
     // ne doit être lisible sans jeton valide.
