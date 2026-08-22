@@ -49,3 +49,14 @@ temp/
 
 # Large binary files (should be stored elsewhere)
 *.pdf
+
+# Test credentials (never commit)
+tests/.env.test
+# Sessions Playwright : contiennent des jetons d'authentification valides
+tests/e2e/.auth/
+
+# Artefacts d'exécution Playwright (rapports, captures, vidéos, traces)
+tests/test-results/
+tests/playwright-report/
+tests/blob-report/
+.gstack/

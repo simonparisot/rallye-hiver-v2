@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { dynamoDb, PASSWORD_ATTEMPTS_TABLE } from '../../../utils/dynamodb';
 import { getTeamById, getEnigmaById, getUserById } from '../../../utils/dynamodb';
+import { getTestTeamIds, excludeTestTeamRows } from '../../../utils/testTeams';
 import { ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
@@ -119,6 +120,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         lastEvaluatedKey = result.LastEvaluatedKey;
       } while (lastEvaluatedKey);
     }
+
+    // A single filter on the consolidated list covers the three branches above
+    // and every statistic derived from it further down
+    const testTeamIds = await getTestTeamIds();
+    allAttempts = excludeTestTeamRows(allAttempts, testTeamIds);
 
     // Sort by attemptedAt descending (most recent first)
     allAttempts.sort((a, b) => {

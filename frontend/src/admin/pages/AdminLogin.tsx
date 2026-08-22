@@ -73,18 +73,18 @@ const AdminLogin: React.FC = () => {
   };
 
   return (
-    <div className="admin-login-container">
+    <div data-testid="admin-login-page" className="admin-login-container">
       <div className="admin-login-card card">
         <div className="admin-login-header">
           <img src="/logo.png" alt="Rallye d'Hiver" className="admin-login-logo" />
           <h2>{getTitle()}</h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="admin-login-form">
+        <form data-testid="admin-login-form" onSubmit={handleSubmit} className="admin-login-form">
           {(mode === 'login' || mode === 'forgot-password' || mode === 'reset-password') && (
             <div className="form-group">
               <label htmlFor="email">Email</label>
-              <input
+              <input data-testid="admin-email-input"
                 type="email"
                 id="email"
                 name="email"
@@ -101,7 +101,7 @@ const AdminLogin: React.FC = () => {
           {mode === 'login' && (
             <div className="form-group">
               <label htmlFor="password">Mot de passe</label>
-              <input
+              <input data-testid="admin-password-input"
                 type="password"
                 id="password"
                 name="password"
@@ -119,7 +119,7 @@ const AdminLogin: React.FC = () => {
             <>
               <div className="form-group">
                 <label htmlFor="code">Code de vérification</label>
-                <input
+                <input data-testid="admin-code-input"
                   type="text"
                   id="code"
                   name="code"
@@ -135,7 +135,7 @@ const AdminLogin: React.FC = () => {
 
               <div className="form-group">
                 <label htmlFor="newPassword">Nouveau mot de passe</label>
-                <input
+                <input data-testid="admin-new-password-input"
                   type="password"
                   id="newPassword"
                   name="newPassword"
@@ -150,10 +150,10 @@ const AdminLogin: React.FC = () => {
             </>
           )}
 
-          {error && <div className="error-message">{error}</div>}
-          {success && <div className="success-message">{success}</div>}
+          {error && <div data-testid="admin-login-error" className="error-message">{error}</div>}
+          {success && <div data-testid="admin-login-success" className="success-message">{success}</div>}
 
-          <button type="submit" className="btn btn-primary btn-large" disabled={loading}>
+          <button data-testid="admin-login-submit" type="submit" className="btn btn-primary btn-large" disabled={loading}>
             {loading ? 'Chargement...' :
              mode === 'login' ? 'Se connecter' :
              mode === 'forgot-password' ? 'Envoyer le code' :
@@ -164,7 +164,7 @@ const AdminLogin: React.FC = () => {
         <div className="admin-login-help">
           {mode === 'login' && (
             <p>
-              <button
+              <button data-testid="admin-forgot-password-link"
                 className="link-button"
                 onClick={() => {
                   setMode('forgot-password');
@@ -178,7 +178,7 @@ const AdminLogin: React.FC = () => {
           )}
           {(mode === 'forgot-password' || mode === 'reset-password') && (
             <p>
-              <button
+              <button data-testid="admin-back-to-login-link"
                 className="link-button"
                 onClick={() => {
                   setMode('login');

@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getAllTeams } from '../../utils/dynamodb';
+import { excludeTestTeams } from '../../utils/testTeams';
 import { successResponse, errorResponse } from '../../utils/response';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -20,7 +21,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     const result = await getAllTeams(limit, lastKey);
 
-    const teams = result.items.map(team => ({
+    // Test teams must never surface in the public team list
+    const teams = excludeTestTeams(result.items).map(team => ({
       teamId: team.teamId,
       teamName: team.teamName,
       memberCount: team.members?.length || 0,

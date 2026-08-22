@@ -292,6 +292,18 @@ export const progressAPI = {
   },
 };
 
+// Hints API (Game)
+export const hintsAPI = {
+  useHint: async (enigmaId: string): Promise<{
+    success: boolean;
+    hintPdfUrl: string;
+    isFirstUse: boolean;
+  }> => {
+    const response = await api.post(`/hints/${enigmaId}/use`);
+    return response.data;
+  },
+};
+
 // Game Status API (Public - but sends auth token for beta team detection)
 export const gameAPI = {
   getStatus: async (): Promise<{ isStarted: boolean; startedAt: string | null }> => {

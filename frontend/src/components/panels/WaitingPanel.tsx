@@ -3,7 +3,7 @@ import './WaitingPanel.css';
 
 const WaitingPanel: React.FC = () => {
   return (
-    <div className="waiting-panel">
+    <div data-testid="waiting-panel" className="waiting-panel">
       <div className="waiting-content">
         <h2>🎄 Le Rallye d'Hiver 2025 n'a pas encore commencé</h2>
         <div className="waiting-message">

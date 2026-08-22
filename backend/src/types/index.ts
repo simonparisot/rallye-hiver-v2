@@ -25,6 +25,7 @@ export interface Team {
   solvedEnigmasCount?: number;
   lastActivityAt?: string;
   isBetaTeam?: boolean; // Beta team flag for early access before game starts
+  isTestTeam?: boolean; // Test team flag: excluded from every list and every statistic
 }
 
 export interface AuthUser {
@@ -59,6 +60,7 @@ export interface Enigma {
   title: string;
   description?: string;
   pdfUrl: string;
+  hintPdfUrl?: string; // Optional hint PDF URL
   correctPassword: string;
   points: number;
   difficulty?: 'easy' | 'medium' | 'hard';
@@ -92,6 +94,8 @@ export interface TeamEnigmaProgress {
   attemptCount: number;
   lastAttemptAt?: string;
   firstAttemptAt?: string;
+  hintUsed?: boolean; // Whether the team used the hint for this enigma
+  hintUsedAt?: string; // ISO 8601 timestamp when hint was used
   createdAt: string;
   updatedAt: string;
 }

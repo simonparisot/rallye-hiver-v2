@@ -410,6 +410,87 @@
   }
 }
 
+/* Hint Section Styles */
+.hint-section {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 15px;
+  background: #fffbeb;
+  border-bottom: 1px solid #fcd34d;
+}
+
+.hint-button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid #f59e0b;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.hint-button:hover:not(:disabled) {
+  background: #fde68a;
+  transform: translateY(-1px);
+}
+
+.hint-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.hint-button.hint-used {
+  background: #e0f2fe;
+  border-color: #0ea5e9;
+  color: #0369a1;
+}
+
+.hint-button.hint-used:hover:not(:disabled) {
+  background: #bae6fd;
+}
+
+.hint-button.hint-back-btn {
+  background: #f3f4f6;
+  border-color: #6b7280;
+  color: #374151;
+}
+
+.hint-button.hint-back-btn:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.hint-used-badge {
+  font-size: 12px;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #fcd34d;
+}
+
+.hint-pdf {
+  position: relative;
+}
+
+.hint-pdf-header {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #f59e0b;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 10;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .enigma-expanded-view {

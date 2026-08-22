@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getAllTeams, getAllEnigmas, getAllParcours } from '../../../utils/dynamodb';
 import { dynamoDb, USERS_TABLE, PASSWORD_ATTEMPTS_TABLE } from '../../../utils/dynamodb';
+import { isTestTeam, excludeTestTeams, excludeTestTeamRows } from '../../../utils/testTeams';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
@@ -22,7 +23,14 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     // Get all teams
     const teamsResult = await getAllTeams(10000); // Get all teams with high limit
-    const teams = teamsResult.items || [];
+    const allTeams = teamsResult.items || [];
+
+    // Test teams are automation, not participants: they must not be counted in
+    // any of the figures shown on the dashboard (teams, players, attempts)
+    const testTeamIds = new Set<string>(
+      allTeams.filter((team: any) => isTestTeam(team)).map((team: any) => team.teamId)
+    );
+    const teams = excludeTestTeams(allTeams);
 
     // Get all users (to count total players)
     const usersResult = await dynamoDb.send(
@@ -30,7 +38,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         TableName: USERS_TABLE,
       })
     );
-    const users = usersResult.Items || [];
+    const users = excludeTestTeamRows(usersResult.Items || [], testTeamIds);
 
     // Get all enigmas
     const enigmas = await getAllEnigmas();
@@ -47,7 +55,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         TableName: PASSWORD_ATTEMPTS_TABLE,
       })
     );
-    const attempts = attemptsResult.Items || [];
+    const attempts = excludeTestTeamRows(attemptsResult.Items || [], testTeamIds);
     const totalAttempts = attempts.length;
     const successfulAttempts = attempts.filter((attempt: any) => attempt.success).length;
 

@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
 import { dynamoDb, TEAMS_TABLE, TEAM_ENIGMA_PROGRESS_TABLE, TEAM_PARCOURS_ACCESS_TABLE, ENIGMAS_TABLE, PARCOURS_TABLE } from '../../../utils/dynamodb';
+import { excludeTestTeams } from '../../../utils/testTeams';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 
 /**
@@ -41,7 +42,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       dynamoDb.send(new ScanCommand({ TableName: TEAM_PARCOURS_ACCESS_TABLE })),
     ]);
 
-    const teams = teamsResult.Items || [];
+    // Dropping the test teams here keeps them out of both the grid rows and
+    // the metadata.totalTeams counter computed below
+    const teams = excludeTestTeams(teamsResult.Items || []);
     const enigmas = enigmasResult.Items || [];
     const parcours = parcoursResult.Items || [];
     const allProgress = progressResult.Items || [];

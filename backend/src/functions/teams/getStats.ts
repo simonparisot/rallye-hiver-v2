@@ -7,10 +7,10 @@ import {
   getAllEnigmas,
   getAllParcours,
   getPasswordAttemptsByTeam,
-  getAllTeams,
   dynamoDb,
   PASSWORD_ATTEMPTS_TABLE
 } from '../../utils/dynamodb';
+import { getTestTeamIds, excludeTestTeamRows } from '../../utils/testTeams';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { success, error } from '../../utils/response';
 
@@ -70,7 +70,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         ProjectionExpression: 'teamId',
       })
     );
-    const allAttempts = allAttemptsResult.Items || [];
+    // Test teams play automated scenarios and would skew the percentile
+    // computed for the real teams, so they are left out of the comparison
+    const testTeamIds = await getTestTeamIds();
+    const allAttempts = excludeTestTeamRows(allAttemptsResult.Items || [], testTeamIds);
 
     // Count attempts per team
     const attemptsByTeam = new Map<string, number>();
@@ -82,7 +85,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // Calculate ranking (percentile)
     // Lower attempts = better rank
     const teamCounts = Array.from(attemptsByTeam.values()).sort((a, b) => a - b);
-    const teamPosition = teamCounts.findIndex(count => count >= passwordAttemptsCount);
+    // A test team is absent from the comparison: rank it last rather than first
+    const rawPosition = teamCounts.findIndex(count => count >= passwordAttemptsCount);
+    const teamPosition = rawPosition === -1 ? teamCounts.length : rawPosition;
     const percentile = teamCounts.length > 0
       ? Math.round(((teamPosition + 1) / teamCounts.length) * 100)
       : 50;

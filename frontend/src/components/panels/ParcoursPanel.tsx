@@ -98,12 +98,12 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
 
   if (isLoading) {
     return (
-      <div className={`parcours-panel ${isCompact ? 'panel-compact' : ''}`}>
+      <div className={`parcours-panel ${isCompact ? 'panel-compact' : ''}`} data-testid="parcours-panel">
         <div className="panel-header">
           <h2>Parcours</h2>
         </div>
         <div className="panel-content">
-          <div className="loading-state">Chargement des parcours...</div>
+          <div className="loading-state" data-testid="parcours-loading">Chargement des parcours...</div>
         </div>
       </div>
     );
@@ -111,50 +111,52 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
 
   if (error) {
     return (
-      <div className={`parcours-panel ${isCompact ? 'panel-compact' : ''}`}>
+      <div className={`parcours-panel ${isCompact ? 'panel-compact' : ''}`} data-testid="parcours-panel">
         <div className="panel-header">
           <h2>Parcours</h2>
         </div>
         <div className="panel-content">
-          <div className="error-state">Erreur lors du chargement des parcours. Veuillez réessayer.</div>
+          <div className="error-state" data-testid="parcours-error">Erreur lors du chargement des parcours. Veuillez réessayer.</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`parcours-panel ${isCompact ? 'panel-compact' : ''}`}>
+    <div className={`parcours-panel ${isCompact ? 'panel-compact' : ''}`} data-testid="parcours-panel">
       <div className="panel-header">
         <h2>Parcours</h2>
       </div>
       <div className="panel-content">
         {!hasAccess && (
-          <div className="access-blocked-message">
+          <div className="access-blocked-message" data-testid="parcours-access-blocked">
             Rejoignez ou créez une équipe et réglez les frais d'inscription pour accéder aux parcours.
           </div>
         )}
         {!isExpanded ? (
           // Compact view: Just list titles with numbers
-          <div className="parcours-list-compact">
+          <div className="parcours-list-compact" data-testid="parcours-list-compact">
             {parcoursList.map((parcours, index) => (
               <div
                 key={parcours.id}
+                data-testid={`parcours-card-${parcours.order}`}
                 className={`parcours-item-compact ${parcours.isCompleted ? 'completed' : ''} ${!hasAccess ? 'locked' : ''}`}
                 onClick={() => hasAccess && handleParcoursSelect(parcours)}
               >
                 <span className="parcours-number">{index + 1}</span>
                 <span className="parcours-title-compact">{parcours.title}</span>
-                {parcours.isCompleted && <span className="completed-badge-small">Réalisé</span>}
+                {parcours.isCompleted && <span className="completed-badge-small" data-testid={`parcours-completed-badge-${parcours.order}`}>Réalisé</span>}
               </div>
             ))}
           </div>
         ) : (
           // Expanded view: List + PDF viewer
-          <div className="parcours-expanded-view">
-            <div className="parcours-list-full">
+          <div className="parcours-expanded-view" data-testid="parcours-expanded-view">
+            <div className="parcours-list-full" data-testid="parcours-list">
               {parcoursList.map((parcours, index) => (
                 <div
                   key={parcours.id}
+                  data-testid={`parcours-card-${parcours.order}`}
                   className={`parcours-item ${selectedParcours?.id === parcours.id ? 'active' : ''} ${
                     parcours.isCompleted ? 'completed' : ''
                   }`}
@@ -165,6 +167,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                     <span className="parcours-title">{parcours.title}</span>
                     {parcours.pdfUrl && selectedParcours?.id === parcours.id && (
                       <button
+                        data-testid={`parcours-download-button-${parcours.order}`}
                         className="parcours-download-btn"
                         onClick={(e) => handleDownload(e, parcours)}
                         title="Télécharger le PDF"
@@ -179,21 +182,21 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                   </div>
                   {parcours.isCompleted && (
                     <div className="parcours-meta">
-                      <span className="completed-badge">Réalisé</span>
+                      <span className="completed-badge" data-testid={`parcours-completed-badge-${parcours.order}`}>Réalisé</span>
                     </div>
                   )}
                 </div>
               ))}
             </div>
-            <div className="parcours-viewer">
+            <div className="parcours-viewer" data-testid="parcours-viewer">
               {selectedParcours ? (
-                <div className="parcours-details">
+                <div className="parcours-details" data-testid="parcours-details">
                   {hasAccess && (
                     <div className="parcours-header-detail">
                       <div className="parcours-completion-section">
                         {selectedParcours.isCompleted ? (
                           <div className="parcours-completed-container">
-                            <div className="parcours-completed-badge">
+                            <div className="parcours-completed-badge" data-testid="parcours-completed-banner">
                               ✅ Parcours réalisé
                               {selectedParcours.completedAt && (
                                 <span className="completed-date">
@@ -202,6 +205,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                               )}
                             </div>
                             <button
+                              data-testid="parcours-uncomplete-button"
                               className="btn-unmark-completed"
                               onClick={handleUnmarkCompleted}
                               disabled={unmarkCompletedMutation.isPending}
@@ -212,6 +216,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                           </div>
                         ) : (
                           <button
+                            data-testid="parcours-complete-button"
                             className="btn-mark-completed"
                             onClick={handleMarkCompleted}
                             disabled={markCompletedMutation.isPending}
@@ -220,7 +225,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                           </button>
                         )}
                         {completionMessage && (
-                          <div className={`completion-message ${completionMessage.includes('✅') || completionMessage.includes('↩️') ? 'success' : 'error'}`}>
+                          <div className={`completion-message ${completionMessage.includes('✅') || completionMessage.includes('↩️') ? 'success' : 'error'}`} data-testid="parcours-completion-message">
                             {completionMessage}
                           </div>
                         )}
@@ -228,18 +233,18 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                     </div>
                   )}
                   {selectedParcours.pdfUrl ? (
-                    <div className="parcours-pdf-container">
+                    <div className="parcours-pdf-container" data-testid="parcours-pdf-container">
                       <PDFViewer pdfUrl={selectedParcours.pdfUrl} title={selectedParcours.title} />
                     </div>
                   ) : (
-                    <div className="parcours-pdf-placeholder">
+                    <div className="parcours-pdf-placeholder" data-testid="parcours-pdf-placeholder">
                       <p>PDF non disponible</p>
                       <p className="pdf-note">Le PDF de ce parcours n'est pas encore disponible</p>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="parcours-placeholder">
+                <div className="parcours-placeholder" data-testid="parcours-placeholder">
                   <p>Sélectionnez un parcours pour voir son PDF</p>
                 </div>
               )}

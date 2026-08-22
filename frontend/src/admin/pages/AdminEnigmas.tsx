@@ -15,10 +15,13 @@ const AdminEnigmas: React.FC = () => {
     title: '',
     correctPassword: '',
     pdfUrl: '',
+    hintPdfUrl: '',
     isActive: true,
   });
   const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [uploadingHintPdf, setUploadingHintPdf] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
+  const [hintUploadProgress, setHintUploadProgress] = useState<string>('');
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['adminEnigmas'],
@@ -61,6 +64,7 @@ const AdminEnigmas: React.FC = () => {
       title: '',
       correctPassword: '',
       pdfUrl: '',
+      hintPdfUrl: '',
       isActive: true,
     });
     setEditingEnigma(null);
@@ -74,6 +78,7 @@ const AdminEnigmas: React.FC = () => {
       title: enigma.title,
       correctPassword: '', // Don't populate for security
       pdfUrl: enigma.pdfUrl,
+      hintPdfUrl: enigma.hintPdfUrl || '',
       isActive: enigma.isActive,
     });
     setShowForm(true);
@@ -135,6 +140,44 @@ const AdminEnigmas: React.FC = () => {
     }
   };
 
+  const handleHintPdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      alert('Seuls les fichiers PDF sont acceptés');
+      return;
+    }
+
+    try {
+      setUploadingHintPdf(true);
+      setHintUploadProgress('Génération de l\'URL d\'upload...');
+
+      // Step 1: Get presigned URL from backend
+      const { uploadUrl, fileUrl } = await adminUploadAPI.generateUploadUrl();
+
+      setHintUploadProgress('Upload du PDF d\'indice vers S3...');
+
+      // Step 2: Upload PDF to S3
+      await adminUploadAPI.uploadPdf(uploadUrl, file);
+
+      setHintUploadProgress('Upload terminé !');
+
+      // Step 3: Update form data with the file URL
+      setFormData({ ...formData, hintPdfUrl: fileUrl });
+
+      setTimeout(() => {
+        setHintUploadProgress('');
+        setUploadingHintPdf(false);
+      }, 1500);
+    } catch (error: any) {
+      console.error('Hint PDF upload failed:', error);
+      alert('Échec de l\'upload du PDF d\'indice: ' + (error.response?.data?.error || error.message));
+      setHintUploadProgress('');
+      setUploadingHintPdf(false);
+    }
+  };
+
   const handleDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
     if (result.source.index === result.destination.index) return;
@@ -176,17 +219,17 @@ const AdminEnigmas: React.FC = () => {
     }
   };
 
-  if (isLoading) return <div className="loading">Chargement des énigmes...</div>;
-  if (error) return <div className="error">Échec du chargement des énigmes</div>;
+  if (isLoading) return <div data-testid="admin-enigmas-loading" className="loading">Chargement des énigmes...</div>;
+  if (error) return <div data-testid="admin-enigmas-error" className="error">Échec du chargement des énigmes</div>;
 
   return (
-    <div className="admin-enigmas">
+    <div data-testid="admin-enigmas-page" className="admin-enigmas">
       <div className="admin-page-header">
         <div>
           <h1>Gestion des énigmes</h1>
           <p className="admin-page-subtitle">Créer, modifier et gérer les énigmes du jeu</p>
         </div>
-        <button
+        <button data-testid="admin-enigmas-new-button"
           className="btn btn-primary"
           onClick={() => setShowForm(!showForm)}
         >
@@ -197,11 +240,11 @@ const AdminEnigmas: React.FC = () => {
       {showForm && (
         <div className="enigma-form-container card">
           <h2>{editingEnigma ? 'Modifier l\'énigme' : 'Créer une nouvelle énigme'}</h2>
-          <form onSubmit={handleSubmit} className="enigma-form">
+          <form data-testid="admin-enigmas-form" onSubmit={handleSubmit} className="enigma-form">
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="enigma-title">Nom de l'énigme *</label>
-                <input
+                <input data-testid="admin-enigmas-title-input"
                   id="enigma-title"
                   type="text"
                   value={formData.title}
@@ -214,7 +257,7 @@ const AdminEnigmas: React.FC = () => {
 
               <div className="form-group">
                 <label htmlFor="enigma-password">Mot de passe (solution) *</label>
-                <input
+                <input data-testid="admin-enigmas-password-input"
                   id="enigma-password"
                   type="text"
                   value={formData.correctPassword}
@@ -231,7 +274,7 @@ const AdminEnigmas: React.FC = () => {
               <div className="form-group">
                 <label htmlFor="enigma-pdf">Fichier PDF de l'énigme *</label>
                 <div className="pdf-upload-container">
-                  <input
+                  <input data-testid="admin-enigmas-pdf-input"
                     id="enigma-pdf-file"
                     type="file"
                     accept="application/pdf,.pdf"
@@ -257,10 +300,40 @@ const AdminEnigmas: React.FC = () => {
               </div>
 
               <div className="form-group">
+                <label htmlFor="enigma-hint-pdf">PDF Indice (optionnel)</label>
+                <div className="pdf-upload-container">
+                  <input data-testid="admin-enigmas-hint-pdf-input"
+                    id="enigma-hint-pdf-file"
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    onChange={handleHintPdfUpload}
+                    disabled={uploadingHintPdf}
+                    style={{ marginBottom: '10px' }}
+                  />
+                  {uploadingHintPdf && (
+                    <div className="upload-progress">
+                      <span className="spinner">⏳</span> {hintUploadProgress}
+                    </div>
+                  )}
+                  {formData.hintPdfUrl && !uploadingHintPdf && (
+                    <div className="pdf-url-display">
+                      <span className="pdf-success">✓ Indice uploadé</span>
+                      <a href={formData.hintPdfUrl} target="_blank" rel="noopener noreferrer" className="pdf-preview-link">
+                        💡 Voir l'indice
+                      </a>
+                    </div>
+                  )}
+                </div>
+                <small className="form-help">PDF d'indice (coûte 25% des points aux joueurs)</small>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
                 <label htmlFor="enigma-active">Statut de publication</label>
                 <div className="toggle-container">
                   <label className="toggle-switch">
-                    <input
+                    <input data-testid="admin-enigmas-active-toggle"
                       id="enigma-active"
                       type="checkbox"
                       checked={formData.isActive}
@@ -283,14 +356,14 @@ const AdminEnigmas: React.FC = () => {
             )}
 
             <div className="form-actions">
-              <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || uploadingPdf}>
+              <button data-testid="admin-enigmas-submit" type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || uploadingPdf || uploadingHintPdf}>
                 {editingEnigma ? '💾 Mettre à jour' : '✨ Créer l\'énigme'}
               </button>
-              <button type="button" className="btn btn-secondary" onClick={resetForm}>
+              <button data-testid="admin-enigmas-cancel" type="button" className="btn btn-secondary" onClick={resetForm}>
                 Annuler
               </button>
               {editingEnigma && (
-                <button
+                <button data-testid="admin-enigmas-delete"
                   type="button"
                   className="btn btn-danger"
                   onClick={() => {
@@ -307,7 +380,7 @@ const AdminEnigmas: React.FC = () => {
             </div>
 
             {(createMutation.isError || updateMutation.isError) && (
-              <div className="form-error">
+              <div data-testid="admin-enigmas-form-error" className="form-error">
                 Erreur: {(createMutation.error as any)?.response?.data?.error || 'Une erreur est survenue'}
               </div>
             )}
@@ -317,7 +390,7 @@ const AdminEnigmas: React.FC = () => {
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="enigmas-list">
-          <table className="admin-table">
+          <table data-testid="admin-enigmas-table" className="admin-table">
             <thead>
               <tr>
                 <th style={{ width: '30px' }}></th>
@@ -325,6 +398,7 @@ const AdminEnigmas: React.FC = () => {
                 <th>Titre</th>
                 <th style={{ width: '150px' }}>Stats</th>
                 <th style={{ width: '80px' }}>PDF</th>
+                <th style={{ width: '60px' }}>Indice</th>
                 <th style={{ width: '100px' }}></th>
               </tr>
             </thead>
@@ -334,7 +408,7 @@ const AdminEnigmas: React.FC = () => {
                   {orderedEnigmas.map((enigma, index) => (
                     <Draggable key={enigma.enigmaId} draggableId={enigma.enigmaId} index={index}>
                       {(provided, snapshot) => (
-                        <tr
+                        <tr data-testid={`admin-enigmas-row-${enigma.enigmaId}`}
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           className={`${snapshot.isDragging ? 'dragging' : ''} ${!enigma.isActive ? 'unpublished' : ''}`}
@@ -370,8 +444,23 @@ const AdminEnigmas: React.FC = () => {
                               <span className="no-pdf">-</span>
                             )}
                           </td>
+                          <td>
+                            {enigma.hintPdfUrl ? (
+                              <a
+                                href={enigma.hintPdfUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hint-link"
+                                title="Voir l'indice"
+                              >
+                                💡
+                              </a>
+                            ) : (
+                              <span className="no-hint">-</span>
+                            )}
+                          </td>
                           <td className="actions">
-                            <button
+                            <button data-testid={`admin-enigmas-edit-button-${enigma.enigmaId}`}
                               className="btn btn-small btn-secondary"
                               onClick={() => handleEdit(enigma)}
                             >
@@ -389,7 +478,7 @@ const AdminEnigmas: React.FC = () => {
           </table>
 
           {orderedEnigmas.length === 0 && (
-            <div className="empty-state">
+            <div data-testid="admin-enigmas-empty" className="empty-state">
               <p>Aucune énigme créée pour le moment. Cliquez sur "Nouvelle énigme" pour commencer.</p>
             </div>
           )}

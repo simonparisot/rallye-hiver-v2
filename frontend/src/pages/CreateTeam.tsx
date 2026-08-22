@@ -29,14 +29,14 @@ const CreateTeam: React.FC = () => {
   };
 
   return (
-    <div className="team-container">
+    <div data-testid="team-create-page" className="team-container">
       <div className="team-box">
         <h1>Créer une équipe</h1>
-        {error && <div className="error-message">{error}</div>}
-        <form onSubmit={handleSubmit}>
+        {error && <div data-testid="team-create-error" className="error-message">{error}</div>}
+        <form data-testid="team-create-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="teamName">Nom de l'équipe</label>
-            <input
+            <input data-testid="team-name-input"
               type="text"
               id="teamName"
               value={teamName}
@@ -45,7 +45,7 @@ const CreateTeam: React.FC = () => {
               placeholder="Entrez le nom de votre équipe"
             />
           </div>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
+          <button data-testid="team-create-submit" type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? 'Création...' : 'Créer l\'équipe'}
           </button>
         </form>

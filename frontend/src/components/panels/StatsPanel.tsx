@@ -106,15 +106,15 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
   // If user has a team but hasn't paid, show simplified view
   if (!isCompact && user?.teamId && team && !team.hasPaid) {
     return (
-      <div className="stats-panel">
+      <div data-testid="stats-panel" className="stats-panel">
         <div className="panel-header">
           <h2>Tableau de bord</h2>
         </div>
         <div className="panel-content">
           <div className="stats-full">
-            <div className="team-section-panel">
+            <div data-testid="team-section" className="team-section-panel">
               {teamLoading ? (
-                <div className="loading-state">Chargement...</div>
+                <div data-testid="team-loading" className="loading-state">Chargement...</div>
               ) : (
                 <>
                   <div className="info-box" style={{ marginBottom: '20px' }}>
@@ -124,19 +124,19 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                     </p>
                   </div>
 
-                  <div className="team-header">
-                    <h3>{team.teamName}</h3>
-                    <p className="unpaid">Paiement requis</p>
+                  <div data-testid="team-header" className="team-header">
+                    <h3 data-testid="team-name">{team.teamName}</h3>
+                    <p data-testid="team-payment-status" className="unpaid">Paiement requis</p>
                   </div>
 
-                  <div className="team-members">
+                  <div data-testid="team-members" className="team-members">
                     <h4>Membres ({team.members.length})</h4>
-                    <ul className="members-list">
+                    <ul data-testid="team-members-list" className="members-list">
                       {team.members.map((member: any) => (
-                        <li key={member.userId}>
+                        <li data-testid={`team-member-row-${member.userId}`} key={member.userId}>
                           {member.displayName}
                           {member.userId === team.leaderId && (
-                            <span className="badge">Chef</span>
+                            <span data-testid={`team-leader-badge-${member.userId}`} className="badge">Chef</span>
                           )}
                         </li>
                       ))}
@@ -144,21 +144,21 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                   </div>
 
                   {isMember && team.pendingRequests && team.pendingRequests.length > 0 && (
-                    <div className="pending-requests-section">
+                    <div data-testid="team-pending-requests" className="pending-requests-section">
                       <h4>Demandes en attente ({team.pendingRequests.length})</h4>
-                      <ul className="requests-list">
+                      <ul data-testid="team-requests-list" className="requests-list">
                         {team.pendingRequests.map((request: any) => (
-                          <li key={request.userId}>
+                          <li data-testid={`team-request-row-${request.userId}`} key={request.userId}>
                             <span>{request.displayName}</span>
                             <div className="request-actions">
-                              <button
+                              <button data-testid={`team-request-approve-${request.userId}`}
                                 className="btn btn-small btn-success"
                                 onClick={() => approveMutation.mutate({ userId: request.userId })}
                                 disabled={approveMutation.isPending}
                               >
                                 Accepter
                               </button>
-                              <button
+                              <button data-testid={`team-request-reject-${request.userId}`}
                                 className="btn btn-small btn-danger"
                                 onClick={() => rejectMutation.mutate({ userId: request.userId })}
                                 disabled={rejectMutation.isPending}
@@ -172,8 +172,8 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                     </div>
                   )}
 
-                  <div className="payment-section">
-                    <button
+                  <div data-testid="team-payment-section" className="payment-section">
+                    <button data-testid="team-pay-button"
                       className="btn btn-primary btn-large"
                       onClick={() => paymentMutation.mutate()}
                       disabled={paymentMutation.isPending}
@@ -183,7 +183,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                   </div>
 
                   <div className="logout-section">
-                    <button className="btn btn-logout" onClick={handleLogout}>
+                    <button data-testid="nav-logout-button" className="btn btn-logout" onClick={handleLogout}>
                       Déconnexion
                     </button>
                   </div>
@@ -197,31 +197,31 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
   }
 
   return (
-    <div className={`stats-panel ${isCompact ? 'panel-compact' : ''}`}>
+    <div data-testid="stats-panel" className={`stats-panel ${isCompact ? 'panel-compact' : ''}`}>
       <div className="panel-header">
         <h2>{!user?.teamId ? `Bienvenue, ${user?.displayName} !` : 'Tableau de bord'}</h2>
       </div>
       <div className="panel-content">
         {/* Compact View */}
         {isCompact && (
-          <div className="stats-compact">
+          <div data-testid="stats-compact" className="stats-compact">
             {stats ? (
               <>
-                <div className="compact-stat">
+                <div data-testid="stats-compact-enigmas" className="compact-stat">
                   <span className="compact-label">Énigmes:</span>
-                  <span className="compact-value">{stats.enigmasSolved}/{stats.totalEnigmas}</span>
+                  <span data-testid="stats-compact-enigmas-value" className="compact-value">{stats.enigmasSolved}/{stats.totalEnigmas}</span>
                 </div>
-                <div className="compact-stat">
+                <div data-testid="stats-compact-points" className="compact-stat">
                   <span className="compact-label">Points:</span>
-                  <span className="compact-value">{stats.totalPoints}</span>
+                  <span data-testid="stats-compact-points-value" className="compact-value">{stats.totalPoints}</span>
                 </div>
               </>
             ) : (
-              <div className="compact-stat">
+              <div data-testid="stats-compact-no-team" className="compact-stat">
                 <span className="compact-value">No team</span>
               </div>
             )}
-            <button className="btn-logout-compact" onClick={handleLogout} title="Déconnexion">
+            <button data-testid="nav-logout-compact-button" className="btn-logout-compact" onClick={handleLogout} title="Déconnexion">
               ×
             </button>
           </div>
@@ -229,10 +229,10 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
 
         {/* Full View */}
         {!isCompact && (
-          <div className="stats-full">
+          <div data-testid="stats-full" className="stats-full">
             {/* No Team Message */}
             {!user?.teamId && (
-              <div className="no-team-message">
+              <div data-testid="team-no-team-message" className="no-team-message">
                 <div className="info-box">
                   <p>
                     Pour participer au Rallye d'Hiver, vous devez rejoindre ou créer une équipe.
@@ -244,16 +244,16 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                 <PendingRequests />
 
                 {/* Create Team Section - Now First */}
-                <div className="create-team-inline">
+                <div data-testid="team-create-section" className="create-team-inline">
                   <h4 className="section-title">Créer une équipe</h4>
-                  {createError && <div className="error-message">{createError}</div>}
-                  <form onSubmit={(e) => {
+                  {createError && <div data-testid="team-create-error" className="error-message">{createError}</div>}
+                  <form data-testid="team-create-form" onSubmit={(e) => {
                     e.preventDefault();
                     if (teamName.trim() && !hasPendingRequests) {
                       createTeamMutation.mutate(teamName.trim());
                     }
                   }} className="inline-form">
-                    <input
+                    <input data-testid="team-name-input"
                       type="text"
                       value={teamName}
                       onChange={(e) => setTeamName(e.target.value)}
@@ -262,7 +262,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                       className="team-name-input"
                       disabled={hasPendingRequests}
                     />
-                    <button
+                    <button data-testid="team-create-submit"
                       type="submit"
                       className="btn btn-primary"
                       disabled={createTeamMutation.isPending || !teamName.trim() || hasPendingRequests}
@@ -273,9 +273,9 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                 </div>
 
                 {/* Show existing teams */}
-                <div className="teams-section-inline">
+                <div data-testid="team-browse-section" className="teams-section-inline">
                   <h4 className="section-title">Équipes existantes</h4>
-                  <input
+                  <input data-testid="team-search-input"
                     type="text"
                     placeholder="Rechercher une équipe..."
                     value={teamSearchQuery}
@@ -283,15 +283,15 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                     className="team-search-input"
                   />
                   {teamsLoading ? (
-                    <div className="loading-state-inline">Chargement des équipes...</div>
+                    <div data-testid="team-list-loading" className="loading-state-inline">Chargement des équipes...</div>
                   ) : filteredTeams.length > 0 ? (
-                    <div className="teams-list-inline">
+                    <div data-testid="team-list" className="teams-list-inline">
                       {filteredTeams.map((t: any) => (
-                        <div key={t.teamId} className="team-item-inline">
+                        <div data-testid={`team-row-${t.teamId}`} key={t.teamId} className="team-item-inline">
                           <div className="team-info-inline">
-                            <h4>{t.teamName}</h4>
+                            <h4 data-testid={`team-row-name-${t.teamId}`}>{t.teamName}</h4>
                           </div>
-                          <button
+                          <button data-testid={`team-join-button-${t.teamId}`}
                             className="btn btn-primary btn-small"
                             onClick={() => joinTeamMutation.mutate(t.teamId)}
                             disabled={joinTeamMutation.isPending || hasPendingRequests}
@@ -302,14 +302,14 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                       ))}
                     </div>
                   ) : (
-                    <div className="no-teams-inline">
+                    <div data-testid="team-list-empty" className="no-teams-inline">
                       <p>{teamSearchQuery ? 'Aucune équipe trouvée.' : 'Aucune équipe existante. Créez la première !'}</p>
                     </div>
                   )}
                 </div>
 
                 <div className="logout-section">
-                  <button className="btn btn-logout" onClick={handleLogout}>
+                  <button data-testid="nav-logout-button" className="btn btn-logout" onClick={handleLogout}>
                     Déconnexion
                   </button>
                 </div>
@@ -318,47 +318,47 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
 
             {/* Unified Dashboard Section - Stats + Discord + Team */}
             {user?.teamId && team?.hasPaid && (
-              <div className="unified-dashboard">
+              <div data-testid="stats-dashboard" className="unified-dashboard">
                 {/* Stats Section - First */}
                 {!hideStats && (
-                  <div className="stats-container">
+                  <div data-testid="stats-container" className="stats-container">
                     {statsLoading ? (
-                      <div className="loading-state">Chargement...</div>
+                      <div data-testid="stats-loading" className="loading-state">Chargement...</div>
                     ) : stats ? (
                       <>
-                        <div className="stat-card">
+                        <div data-testid="stats-enigmas-solved" className="stat-card">
                           <div className="stat-content">
-                            <div className="stat-value">
+                            <div data-testid="stats-enigmas-solved-value" className="stat-value">
                               {stats.enigmasSolved} / {stats.totalEnigmas}
                             </div>
                             <div className="stat-label">Énigmes Résolues</div>
                           </div>
                         </div>
 
-                        <div className="stat-card">
+                        <div data-testid="stats-parcours-completed" className="stat-card">
                           <div className="stat-content">
-                            <div className="stat-value">
+                            <div data-testid="stats-parcours-completed-value" className="stat-value">
                               {stats.parcoursCompleted} / {stats.totalParcours}
                             </div>
                             <div className="stat-label">Parcours Complétés</div>
                           </div>
                         </div>
 
-                        <div className="stat-card">
+                        <div data-testid="stats-attempts-count" className="stat-card">
                           <div className="stat-content">
-                            <div className="stat-value">{stats.passwordAttemptsCount}</div>
+                            <div data-testid="stats-attempts-count-value" className="stat-value">{stats.passwordAttemptsCount}</div>
                             <div className="stat-label">Tentatives de mots de passe</div>
                           </div>
                         </div>
                       </>
                     ) : (
-                      <div className="error-state">Erreur lors du chargement des statistiques.</div>
+                      <div data-testid="stats-error" className="error-state">Erreur lors du chargement des statistiques.</div>
                     )}
                   </div>
                 )}
 
                 {/* Discord Section - Second */}
-                <div
+                <div data-testid="stats-discord-link"
                   className="discord-card"
                   onClick={() => window.open('https://discord.gg/cqSCHwSg', '_blank')}
                   style={{ cursor: 'pointer' }}
@@ -380,16 +380,16 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
 
                 {/* Team Section - Third (clickable) */}
                 {teamLoading ? (
-                  <div className="loading-state">Chargement...</div>
+                  <div data-testid="team-loading" className="loading-state">Chargement...</div>
                 ) : team ? (
                   <>
-                    <div
+                    <div data-testid="team-header"
                       className="team-header"
                       onClick={() => setShowTeamDetails(!showTeamDetails)}
                       style={{ cursor: 'pointer' }}
                     >
-                      <h3>{team.teamName}</h3>
-                      <p className="paid">
+                      <h3 data-testid="team-name">{team.teamName}</h3>
+                      <p data-testid="team-payment-status" className="paid">
                         {team.pendingRequests && team.pendingRequests.length > 0
                           ? `${team.pendingRequests.length} demande${team.pendingRequests.length > 1 ? 's' : ''} en attente - `
                           : ''}
@@ -405,14 +405,14 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                           </p>
                         </div>
 
-                        <div className="team-members">
+                        <div data-testid="team-members" className="team-members">
                           <h4>Membres ({team.members.length})</h4>
-                          <ul className="members-list">
+                          <ul data-testid="team-members-list" className="members-list">
                             {team.members.map((member: any) => (
-                              <li key={member.userId}>
+                              <li data-testid={`team-member-row-${member.userId}`} key={member.userId}>
                                 {member.displayName}
                                 {member.userId === team.leaderId && (
-                                  <span className="badge">Chef</span>
+                                  <span data-testid={`team-leader-badge-${member.userId}`} className="badge">Chef</span>
                                 )}
                               </li>
                             ))}
@@ -420,21 +420,21 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                         </div>
 
                         {isMember && team.pendingRequests && team.pendingRequests.length > 0 && (
-                          <div className="pending-requests-section">
+                          <div data-testid="team-pending-requests" className="pending-requests-section">
                             <h4>Demandes en attente ({team.pendingRequests.length})</h4>
-                            <ul className="requests-list">
+                            <ul data-testid="team-requests-list" className="requests-list">
                               {team.pendingRequests.map((request: any) => (
-                                <li key={request.userId}>
+                                <li data-testid={`team-request-row-${request.userId}`} key={request.userId}>
                                   <span>{request.displayName}</span>
                                   <div className="request-actions">
-                                    <button
+                                    <button data-testid={`team-request-approve-${request.userId}`}
                                       className="btn btn-small btn-success"
                                       onClick={() => approveMutation.mutate({ userId: request.userId })}
                                       disabled={approveMutation.isPending}
                                     >
                                       Accepter
                                     </button>
-                                    <button
+                                    <button data-testid={`team-request-reject-${request.userId}`}
                                       className="btn btn-small btn-danger"
                                       onClick={() => rejectMutation.mutate({ userId: request.userId })}
                                       disabled={rejectMutation.isPending}
@@ -451,13 +451,13 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                     )}
 
                     <div className="logout-section">
-                      <button className="btn btn-logout" onClick={handleLogout}>
+                      <button data-testid="nav-logout-button" className="btn btn-logout" onClick={handleLogout}>
                         Déconnexion
                       </button>
                     </div>
                   </>
                 ) : (
-                  <div className="error-state">Équipe introuvable</div>
+                  <div data-testid="team-not-found" className="error-state">Équipe introuvable</div>
                 )}
               </div>
             )}

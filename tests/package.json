@@ -4,15 +4,32 @@
   "description": "Functional tests for Rallye Hiver application",
   "type": "module",
   "scripts": {
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
-    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
+    "test": "TEST_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:api": "TEST_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js api/",
+    "test:scenarios": "TEST_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js scenarios/",
+    "test:health": "TEST_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js prod/health",
+    "test:prod": "TEST_ENV=prod node --experimental-vm-modules node_modules/jest/bin/jest.js prod/health",
+    "test:prod:scenarios": "TEST_ENV=prod ALLOW_PROD_WRITES=1 node --experimental-vm-modules node_modules/jest/bin/jest.js scenarios/",
+    "provision": "TEST_ENV=test node scripts/provision.js",
+    "provision:prod": "TEST_ENV=prod ALLOW_PROD_WRITES=1 node scripts/provision.js",
+    "sweep": "TEST_ENV=test node scripts/sweep.js",
+    "sweep:prod": "TEST_ENV=prod ALLOW_PROD_WRITES=1 node scripts/sweep.js",
+    "test:watch": "TEST_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --watch scenarios/",
+    "test:e2e": "TEST_ENV=test playwright test",
+    "test:e2e:visual": "TEST_ENV=test playwright test visual",
+    "test:e2e:update": "TEST_ENV=test playwright test visual --update-snapshots",
+    "test:e2e:report": "playwright show-report"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
+    "@playwright/test": "^1.62.1",
     "jest": "^29.7.0"
   },
   "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.1116.0",
+    "@aws-sdk/client-dynamodb": "^3.1116.0",
+    "@aws-sdk/credential-providers": "^3.1116.0",
+    "@aws-sdk/lib-dynamodb": "^3.1116.0",
     "axios": "^1.6.2"
   }
 }

@@ -396,6 +396,31 @@ export const adminUsersAPI = {
   },
 };
 
+// Admin Hints API
+export const adminHintsAPI = {
+  getUsage: async (): Promise<{
+    usages: Array<{
+      teamId: string;
+      teamName: string;
+      enigmaId: string;
+      enigmaNumber: number;
+      enigmaTitle: string;
+      hintUsedAt: string;
+      solved: boolean;
+      solvedAt?: string;
+    }>;
+    stats: {
+      totalUsages: number;
+      uniqueTeams: number;
+      uniqueEnigmas: number;
+      solvedAfterHint: number;
+    };
+  }> => {
+    const response = await adminApi.get('/hints/usage');
+    return response.data;
+  },
+};
+
 // Admin Upload API
 export const adminUploadAPI = {
   generateUploadUrl: async (): Promise<{

@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getAllParcoursForAdmin } from '../../../utils/dynamodb';
 import { dynamoDb, TEAM_PARCOURS_ACCESS_TABLE } from '../../../utils/dynamodb';
+import { getTestTeamIds, excludeTestTeamRows } from '../../../utils/testTeams';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
@@ -29,7 +30,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         TableName: TEAM_PARCOURS_ACCESS_TABLE,
       })
     );
-    const accessRecords = accessResult.Items || [];
+    // Test teams unlock parcours as part of their scenarios: excluding their
+    // access records keeps the teamsUnlocked counter on real teams only
+    const testTeamIds = await getTestTeamIds();
+    const accessRecords = excludeTestTeamRows(accessResult.Items || [], testTeamIds);
 
     // Count unlocks per parcours
     const unlocksMap = new Map<string, number>();

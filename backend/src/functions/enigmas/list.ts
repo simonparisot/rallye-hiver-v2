@@ -9,10 +9,14 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // Sort by enigmaNumber
     enigmas.sort((a: any, b: any) => a.enigmaNumber - b.enigmaNumber);
 
-    // Don't expose the correct password to clients
+    // Don't expose the correct password or hint URL to clients
+    // Instead, expose hasHint boolean so frontend knows if hint is available
     const sanitizedEnigmas = enigmas.map((enigma: any) => {
-      const { correctPassword, ...rest } = enigma;
-      return rest;
+      const { correctPassword, hintPdfUrl, ...rest } = enigma;
+      return {
+        ...rest,
+        hasHint: !!hintPdfUrl, // Boolean indicating if hint is available
+      };
     });
 
     return success({

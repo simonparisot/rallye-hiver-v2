@@ -30,14 +30,14 @@ const AdminAttempts: React.FC = () => {
     setFilters({ ...filters, offset: filters.offset + filters.limit });
   };
 
-  if (isLoading) return <div className="loading">Chargement des tentatives...</div>;
-  if (error) return <div className="error">Échec du chargement des tentatives</div>;
+  if (isLoading) return <div data-testid="admin-attempts-loading" className="loading">Chargement des tentatives...</div>;
+  if (error) return <div data-testid="admin-attempts-error" className="error">Échec du chargement des tentatives</div>;
 
   const attempts = data?.attempts || [];
   const hasMore = attempts.length === filters.limit;
 
   return (
-    <div className="admin-attempts">
+    <div data-testid="admin-attempts-page" className="admin-attempts">
       <div className="admin-page-header">
         <div>
           <h1>Suivi des tentatives</h1>
@@ -49,7 +49,7 @@ const AdminAttempts: React.FC = () => {
         <div className="filter-controls">
           <div className="filter-group">
             <label>Énigme</label>
-            <select
+            <select data-testid="admin-attempts-enigma-filter"
               value={filters.enigmaId || 'all'}
               onChange={(e) => {
                 const value = e.target.value;
@@ -71,7 +71,7 @@ const AdminAttempts: React.FC = () => {
 
           <div className="filter-group">
             <label>Statut</label>
-            <select
+            <select data-testid="admin-attempts-status-filter"
               value={filters.success === undefined ? 'all' : filters.success.toString()}
               onChange={(e) => {
                 const value = e.target.value;
@@ -88,7 +88,7 @@ const AdminAttempts: React.FC = () => {
 
           <div className="filter-group">
             <label>Résultats par page</label>
-            <select
+            <select data-testid="admin-attempts-limit-filter"
               value={filters.limit}
               onChange={(e) => handleFilterChange({ limit: parseInt(e.target.value) })}
             >
@@ -123,7 +123,7 @@ const AdminAttempts: React.FC = () => {
       </div>
 
       <div className="attempts-list">
-        <table className="admin-table attempts-table">
+        <table data-testid="admin-attempts-table" className="admin-table attempts-table">
           <thead>
             <tr>
               <th>Date/Heure</th>
@@ -136,7 +136,7 @@ const AdminAttempts: React.FC = () => {
           </thead>
           <tbody>
             {attempts.map((attempt) => (
-              <tr key={attempt.attemptId} className={attempt.success ? 'success-row' : 'fail-row'}>
+              <tr data-testid={`admin-attempts-row-${attempt.attemptId}`} key={attempt.attemptId} className={attempt.success ? 'success-row' : 'fail-row'}>
                 <td className="attempt-date">
                   {new Date(attempt.attemptedAt).toLocaleString('fr-FR', {
                     dateStyle: 'short',
@@ -165,14 +165,14 @@ const AdminAttempts: React.FC = () => {
         </table>
 
         {attempts.length === 0 && (
-          <div className="empty-state">
+          <div data-testid="admin-attempts-empty" className="empty-state">
             <p>Aucune tentative trouvée correspondant à vos filtres.</p>
           </div>
         )}
 
         {hasMore && (
           <div className="load-more-container">
-            <button className="btn btn-secondary" onClick={handleLoadMore}>
+            <button data-testid="admin-attempts-load-more" className="btn btn-secondary" onClick={handleLoadMore}>
               Charger plus
             </button>
           </div>

@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { dynamoDb, USERS_TABLE, TEAMS_TABLE, PASSWORD_ATTEMPTS_TABLE } from '../../../utils/dynamodb';
+import { isTestTeam, excludeTestTeams, excludeTestTeamRows } from '../../../utils/testTeams';
 import { ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
@@ -26,7 +27,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       })
     );
 
-    const users = usersResult.Items || [];
+    const allUsers = usersResult.Items || [];
 
     // Get all teams to enrich user data
     const teamsResult = await dynamoDb.send(
@@ -35,7 +36,15 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       })
     );
 
-    const teams = teamsResult.Items || [];
+    const allTeams = teamsResult.Items || [];
+
+    // The members of a test team are not real players: neither they nor their
+    // attempts belong in the user list or in its counters
+    const testTeamIds = new Set<string>(
+      allTeams.filter((team: any) => isTestTeam(team)).map((team: any) => team.teamId)
+    );
+    const teams = excludeTestTeams(allTeams);
+    const users = excludeTestTeamRows(allUsers, testTeamIds);
 
     // Build maps for quick lookups
     const teamMap = new Map<string, any>();
@@ -60,11 +69,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const attemptsResult = await dynamoDb.send(
       new ScanCommand({
         TableName: PASSWORD_ATTEMPTS_TABLE,
-        ProjectionExpression: 'attemptedBy',
+        ProjectionExpression: 'attemptedBy, teamId',
       })
     );
 
-    const attempts = attemptsResult.Items || [];
+    const attempts = excludeTestTeamRows(attemptsResult.Items || [], testTeamIds);
     const attemptsCountMap = new Map<string, number>();
 
     attempts.forEach((attempt: any) => {

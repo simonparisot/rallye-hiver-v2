@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { dynamoDb, USERS_TABLE, TEAMS_TABLE } from '../../../utils/dynamodb';
+import { excludeTestTeams } from '../../../utils/testTeams';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
@@ -39,7 +40,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       })
     );
 
-    const teams = teamsResult.Items || [];
+    // Without this, the name of a test team would leak through pendingTeamName
+    const teams = excludeTestTeams(teamsResult.Items || []);
 
     // Build a map of userId -> pending team info
     const pendingRequestsMap = new Map<string, { teamId: string; teamName: string }>();
