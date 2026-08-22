@@ -1,102 +1,122 @@
-# Rallye Hiver Functional Tests
+# Tests fonctionnels — Rallye d'Hiver
 
-This directory contains functional tests for the Rallye Hiver application. These tests verify that the API endpoints work correctly in the production environment.
+Suite exécutable sur trois environnements, avec des garanties différentes selon
+la cible. Les tests parlent à l'API déployée : ils vérifient le comportement
+réel du rallye, pas des mocks.
 
-## Setup
+## Démarrage
 
-1. Install dependencies:
 ```bash
 cd tests
 npm install
+cp .env.test.example .env.test   # puis compléter les mots de passe
+npm test                         # suite complète sur l'environnement de test
 ```
 
-2. Configure test environment:
-Edit `.env.test` to set the correct API URL and test user credentials.
+## Commandes
 
-**IMPORTANT**: Create a dedicated test user in your production environment. Do NOT use real user credentials for testing.
+| Commande | Cible | Effet |
+|---|---|---|
+| `npm test` | test | Tout : API, scénarios, santé |
+| `npm run test:api` | test | Contrat de l'API (crée des comptes en série) |
+| `npm run test:scenarios` | test | Les 12 scénarios du rallye |
+| `npm run test:health` | test | Santé, sans effet de bord |
+| `npm run test:prod` | **production** | Santé uniquement, strictement en lecture |
+| `npm run test:prod:scenarios` | **production** | Les 12 scénarios, sur le décor de test |
+| `npm run provision` | test | Crée le décor permanent (comptes + équipe) |
+| `npm run sweep` | test | Supprime les comptes jetables orphelins |
+| `npm run test:e2e` | test | Les scénarios par le navigateur (desktop + mobile) |
+| `npm run test:e2e:visual` | test | Régression visuelle |
+| `npm run test:e2e:update` | test | Régénère les captures de référence |
 
-## Running Tests
+Les variantes `provision:prod` et `sweep:prod` existent pour la production.
 
-Run all tests:
-```bash
-npm test
-```
+## Les trois niveaux d'écriture
 
-Run tests in watch mode:
-```bash
-npm test:watch
-```
+Le fichier `config/environments.js` attribue à chaque environnement une capacité,
+et chaque suite déclare ce dont elle a besoin. Un test ne peut pas écrire là où
+il n'en a pas le droit : la suite s'interrompt avant le premier appel HTTP.
 
-Run tests with coverage:
-```bash
-npm test:coverage
-```
+- **`read`** — aucune trace. Santé du site, disponibilité, contrôle des accès.
+- **`scoped`** — écriture confinée à l'équipe de test et à des participants
+  jetables dont l'adresse suit un motif réservé, avec effacement des traces.
+  C'est le niveau des 12 scénarios, et le maximum autorisé en production.
+- **`full`** — écriture libre. Environnement jetable uniquement.
 
-## Test Structure
+Trois protections se cumulent en production : la capacité plafonne à `scoped`,
+toute écriture exige `ALLOW_PROD_WRITES=1`, et `assertScopedResource` refuse
+d'agir sur une adresse hors du motif réservé — un compte de participant est
+rejeté même si un test s'égarait.
 
-- `auth/` - Authentication tests (login, signup, etc.)
-- `teams/` - Team management tests
-- `payments/` - Payment integration tests
-- `content/` - Content access tests
-- `helpers/` - Shared test utilities
-- `config/` - Test configuration
+## Ce que couvrent les 12 scénarios
 
-## Writing New Tests
+En tant que membre d'une équipe (`scenarios/01`, `scenarios/02`) : authentification,
+affichage d'une énigme, affichage d'un parcours, mot de passe erroné, mot de passe
+correct, complétion d'un parcours, téléchargement d'une énigme, téléchargement d'un
+parcours, statistiques du tableau de bord.
 
-1. Create a new test file in the appropriate directory
-2. Import the API client and test config
-3. Use describe/test blocks from Jest
-4. Follow the existing patterns for consistency
+À l'arrivée d'un participant (`scenarios/03`) : création de compte, demande
+d'adhésion, acceptation par un membre établi.
 
-Example:
-```javascript
-import { describe, test, expect } from '@jest/globals';
-import APIClient from '../helpers/api-client.js';
+En complément (`scenarios/04`) : cloisonnement du back-office. L'authorizer ne
+vérifie pas `isAdmin` — ce contrôle est fait handler par handler via
+`requireAdmin()`. Un endpoint d'administration qui oublierait cet appel serait
+ouvert à tout participant connecté ; ces tests vérifient que muni d'un jeton
+ordinaire, aucun endpoint `/admin/*` ne répond.
 
-describe('Feature Name', () => {
-  let client;
+Hors périmètre, comme convenu : la création d'équipe et le paiement Stripe.
 
-  beforeAll(() => {
-    client = new APIClient();
-  });
+## Le décor, et ce qu'il devient
 
-  test('should do something', async () => {
-    const response = await client.get('/endpoint');
-    expect(response.status).toBe(200);
-  });
-});
-```
+`scripts/provision.js` installe un décor **permanent** : deux comptes stables et
+une équipe de test marquée payée, conservée d'un run à l'autre. Il est idempotent.
 
-## Best Practices
+Les scénarios, eux, ne créent que des participants **jetables**, supprimés en fin
+de test — compte Cognito, enregistrement en base, appartenance à l'équipe — même
+si une assertion échoue. La progression de l'équipe de test est remise à zéro
+après chaque run : sans quoi une énigme résolue le resterait, et les tentatives
+fausseraient le calcul de difficulté en production.
 
-- Each test should be independent and not rely on other tests
-- Clean up any data created during tests
-- Use descriptive test names
-- Verify both success and error cases
-- Check response structure and data types, not just status codes
-- Use beforeAll/afterAll for setup and cleanup
-- Keep tests focused on one behavior per test
+Tout compte créé via `createEphemeralUser` — ou déclaré par `registerForCleanup`
+pour une création directe — est supprimé automatiquement en fin de suite, y
+compris si un test a échoué. `scripts/sweep.js` reste le filet de rattrapage
+pour un processus interrompu avant l'exécution du `afterAll`.
 
-## Test Coverage
+## Tests de navigateur
 
-The tests should cover:
-- ✅ Authentication (login, signup, token validation)
-- ⏳ Team management (create, join, approve, reject, remove)
-- ⏳ Payment flows (checkout, webhook)
-- ⏳ Content access (check access, get content)
-- ⏳ Edge cases and error handling
+Playwright pilote un vrai navigateur contre le site déployé. Deux profils :
+`desktop` (Chromium, 1440×900) et `mobile` (WebKit, iPhone 13) — WebKit parce
+qu'une large part des participants joue sur iPhone, et que Safari s'écarte
+parfois de Chromium, notamment sur l'affichage des PDF.
 
-## CI/CD Integration
+Prérequis, une seule fois : `npx playwright install chromium webkit`.
 
-These tests should be run:
-- Before deploying major changes
-- After deployment to verify everything works
-- As part of CI/CD pipeline (recommended)
+La session est ouverte une fois par `e2e/auth.setup.ts`, via l'API, puis
+partagée par tous les tests. Le formulaire de connexion, lui, est exercé pour
+lui-même dans `auth.spec.ts` : le rejouer avant chaque scénario rendrait toute
+la suite dépendante de son habillage, que la refonte 2027 va changer.
 
-## Troubleshooting
+Chaque test surveille la console et le réseau : une erreur JavaScript ou une
+réponse serveur en échec fait échouer le test, même si le scénario aboutit
+visuellement.
 
-**Test user creation fails**: The test user may already exist. This is OK - the tests will continue.
+### Points d'accroche
 
-**Connection errors**: Check that the API_URL in `.env.test` is correct and the API is accessible.
+Les sélecteurs s'appuient sur des `data-testid` (`<zone>-<élément>`), jamais sur
+les libellés ni les classes CSS — ceux-ci seront réécrits en 2027, les rôles
+non. Les éléments répétés portent un identifiant issu de la donnée
+(`enigma-card-3`), jamais l'indice de boucle, qui changerait au moindre tri.
 
-**Authentication failures**: Verify the test user credentials are correct and the user exists in Cognito.
+### Régression visuelle
+
+Les captures de référence vivent dans `e2e/visual.spec.ts-snapshots/`. Les
+animations sont neutralisées pour les rendre reproductibles. Quand la nouvelle
+interface sera arrêtée, elles se régénèrent d'un bloc avec
+`npm run test:e2e:update`.
+
+## Défauts connus
+
+Les tests marqués `[défaut connu]` utilisent `test.failing` : ils décrivent le
+comportement attendu d'une API correcte et resteront « attendus en échec »
+jusqu'à correction. Le jour où le handler est corrigé, ils virent au rouge pour
+signaler qu'il faut les repasser en tests normaux.
