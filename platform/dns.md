@@ -7,7 +7,13 @@
 | `rallyehiver.fr` | Site vitrine | `E2BGPNXDN8XXQX` | `s3://home.rallyehiver.fr` |
 | `www.rallyehiver.fr` | Redirection 301 vers le domaine nu | `E2BGPNXDN8XXQX` | — |
 | `2026.rallyehiver.fr` | Application de jeu, édition 2026 | `E2M1D4SPTNMDIK` | `s3://proto.rallyehiver.fr` |
+| `home.rallyehiver.fr` | Redirection 301 vers le domaine nu | `E2BGPNXDN8XXQX` | — |
+| `archives.rallyehiver.fr` | Redirection 301 vers `/editions.html` | `E2BGPNXDN8XXQX` | — |
 | `test.rallyehiver.fr` | Application de jeu, environnement de test | `E104E5O2KDVFJN` | compte `rallye-test` |
+
+`home.` et `archives.` servaient l'ancien site vitrine, hébergé sur un compte
+personnel. Ils sont conservés en redirection : des liens externes pointent
+peut-être encore dessus, et une redirection coûte moins qu'un lien mort.
 
 Certificat : `*.rallyehiver.fr` + `rallyehiver.fr`, dans `us-east-1` — région
 imposée par CloudFront. Le caractère générique couvre les sous-domaines des
