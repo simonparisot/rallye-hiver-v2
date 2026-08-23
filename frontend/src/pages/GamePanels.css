@@ -382,3 +382,54 @@
   border-color: rgba(169, 143, 76, .8);
 }
 .section .hint-used-badge { color: #7A6428; }
+
+/* Le reste à faire, sous la barre de progression. */
+.section .stat-reste {
+  font-size: 13px;
+  color: rgba(237, 232, 224, .55);
+  margin-top: 4px;
+}
+
+/* ---------------------------------------------------------------------------
+   Équipe : les blocs restés sur fond clair
+
+   Le panneau des membres et l'encart d'invitation gardaient un fond blanc et
+   un bleu d'information sans rapport avec l'édition : deux rectangles clairs
+   au milieu d'une scène sombre, dont le texte pâle devenait illisible.
+   --------------------------------------------------------------------------- */
+.section .team-members,
+.section .info-box,
+.section .pending-requests,
+.section .team-info-inline {
+  background: rgba(27, 23, 32, .82);
+  border: 1px solid rgba(255, 255, 255, .12);
+  color: var(--theatre-programme, #EDE8E0);
+}
+
+.section .info-box {
+  border-left: 3px solid var(--theatre-dorure, #A98F4C);
+  color: rgba(237, 232, 224, .82);
+}
+
+.section .team-members h4,
+.section .pending-requests h4 {
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 400;
+}
+
+.section .members-list li,
+.section .team-members li {
+  color: var(--theatre-programme, #EDE8E0);
+  border-bottom-color: rgba(255, 255, 255, .1);
+}
+
+.section .badge {
+  background: var(--theatre-dorure, #A98F4C);
+  color: #221B08;
+  font-weight: 700;
+}
+
+/* Les compteurs : la barre occupe toute la largeur de sa carte. */
+.section .stat-card { display: flex; flex-direction: column; }
+.section .stat-card .stat-content { flex: 1; }

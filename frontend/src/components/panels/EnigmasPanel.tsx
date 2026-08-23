@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import PDFViewer from '../PDFViewer';
 import ConfirmationModal from '../ConfirmationModal';
 import './EnigmasPanel.css';
+import ResultatTentative from '../ResultatTentative';
 
 interface EnigmasPanelProps {
   isExpanded: boolean;
@@ -149,27 +150,14 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
       setAttemptMessage(result.message);
       setAttemptSuccess(result.success);
 
+        // Le champ est vidé quand la réponse est la bonne : l'énigme est close,
+        // réafficher le mot de passe trouvé n'apporte rien.
       if (result.success) {
         setPassword('');
-        // Show success message for 4 seconds
-        setTimeout(() => {
-          setAttemptMessage('');
-          setAttemptSuccess(null);
-        }, 4000);
-      } else {
-        // Show error message for 2 minutes
-        setTimeout(() => {
-          setAttemptMessage('');
-          setAttemptSuccess(null);
-        }, 120000);
       }
     } catch (error) {
       setAttemptMessage('Une erreur est survenue. Veuillez réessayer.');
       setAttemptSuccess(false);
-      setTimeout(() => {
-        setAttemptMessage('');
-        setAttemptSuccess(null);
-      }, 120000);
     }
   };
 
@@ -310,11 +298,11 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                       {passwordMutation.isPending ? 'Envoi…' : 'Valider ma réponse'}
                     </button>
                   </form>
-                  {attemptMessage && (
-                    <div className={`attempt-message ${attemptSuccess === true ? 'attempt-success' : 'attempt-error'}`} data-testid={attemptSuccess === true ? 'enigma-attempt-success' : 'enigma-attempt-error'}>
-                      {attemptMessage}
-                    </div>
-                  )}
+                  <ResultatTentative
+                    message={attemptMessage || null}
+                    reussi={attemptSuccess === true}
+                    onFermer={() => setAttemptMessage('')}
+                  />
                   {/* Hint button and toggle */}
                   {selectedEnigma.hasHint && !selectedEnigma.isSolved && (
                     <div className="hint-section" data-testid="hint-section">
