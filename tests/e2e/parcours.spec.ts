@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, ouvrirSection } from './fixtures.js';
 import { resetTestTeamProgress } from '../helpers/cleanup.js';
 
 /**
@@ -20,6 +20,7 @@ test.describe('Parcours', () => {
 
   test('3. la liste des parcours est affichée', async ({ page }) => {
     await page.goto('/');
+    await ouvrirSection(page, 'parcours');
 
     await expect(page.getByTestId('parcours-panel')).toBeVisible();
 
@@ -30,6 +31,7 @@ test.describe('Parcours', () => {
 
   test('3. l\'ouverture d\'un parcours montre son contenu', async ({ page }) => {
     await page.goto('/');
+    await ouvrirSection(page, 'parcours');
     await page.getByTestId('parcours-card-1').click();
 
     await expect(page.getByTestId('parcours-expanded-view')).toBeVisible();
@@ -38,6 +40,7 @@ test.describe('Parcours', () => {
 
   test('8. le PDF du parcours est téléchargeable', async ({ page }) => {
     await page.goto('/');
+    await ouvrirSection(page, 'parcours');
     await page.getByTestId('parcours-card-1').click();
     await expect(page.getByTestId('parcours-expanded-view')).toBeVisible();
 
@@ -62,6 +65,7 @@ test.describe('Parcours', () => {
     test.fail();
 
     await page.goto('/');
+    await ouvrirSection(page, 'parcours');
     await page.getByTestId('parcours-card-1').click();
     await expect(page.getByTestId('parcours-expanded-view')).toBeVisible();
 
@@ -72,6 +76,7 @@ test.describe('Parcours', () => {
 
   test('6. un parcours peut être marqué comme réalisé, puis remis en état', async ({ page }) => {
     await page.goto('/');
+    await ouvrirSection(page, 'parcours');
     await page.getByTestId('parcours-card-1').click();
     await expect(page.getByTestId('parcours-expanded-view')).toBeVisible();
 
@@ -80,6 +85,8 @@ test.describe('Parcours', () => {
     // vérifie que la complétion est bien enregistrée, pas qu'elle s'affiche.
     await page.waitForTimeout(2000);
     await page.reload({ waitUntil: 'networkidle' });
+    // Un rechargement ramène à la section par défaut.
+    await ouvrirSection(page, 'parcours');
     await page.getByTestId('parcours-card-1').click();
 
     await expect(page.getByTestId('parcours-completed-banner')).toBeVisible({ timeout: 15_000 });
@@ -89,6 +96,8 @@ test.describe('Parcours', () => {
     await page.getByTestId('parcours-uncomplete-button').click();
     await page.waitForTimeout(2000);
     await page.reload({ waitUntil: 'networkidle' });
+    // Un rechargement ramène à la section par défaut.
+    await ouvrirSection(page, 'parcours');
     await page.getByTestId('parcours-card-1').click();
 
     await expect(page.getByTestId('parcours-complete-button')).toBeVisible({ timeout: 15_000 });
