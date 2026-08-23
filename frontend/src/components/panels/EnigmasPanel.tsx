@@ -28,13 +28,11 @@ function etatDe(enigma: { isSolved: boolean; attemptCount?: number }): EtatEnigm
   return (enigma.attemptCount ?? 0) > 0 ? 'tentee' : 'vierge';
 }
 
-function libelleEtat(enigma: { isSolved: boolean; attemptCount?: number }): string | null {
-  const n = enigma.attemptCount ?? 0;
-  if (enigma.isSolved) return 'Résolue';
-  if (n > 0) return n === 1 ? '1 essai' : `${n} essais`;
-  // Une énigme jamais ouverte est le cas courant : le dire sur chacune des
-  // vingt cartes n'apprendrait rien et alourdirait la liste.
-  return null;
+function libelleEtat(enigma: { isSolved: boolean }): string | null {
+  // Seule la résolution est annoncée. Le décompte des essais mettait un score
+  // sous les yeux à chaque coup d'œil, là où le jeu se joue sur trois mois :
+  // la pastille cerclée suffit à dire qu'une énigme est commencée.
+  return enigma.isSolved ? 'Résolue' : null;
 }
 
 const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onExpand }) => {
@@ -290,22 +288,31 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                       ✅ Énigme déjà résolue
                     </div>
                   )}
-                  {/* L'énoncé vient avant la réponse : le geste attendu ne doit pas
-                      précéder l'information qui le rend possible. */}
-                  {/* PDF Viewer - show hint or enigma */}
-                  {showingHint && hintPdfUrl ? (
-                    <div className="enigma-pdf-container hint-pdf" data-testid="hint-pdf-container">
-                      <div className="hint-pdf-header">Indice</div>
-                      <PDFViewer pdfUrl={hintPdfUrl} title={`Indice - ${selectedEnigma.title}`} />
-                    </div>
-                  ) : selectedEnigma.pdfUrl ? (
-                    <div className="enigma-pdf-container" data-testid="enigma-pdf-container">
-                      <PDFViewer pdfUrl={selectedEnigma.pdfUrl} title={selectedEnigma.title} />
-                    </div>
-                  ) : (
-                    <div className="enigma-pdf-placeholder" data-testid="enigma-pdf-placeholder">
-                      <p>PDF non disponible</p>
-                      <p className="pdf-note">Le PDF de cette enigme n'est pas encore disponible</p>
+                  {/* La barre de réponse et l'indice précèdent l'énoncé :
+                      celui-ci est un PDF long, souvent déjà lu, et ce que
+                      l'on vient faire en rouvrant une énigme, c'est répondre. */}
+                  <form className="password-form password-form-compact" data-testid="enigma-password-form" onSubmit={handlePasswordSubmit}>
+                    <input
+                      type="text"
+                      placeholder={selectedEnigma.isSolved ? "Retester un mot de passe" : "Entrez le mot de passe"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="password-input"
+                      data-testid="enigma-password-input"
+                      disabled={passwordMutation.isPending}
+                    />
+                    <button
+                      type="submit"
+                      data-testid="enigma-submit"
+                      className="submit-btn submit-btn-principal"
+                      disabled={passwordMutation.isPending || !password.trim()}
+                    >
+                      {passwordMutation.isPending ? 'Envoi…' : 'Valider ma réponse'}
+                    </button>
+                  </form>
+                  {attemptMessage && (
+                    <div className={`attempt-message ${attemptSuccess === true ? 'attempt-success' : 'attempt-error'}`} data-testid={attemptSuccess === true ? 'enigma-attempt-success' : 'enigma-attempt-error'}>
+                      {attemptMessage}
                     </div>
                   )}
                   {/* Hint button and toggle */}
@@ -334,28 +341,20 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                       )}
                     </div>
                   )}
-                  <form className="password-form password-form-compact" data-testid="enigma-password-form" onSubmit={handlePasswordSubmit}>
-                    <input
-                      type="text"
-                      placeholder={selectedEnigma.isSolved ? "Retester un mot de passe" : "Entrez le mot de passe"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="password-input"
-                      data-testid="enigma-password-input"
-                      disabled={passwordMutation.isPending}
-                    />
-                    <button
-                      type="submit"
-                      data-testid="enigma-submit"
-                      className="submit-btn submit-btn-principal"
-                      disabled={passwordMutation.isPending || !password.trim()}
-                    >
-                      {passwordMutation.isPending ? 'Envoi…' : 'Valider ma réponse'}
-                    </button>
-                  </form>
-                  {attemptMessage && (
-                    <div className={`attempt-message ${attemptSuccess === true ? 'attempt-success' : 'attempt-error'}`} data-testid={attemptSuccess === true ? 'enigma-attempt-success' : 'enigma-attempt-error'}>
-                      {attemptMessage}
+                  {/* PDF Viewer - show hint or enigma */}
+                  {showingHint && hintPdfUrl ? (
+                    <div className="enigma-pdf-container hint-pdf" data-testid="hint-pdf-container">
+                      <div className="hint-pdf-header">Indice</div>
+                      <PDFViewer pdfUrl={hintPdfUrl} title={`Indice - ${selectedEnigma.title}`} />
+                    </div>
+                  ) : selectedEnigma.pdfUrl ? (
+                    <div className="enigma-pdf-container" data-testid="enigma-pdf-container">
+                      <PDFViewer pdfUrl={selectedEnigma.pdfUrl} title={selectedEnigma.title} />
+                    </div>
+                  ) : (
+                    <div className="enigma-pdf-placeholder" data-testid="enigma-pdf-placeholder">
+                      <p>PDF non disponible</p>
+                      <p className="pdf-note">Le PDF de cette enigme n'est pas encore disponible</p>
                     </div>
                   )}
                 </div>

@@ -260,3 +260,125 @@
 .section .parcours-expanded-view {
   align-items: start;
 }
+
+/* ---------------------------------------------------------------------------
+   Tableau de bord — mise en page de bureau
+
+   Trois cartes occupaient chacune 1 200 pixels de large pour afficher un
+   chiffre : une mise en page de téléphone étirée. Sur un écran large, les
+   compteurs se rangent côte à côte et le contenu cesse de courir d'un bord
+   à l'autre.
+   --------------------------------------------------------------------------- */
+@media (min-width: 861px) {
+  .section .stats-full,
+  .section .unified-dashboard {
+    max-width: 940px;
+  }
+
+  /* Les trois compteurs partagent une rangée au lieu de s'empiler sur toute
+     la largeur. Le conteneur ne porte qu'eux : il peut devenir la grille. */
+  .section .stats-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    max-width: 940px;
+  }
+  .section .stats-container .stat-card { max-width: none; }
+
+  /* Un état de chargement ou d'erreur occupe la rangée entière. */
+  .section .stats-container > .loading-state,
+  .section .stats-container > .error-state {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Repli commun aux deux tailles : les cartes ne s'étirent plus indéfiniment. */
+.section .stat-card {
+  max-width: 940px;
+}
+
+.section .team-section-panel,
+.section .discord-card,
+.section .logout-section,
+.section .no-team-message {
+  max-width: 940px;
+}
+
+/* ---------------------------------------------------------------------------
+   Le bloc Discord
+
+   Le violet de la marque Discord était la seule tache de couleur vive du
+   tableau de bord, sans rapport avec l'édition. Il prend les teintes de la
+   salle et cesse de capter le regard avant les compteurs.
+   --------------------------------------------------------------------------- */
+.section .discord-card {
+  background: rgba(86, 135, 168, .14);
+  border: 1px solid rgba(110, 157, 188, .3);
+  color: var(--theatre-programme, #EDE8E0);
+}
+.section .discord-card:hover {
+  background: rgba(86, 135, 168, .2);
+  border-color: rgba(110, 157, 188, .45);
+}
+.section .discord-title { color: var(--theatre-dorure-claire, #C2A868); }
+.section .discord-text { color: rgba(237, 232, 224, .74); }
+.section .discord-icon { opacity: .82; }
+
+/* Le bloc de l'équipe était un grand rectangle blanc sur la scène. */
+.section .team-section-panel,
+.section .no-team-message {
+  background: rgba(27, 23, 32, .82);
+  border: 1px solid rgba(255, 255, 255, .12);
+  color: var(--theatre-programme, #EDE8E0);
+}
+/* .team-header garde un fond clair : son texte doit rester sombre.
+   Une règle antérieure y posait du blanc en supposant un fond de scène,
+   ce qui rendait le nom d'équipe illisible. */
+.section .team-header {
+  background: rgba(27, 23, 32, .82);
+  border: 1px solid rgba(255, 255, 255, .12);
+  color: var(--theatre-programme, #EDE8E0);
+}
+.section .team-header .team-name,
+.section .team-header h2,
+.section .team-header h3 { color: #fff; }
+
+.section .logout-section { border-top-color: rgba(255, 255, 255, .12); }
+.section .btn-logout {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, .22);
+  color: var(--theatre-programme, #EDE8E0);
+}
+.section .btn-logout:hover { border-color: var(--theatre-dorure-claire, #C2A868); color: var(--theatre-dorure-claire, #C2A868); }
+
+/* ---------------------------------------------------------------------------
+   La barre de réponse et l'indice
+
+   Placés en tête de l'énigme : l'énoncé est un PDF long, souvent déjà lu, et
+   ce que l'on vient faire en rouvrant une énigme, c'est répondre.
+
+   Le bandeau d'indice était en jaune vif — la dernière couleur criarde de
+   l'écran. Il prend l'or patiné de l'édition.
+   --------------------------------------------------------------------------- */
+.section .password-form,
+.section .password-form-compact {
+  background: rgba(27, 23, 32, .06);
+  border-bottom: 1px solid var(--theatre-filet, #D6CFC4);
+}
+
+.section .hint-section {
+  background: rgba(194, 168, 104, .12);
+  border-bottom: 1px solid rgba(169, 143, 76, .28);
+}
+
+.section .hint-button {
+  background: transparent;
+  border: 1px solid rgba(169, 143, 76, .55);
+  color: #7A6428;
+  font-weight: 600;
+}
+.section .hint-button:hover:not(:disabled) {
+  background: rgba(194, 168, 104, .18);
+  border-color: rgba(169, 143, 76, .8);
+}
+.section .hint-used-badge { color: #7A6428; }

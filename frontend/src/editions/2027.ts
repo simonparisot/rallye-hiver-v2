@@ -13,9 +13,10 @@ export const edition2027: Edition = {
   theme: {
     key: '2027',
     name: 'Le théâtre',
-    // Bodoni Moda pour les titres — la Didone des affiches de théâtre ;
-    // Source Sans 3 pour le texte courant, dessinée pour les longues lectures.
-    fonts: 'https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,600;0,6..96,700;1,6..96,600&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap',
+    // Abril Fatface pour les titres : c'est déjà la police de rallyehiver.fr,
+    // ce qui relie l'édition au site du Rallye. Source Sans 3 pour le texte
+    // courant, dessinée pour les longues lectures.
+    fonts: 'https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap',
     // Les deux masques, comédie et tragédie, retenus par les organisateurs.
     logo: '/logo-2027.jpg',
   },

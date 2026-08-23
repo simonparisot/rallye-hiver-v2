@@ -11,22 +11,25 @@
    --------------------------------------------------------------------------- */
 :root,
 :root[data-edition='2027'] {
-  /* --- Les deux masques --- */
-  --theatre-comedie: #3D7FAE;        /* bleu d'action, assombri pour tenir le contraste sur blanc */
-  --theatre-comedie-clair: #4E93C4;
-  --theatre-comedie-sombre: #2C5F84;
-  --theatre-tragedie: #C4402F;       /* rouge d'enjeu : valider, alerter */
-  --theatre-tragedie-sombre: #A32F21;
-  --theatre-dorure: #B08D1E;         /* la réussite, et rien d'autre */
-  --theatre-dorure-claire: #C9A227;
+  /* --- Les deux masques, en version velours ---
+     Les teintes du logo, désaturées et assombries : sur un fond de salle, des
+     couleurs franches deviennent criardes. On cherche le confort d'une lecture
+     longue plutôt que l'éclat. */
+  --theatre-comedie: #5687A8;        /* bleu d'action, patiné */
+  --theatre-comedie-clair: #6E9DBC;
+  --theatre-comedie-sombre: #3F6A88;
+  --theatre-tragedie: #A9503F;       /* bordeaux plutôt que rouge vif */
+  --theatre-tragedie-sombre: #8C3E30;
+  --theatre-dorure: #A98F4C;         /* or patiné, pas or vif */
+  --theatre-dorure-claire: #C2A868;
 
   /* --- La salle et la scène --- */
-  --theatre-salle: #14161A;          /* noir de salle : texte, pieds de page */
-  --theatre-programme: #F2EFE9;      /* papier de programme : fond du jeu */
-  --theatre-scene: #FFFFFF;          /* surfaces surélevées */
-  --theatre-filet: #DCD7CD;          /* bordures sur fond clair */
-  --theatre-coulisse: #6C6459;       /* gris chaud, texte secondaire */
-  --theatre-coulisse-pale: #8A8073;
+  --theatre-salle: #1B1720;          /* velours brun-violet, pas un noir d'encre */
+  --theatre-programme: #EDE8E0;      /* papier de programme, légèrement chaud */
+  --theatre-scene: #FBF9F5;          /* surfaces surélevées */
+  --theatre-filet: #D6CFC4;          /* bordures sur fond clair */
+  --theatre-coulisse: #6B6357;       /* gris chaud, texte secondaire */
+  --theatre-coulisse-pale: #8B8275;
 
   /* --- Remappage des variables historiques ---------------------------------
      Le reste du site continue de les employer : les redéfinir suffit à
