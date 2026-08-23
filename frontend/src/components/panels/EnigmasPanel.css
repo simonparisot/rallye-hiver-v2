@@ -541,3 +541,83 @@
     padding: 8px 12px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   États d'une énigme — refonte 2027
+
+   Les vingt cartes étaient rigoureusement identiques : rien ne distinguait une
+   énigme résolue d'une énigme jamais ouverte, et retrouver où l'on en était
+   supposait de parcourir toute la liste. L'état se lit désormais à la pastille
+   comme au libellé — la couleur seule ne suffit pas.
+   --------------------------------------------------------------------------- */
+.enigma-number.pastille-resolue {
+  background: var(--etat-resolu-fond);
+  color: var(--etat-resolu-texte);
+  border-color: var(--etat-resolu-fond);
+}
+
+.enigma-number.pastille-tentee {
+  background: var(--etat-tente-fond);
+  color: var(--etat-tente-trait);
+  border: 2px solid var(--etat-tente-trait);
+}
+
+.enigma-number.pastille-vierge {
+  background: var(--etat-vierge-fond);
+  color: var(--etat-vierge-texte);
+  border-color: var(--etat-vierge-fond);
+}
+
+.enigma-etat {
+  margin-left: auto;
+  padding-left: 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--theatre-coulisse-pale, #8A8073);
+}
+
+.enigma-etat.etat-resolue { color: var(--etat-resolu-libelle); }
+.enigma-etat.etat-tentee { color: var(--etat-tente-trait); }
+
+/* Sur la liste étroite du mode déployé, le libellé passerait à la ligne. */
+.enigma-list-full .enigma-etat {
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+}
+
+/* ---------------------------------------------------------------------------
+   Le geste central du rallye
+
+   « Tester » était un petit bouton bleu clair sur fond blanc, alors que c'est
+   l'action qu'un participant répète des centaines de fois. Il prend le rouge
+   du rideau et la place qui lui revient.
+   --------------------------------------------------------------------------- */
+.submit-btn.submit-btn-principal {
+  background: var(--theatre-tragedie, var(--color-primary-red));
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.submit-btn.submit-btn-principal:hover:not(:disabled) {
+  background: var(--theatre-tragedie-sombre, var(--color-primary-red));
+}
+
+.submit-btn.submit-btn-principal:disabled {
+  background: var(--etat-vierge-fond);
+  color: var(--etat-vierge-texte);
+  cursor: not-allowed;
+}
+
+.submit-btn.submit-btn-principal:focus-visible {
+  outline: 3px solid var(--theatre-comedie, var(--color-primary-blue));
+  outline-offset: 2px;
+}

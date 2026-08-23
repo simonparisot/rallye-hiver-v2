@@ -14,6 +14,29 @@ interface EnigmasPanelProps {
   onExpand: () => void;
 }
 
+/**
+ * État d'une énigme du point de vue du participant.
+ *
+ * Rien ne distinguait jusqu'ici une énigme résolue d'une énigme jamais ouverte :
+ * les vingt cartes étaient identiques, et retrouver où l'on en était supposait
+ * de toutes les parcourir.
+ */
+type EtatEnigme = 'resolue' | 'tentee' | 'vierge';
+
+function etatDe(enigma: { isSolved: boolean; attemptCount?: number }): EtatEnigme {
+  if (enigma.isSolved) return 'resolue';
+  return (enigma.attemptCount ?? 0) > 0 ? 'tentee' : 'vierge';
+}
+
+function libelleEtat(enigma: { isSolved: boolean; attemptCount?: number }): string | null {
+  const n = enigma.attemptCount ?? 0;
+  if (enigma.isSolved) return 'Résolue';
+  if (n > 0) return n === 1 ? '1 essai' : `${n} essais`;
+  // Une énigme jamais ouverte est le cas courant : le dire sur chacune des
+  // vingt cartes n'apprendrait rien et alourdirait la liste.
+  return null;
+}
+
 const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onExpand }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -205,12 +228,15 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
               <div
                 key={enigma.id}
                 data-testid={`enigma-card-${enigma.order}`}
-                className={`enigma-item-compact ${enigma.isSolved ? 'solved' : ''} ${!hasAccess ? 'locked' : ''}`}
+                className={`enigma-item-compact etat-${etatDe(enigma)} ${enigma.isSolved ? 'solved' : ''} ${!hasAccess ? 'locked' : ''}`}
                 onClick={() => hasAccess && handleEnigmaSelect(enigma)}
               >
-                <span className="enigma-number">{enigma.order}</span>
+                <span className={`enigma-number pastille-${etatDe(enigma)}`}>{enigma.order}</span>
                 <span className="enigma-title-compact">{enigma.title}</span>
-                {enigma.isSolved && <span className="solved-badge-small" data-testid={`enigma-solved-badge-${enigma.order}`}>Résolu</span>}
+                {libelleEtat(enigma) && (
+                  <span className={`enigma-etat etat-${etatDe(enigma)}`}>{libelleEtat(enigma)}</span>
+                )}
+                {enigma.isSolved && <span className="solved-badge-small visually-hidden" data-testid={`enigma-solved-badge-${enigma.order}`}>Résolu</span>}
               </div>
             ))}
           </div>
@@ -222,14 +248,17 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                 <div
                   key={enigma.id}
                   data-testid={`enigma-card-${enigma.order}`}
-                  className={`enigma-item ${selectedEnigma?.id === enigma.id ? 'active' : ''} ${
+                  className={`enigma-item etat-${etatDe(enigma)} ${selectedEnigma?.id === enigma.id ? 'active' : ''} ${
                     enigma.isSolved ? 'solved' : ''
                   }`}
                   onClick={() => handleEnigmaSelect(enigma)}
                 >
                   <div className="enigma-header-item">
-                    <span className="enigma-number">{enigma.order}</span>
+                    <span className={`enigma-number pastille-${etatDe(enigma)}`}>{enigma.order}</span>
                     <span className="enigma-title">{enigma.title}</span>
+                    {libelleEtat(enigma) && (
+                  <span className={`enigma-etat etat-${etatDe(enigma)}`}>{libelleEtat(enigma)}</span>
+                )}
                     {enigma.pdfUrl && selectedEnigma?.id === enigma.id && (
                       <button
                         data-testid={`enigma-download-button-${enigma.order}`}
@@ -246,7 +275,7 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                     )}
                   </div>
                   {enigma.isSolved && (
-                    <div className="enigma-meta">
+                    <div className="enigma-meta visually-hidden">
                       <span className="solved-badge" data-testid={`enigma-solved-badge-${enigma.order}`}>Résolue</span>
                     </div>
                   )}
@@ -261,28 +290,22 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                       ✅ Énigme déjà résolue
                     </div>
                   )}
-                  <form className="password-form password-form-compact" data-testid="enigma-password-form" onSubmit={handlePasswordSubmit}>
-                    <input
-                      type="text"
-                      placeholder={selectedEnigma.isSolved ? "Retester un mot de passe" : "Entrez le mot de passe"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="password-input"
-                      data-testid="enigma-password-input"
-                      disabled={passwordMutation.isPending}
-                    />
-                    <button
-                      type="submit"
-                      data-testid="enigma-submit"
-                      className="submit-btn btn-small"
-                      disabled={passwordMutation.isPending || !password.trim()}
-                    >
-                      {passwordMutation.isPending ? 'Envoi...' : 'Tester'}
-                    </button>
-                  </form>
-                  {attemptMessage && (
-                    <div className={`attempt-message ${attemptSuccess === true ? 'attempt-success' : 'attempt-error'}`} data-testid={attemptSuccess === true ? 'enigma-attempt-success' : 'enigma-attempt-error'}>
-                      {attemptMessage}
+                  {/* L'énoncé vient avant la réponse : le geste attendu ne doit pas
+                      précéder l'information qui le rend possible. */}
+                  {/* PDF Viewer - show hint or enigma */}
+                  {showingHint && hintPdfUrl ? (
+                    <div className="enigma-pdf-container hint-pdf" data-testid="hint-pdf-container">
+                      <div className="hint-pdf-header">Indice</div>
+                      <PDFViewer pdfUrl={hintPdfUrl} title={`Indice - ${selectedEnigma.title}`} />
+                    </div>
+                  ) : selectedEnigma.pdfUrl ? (
+                    <div className="enigma-pdf-container" data-testid="enigma-pdf-container">
+                      <PDFViewer pdfUrl={selectedEnigma.pdfUrl} title={selectedEnigma.title} />
+                    </div>
+                  ) : (
+                    <div className="enigma-pdf-placeholder" data-testid="enigma-pdf-placeholder">
+                      <p>PDF non disponible</p>
+                      <p className="pdf-note">Le PDF de cette enigme n'est pas encore disponible</p>
                     </div>
                   )}
                   {/* Hint button and toggle */}
@@ -311,20 +334,28 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                       )}
                     </div>
                   )}
-                  {/* PDF Viewer - show hint or enigma */}
-                  {showingHint && hintPdfUrl ? (
-                    <div className="enigma-pdf-container hint-pdf" data-testid="hint-pdf-container">
-                      <div className="hint-pdf-header">Indice</div>
-                      <PDFViewer pdfUrl={hintPdfUrl} title={`Indice - ${selectedEnigma.title}`} />
-                    </div>
-                  ) : selectedEnigma.pdfUrl ? (
-                    <div className="enigma-pdf-container" data-testid="enigma-pdf-container">
-                      <PDFViewer pdfUrl={selectedEnigma.pdfUrl} title={selectedEnigma.title} />
-                    </div>
-                  ) : (
-                    <div className="enigma-pdf-placeholder" data-testid="enigma-pdf-placeholder">
-                      <p>PDF non disponible</p>
-                      <p className="pdf-note">Le PDF de cette enigme n'est pas encore disponible</p>
+                  <form className="password-form password-form-compact" data-testid="enigma-password-form" onSubmit={handlePasswordSubmit}>
+                    <input
+                      type="text"
+                      placeholder={selectedEnigma.isSolved ? "Retester un mot de passe" : "Entrez le mot de passe"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="password-input"
+                      data-testid="enigma-password-input"
+                      disabled={passwordMutation.isPending}
+                    />
+                    <button
+                      type="submit"
+                      data-testid="enigma-submit"
+                      className="submit-btn submit-btn-principal"
+                      disabled={passwordMutation.isPending || !password.trim()}
+                    >
+                      {passwordMutation.isPending ? 'Envoi…' : 'Valider ma réponse'}
+                    </button>
+                  </form>
+                  {attemptMessage && (
+                    <div className={`attempt-message ${attemptSuccess === true ? 'attempt-success' : 'attempt-error'}`} data-testid={attemptSuccess === true ? 'enigma-attempt-success' : 'enigma-attempt-error'}>
+                      {attemptMessage}
                     </div>
                   )}
                 </div>

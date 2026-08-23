@@ -1,0 +1,48 @@
+/* ---------------------------------------------------------------------------
+   Édition 2026 — Bande dessinée
+
+   Conservée telle qu'elle a tourné. Ce thème ne s'applique que si le build
+   cible explicitement l'édition 2026 (REACT_APP_EDITION=2026), ce qui rend
+   2026.rallyehiver.fr reproductible plutôt que figé sur un artefact.
+   --------------------------------------------------------------------------- */
+:root[data-edition='2026'] {
+  --color-primary-blue: #0052CC;
+  --color-primary-red: #DC143C;
+  --color-primary-yellow: #FFD700;
+  --color-primary-green: #28a745;
+  --color-secondary-orange: #FF8C00;
+  --color-secondary-purple: #6B46C1;
+  --color-neutral-black: #1A1A1A;
+  --color-neutral-gray: #F5F5F5;
+  --color-neutral-white: #FFFFFF;
+
+  --font-display: 'Bangers', sans-serif;
+  --font-body: 'Poppins', sans-serif;
+  --font-secondary: 'Comic Neue', sans-serif;
+
+  --border-width-thin: 2px;
+  --border-width-medium: 3px;
+  --border-width-thick: 4px;
+  --border-color: var(--color-neutral-black);
+
+  --primary-color: var(--color-primary-blue);
+  --primary-hover: #003d99;
+  --secondary-color: var(--color-secondary-orange);
+  --success-color: var(--color-primary-yellow);
+  --danger-color: var(--color-primary-red);
+
+  --etat-resolu-fond: var(--color-primary-yellow);
+  --etat-resolu-texte: #1A1A1A;
+  --etat-resolu-libelle: #8A6D08;
+  --etat-tente-fond: #FFFFFF;
+  --etat-tente-trait: var(--color-primary-red);
+  --etat-vierge-fond: #E9ECEF;
+  --etat-vierge-texte: #666;
+
+  --display-taille-mini: 16px;
+
+  --fond-couleur: #FFFFFF;
+  --fond-image: url(../../../public/tintin_bg.jpg);
+  --fond-taille: cover;
+  --fond-repetition: no-repeat;
+}

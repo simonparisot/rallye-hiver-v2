@@ -1,3 +1,6 @@
+@import './editions/themes/2027.css';
+@import './editions/themes/2026.css';
+
 /* Global Styles */
 * {
   margin: 0;
@@ -5,29 +8,11 @@
   box-sizing: border-box;
 }
 
+/* Couleurs, polices et bordures appartiennent à l'édition : voir
+   src/editions/themes/. Ne subsistent ici que les valeurs structurelles,
+   communes à toutes les éditions. */
 :root {
-  /* Comic Book Color Palette */
-  --color-primary-blue: #0052CC;
-  --color-primary-red: #DC143C;
-  --color-primary-yellow: #FFD700;
-  --color-primary-green: #28a745;
-  --color-secondary-orange: #FF8C00;
-  --color-secondary-purple: #6B46C1;
-  --color-neutral-black: #1A1A1A;
-  --color-neutral-gray: #F5F5F5;
-  --color-neutral-white: #FFFFFF;
-
-  /* Typography */
-  --font-display: 'Bangers', sans-serif;
-  --font-body: 'Poppins', sans-serif;
-  --font-secondary: 'Comic Neue', sans-serif;
-
-  /* Borders */
-  --border-width-thin: 2px;
-  --border-width-medium: 3px;
-  --border-width-thick: 4px;
   --border-style: solid;
-  --border-color: var(--color-neutral-black);
 
   /* Spacing */
   --spacing-xs: 4px;
@@ -37,12 +22,6 @@
   --spacing-xl: 32px;
   --spacing-2xl: 48px;
 
-  /* Legacy variable mappings for compatibility */
-  --primary-color: var(--color-primary-blue);
-  --primary-hover: #003d99;
-  --secondary-color: var(--color-secondary-orange);
-  --success-color: var(--color-primary-yellow);
-  --danger-color: var(--color-primary-red);
   --background: var(--color-neutral-gray);
   --card-background: var(--color-neutral-white);
   --text-primary: var(--color-neutral-black);
@@ -58,10 +37,12 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   min-height: 100vh;
-  background-image: url(../public/tintin_bg.jpg);
-  background-size: cover;
+  /* Le décor est propre à l'édition : voir src/editions/themes/. */
+  background-color: var(--fond-couleur);
+  background-image: var(--fond-image);
+  background-size: var(--fond-taille);
   background-position: center;
-  background-repeat: no-repeat;
+  background-repeat: var(--fond-repetition);
   background-attachment: fixed;
 }
 
@@ -337,4 +318,17 @@ p {
   h3 {
     font-size: 1.75rem;
   }
+}
+
+/* Retiré de l'affichage, conservé pour les lecteurs d'écran et les tests. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

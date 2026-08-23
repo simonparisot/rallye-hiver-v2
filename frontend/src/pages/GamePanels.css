@@ -201,8 +201,15 @@
   position: absolute;
   top: 20px;
   right: 20px;
-  background: var(--color-primary-red);
-  color: var(--color-neutral-white);
+  /* Une commande de retour se lit ; une croix de 26 pixels se devine.
+     Fond clair et libellé explicite : la cible passe de 26 à 96 pixels. */
+  background: var(--color-neutral-white);
+  color: var(--color-neutral-black);
+  font-weight: 600;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border: var(--border-width-medium) var(--border-style) var(--color-neutral-black);
   border-radius: 8px;
   width: auto;
@@ -222,8 +229,12 @@
 }
 
 .panel-close-btn:hover {
-  transform: translateY(-2px);
-  filter: brightness(0.9);
+  background: var(--color-neutral-gray);
+}
+
+.panel-close-btn:focus-visible {
+  outline: 3px solid var(--color-primary-blue);
+  outline-offset: 2px;
 }
 
 /* Mobile responsiveness */

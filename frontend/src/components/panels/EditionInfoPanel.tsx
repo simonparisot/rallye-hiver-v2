@@ -1,5 +1,6 @@
 import React from 'react';
 import './InfoPanel.css';
+import { edition } from '../../editions';
 
 interface EditionInfoPanelProps {
   isExpanded: boolean;
@@ -15,7 +16,7 @@ const EditionInfoPanel: React.FC<EditionInfoPanelProps> = ({ isExpanded, isCompa
       <div className="panel-content">
         {!isExpanded ? (
           <div className="info-compact">
-            <p className="tagline">Édition Hiver 2026</p>
+            <p className="tagline">{edition.copy.tagline}</p>
           </div>
         ) : (
           <div className="info-expanded">
@@ -53,7 +54,7 @@ const EditionInfoPanel: React.FC<EditionInfoPanelProps> = ({ isExpanded, isCompa
             <section className="info-section">
               <h3>Déroulement</h3>
               <p>
-                Vous disposez de <strong>3 mois</strong> (du 21 décembre 2025 au 20 mars 2026) pour résoudre les énigmes et faire les parcours à votre rythme. Parfait pour occuper les longues soirées d'hiver et les weekends brumeux !
+                Vous disposez de <strong>3 mois</strong> ({edition.copy.duration}) pour résoudre les énigmes et faire les parcours à votre rythme. Parfait pour occuper les longues soirées d'hiver et les weekends brumeux !
               </p>
             </section>
           </div>

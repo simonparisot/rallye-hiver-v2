@@ -714,3 +714,44 @@
     font-size: 13px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Compteurs du tableau de bord — refonte 2027
+
+   Le chiffre était gros et son libellé minuscule en gris pâle : l'inverse de
+   ce qu'il faut pour comprendre d'un coup d'œil. Le libellé reprend du poids,
+   et une jauge répond à la question que le rapport « 7 / 20 » laissait entière :
+   où en est-on dans la saison ?
+   --------------------------------------------------------------------------- */
+.stat-value {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.stat-label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--theatre-coulisse, #6C6459);
+  margin-top: 4px;
+}
+
+.stat-jauge {
+  height: 5px;
+  background: var(--etat-vierge-fond, #E4DFD6);
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.stat-jauge span {
+  display: block;
+  height: 100%;
+  background: var(--theatre-dorure, var(--color-primary-yellow));
+  transition: width 0.4s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-jauge span { transition: none; }
+}

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './Layout.css';
+import { edition } from '../../editions';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -40,7 +41,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </header>
       <main className="main-content">{children}</main>
       <footer className="footer">
-        <p>&copy; 2025 Rallye d'Hiver. Tous droits réservés.</p>
+        <p>&copy; {edition.year} Rallye d'Hiver. Tous droits réservés.</p>
       </footer>
     </div>
   );

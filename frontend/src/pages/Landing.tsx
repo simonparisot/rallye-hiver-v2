@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './Landing.css';
+import { edition } from '../editions';
 
 const Landing: React.FC = () => {
   return (
     <div className="landing">
       <div className="landing-hero">
-        <h1>Rallye d'Hiver 2025</h1>
+        <h1>{edition.label}</h1>
         <p>Rejoignez l'aventure annuelle d'énigmes !</p>
         <div className="landing-buttons">
           <Link to="/login" className="btn btn-primary">

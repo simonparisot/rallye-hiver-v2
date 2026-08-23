@@ -10,6 +10,7 @@ import EditionInfoPanel from '../components/panels/EditionInfoPanel';
 import AuthPanel from '../components/panels/AuthPanel';
 import WaitingPanel from '../components/panels/WaitingPanel';
 import './GamePanels.css';
+import { edition } from '../editions';
 
 type PanelState = 'none' | 'panel1' | 'panel2';
 
@@ -66,7 +67,7 @@ const GamePanels: React.FC = () => {
   return (
     <div data-testid="nav-panels-container" className="game-panels-container">
       {/* Logo positioned at top right */}
-      <img data-testid="nav-logo" src="/logo.png" alt="Rallye d'Hiver" className="rallye-logo" />
+      <img data-testid="nav-logo" src={edition.theme.logo} alt={edition.label} className="rallye-logo" />
 
       {!user ? (
         // Unauthenticated State
@@ -114,8 +115,8 @@ const GamePanels: React.FC = () => {
                 onClick={() => expandedPanel !== 'panel1' && handlePanelClick('panel1')}
               >
                 {expandedPanel === 'panel1' && gameStarted && (
-                  <button data-testid="nav-panel-close-button" className="panel-close-btn" onClick={(e) => { e.stopPropagation(); handleClose(); }}>
-                    ×
+                  <button data-testid="nav-panel-close-button" className="panel-close-btn" onClick={(e) => { e.stopPropagation(); handleClose(); }} aria-label="Refermer le panneau">
+                    <span aria-hidden="true">←</span> Retour
                   </button>
                 )}
                 {!gameStarted ? (
@@ -138,8 +139,8 @@ const GamePanels: React.FC = () => {
                   onClick={() => expandedPanel !== 'panel2' && handlePanelClick('panel2')}
                 >
                   {expandedPanel === 'panel2' && (
-                    <button data-testid="nav-panel-close-button" className="panel-close-btn" onClick={(e) => { e.stopPropagation(); handleClose(); }}>
-                      ×
+                    <button data-testid="nav-panel-close-button" className="panel-close-btn" onClick={(e) => { e.stopPropagation(); handleClose(); }} aria-label="Refermer le panneau">
+                      <span aria-hidden="true">←</span> Retour
                     </button>
                   )}
                   <ParcoursPanel

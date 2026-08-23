@@ -1,0 +1,94 @@
+/* ---------------------------------------------------------------------------
+   Édition 2027 — Le théâtre
+
+   Palette tirée du logo : le masque bleu de la comédie, le masque rouge de la
+   tragédie. Deux dominantes, et non un accent unique — le bleu porte l'action,
+   le rouge porte l'enjeu. L'or est réservé à la réussite, et à elle seule.
+
+   Ce thème est posé sur :root sans attendre l'attribut data-edition : c'est
+   l'édition servie par défaut, et l'attendre provoquerait un flash au
+   chargement.
+   --------------------------------------------------------------------------- */
+:root,
+:root[data-edition='2027'] {
+  /* --- Les deux masques --- */
+  --theatre-comedie: #3D7FAE;        /* bleu d'action, assombri pour tenir le contraste sur blanc */
+  --theatre-comedie-clair: #4E93C4;
+  --theatre-comedie-sombre: #2C5F84;
+  --theatre-tragedie: #C4402F;       /* rouge d'enjeu : valider, alerter */
+  --theatre-tragedie-sombre: #A32F21;
+  --theatre-dorure: #B08D1E;         /* la réussite, et rien d'autre */
+  --theatre-dorure-claire: #C9A227;
+
+  /* --- La salle et la scène --- */
+  --theatre-salle: #14161A;          /* noir de salle : texte, pieds de page */
+  --theatre-programme: #F2EFE9;      /* papier de programme : fond du jeu */
+  --theatre-scene: #FFFFFF;          /* surfaces surélevées */
+  --theatre-filet: #DCD7CD;          /* bordures sur fond clair */
+  --theatre-coulisse: #6C6459;       /* gris chaud, texte secondaire */
+  --theatre-coulisse-pale: #8A8073;
+
+  /* --- Remappage des variables historiques ---------------------------------
+     Le reste du site continue de les employer : les redéfinir suffit à
+     rethémer l'ensemble sans toucher aux composants.                        */
+  --color-primary-blue: var(--theatre-comedie);
+  --color-primary-red: var(--theatre-tragedie);
+  --color-primary-yellow: var(--theatre-dorure);
+  --color-primary-green: #4A7C59;                    /* vert de rideau, remplace le vert vif */
+  --color-secondary-orange: var(--theatre-dorure-claire);
+  --color-secondary-purple: var(--theatre-comedie-sombre);
+  --color-neutral-black: var(--theatre-salle);
+  --color-neutral-gray: var(--theatre-programme);
+  --color-neutral-white: var(--theatre-scene);
+
+  --font-display: 'Bodoni Moda', 'Didot', Georgia, serif;
+  --font-body: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-secondary: 'Source Sans 3', -apple-system, sans-serif;
+
+  /* Le trait de la gravure est fin : les bordures épaisses de la bande
+     dessinée n'ont plus lieu d'être. */
+  --border-width-thin: 1px;
+  --border-width-medium: 1px;
+  --border-width-thick: 2px;
+  --border-color: var(--theatre-filet);
+
+  --primary-color: var(--theatre-comedie);
+  --primary-hover: var(--theatre-comedie-sombre);
+  --secondary-color: var(--theatre-dorure);
+  --success-color: var(--theatre-dorure);
+  --danger-color: var(--theatre-tragedie);
+
+  /* --- États d'une énigme ou d'un parcours ---
+     Introduits par la refonte : rien ne distinguait jusqu'ici une énigme
+     résolue d'une énigme jamais ouverte. */
+  --etat-resolu-fond: var(--theatre-dorure);
+  --etat-resolu-texte: #2A2205;
+  --etat-resolu-libelle: #7A6210;
+  --etat-tente-fond: var(--theatre-scene);
+  --etat-tente-trait: var(--theatre-tragedie);
+  --etat-vierge-fond: #E8E3DA;
+  --etat-vierge-texte: var(--theatre-coulisse);
+
+  /* Titres : la Bodoni a trop de contraste pour les petites tailles.
+     Cette borne empêche la police de titre de descendre dans le texte. */
+  --display-taille-mini: 22px;
+
+  /* --- Le décor ---
+     Un velours de salle plutôt qu'une illustration : le fond de 2026 occupait
+     un quart de la largeur à pleine saturation et concurrençait le contenu.
+     Trois dégradés superposés suffisent à évoquer le tombé d'un rideau — sans
+     image à charger, et sans jamais monter en saturation. */
+  --fond-couleur: #1A1D24;
+  --fond-image:
+    linear-gradient(180deg, rgba(196, 64, 47, .16) 0%, rgba(196, 64, 47, 0) 42%),
+    repeating-linear-gradient(90deg,
+      rgba(255, 255, 255, .028) 0px,
+      rgba(255, 255, 255, .028) 2px,
+      rgba(0, 0, 0, .05) 2px,
+      rgba(0, 0, 0, .05) 26px,
+      rgba(255, 255, 255, .015) 26px,
+      rgba(255, 255, 255, .015) 30px),
+    radial-gradient(ellipse 140% 90% at 50% 0%, rgba(201, 162, 39, .1) 0%, rgba(201, 162, 39, 0) 60%);
+  --fond-taille: auto;
+  --fond-repetition: repeat;
+}
