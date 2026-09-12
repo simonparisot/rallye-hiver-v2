@@ -43,6 +43,10 @@
   - `description` (String, optional) - Short description
   - `pdfUrl` (String) - S3 URL to enigma PDF
   - `correctPassword` (String) - Solution password (case-insensitive comparison)
+  - `solution` (String, nullable) - Démarche de résolution détaillée, fausses
+    pistes comprises. NEVER exposed to clients.
+  - `hints` (List, nullable) - Indices pré-écrits `{ id, order, text }`, ordre
+    croissant. NEVER exposed to clients : l'API ne publie que `hintsCount`.
   - `points` (Number) - Points awarded when solved
   - `difficulty` (String, optional) - 'easy' | 'medium' | 'hard'
   - `isActive` (Boolean, default: true) - Whether enigma is currently active
@@ -116,10 +120,15 @@ Tracks summary progress for each team on each enigma.
   - `attemptCount` (Number, default: 0) - Total number of attempts
   - `lastAttemptAt` (String, nullable) - ISO 8601 timestamp of last attempt
   - `firstAttemptAt` (String, nullable) - ISO 8601 timestamp of first attempt
+  - `hintsRequested` (Number, nullable) - Nombre d'indices obtenus sur cette énigme
+  - `lastHintAt` (String, nullable) - ISO 8601 timestamp du dernier indice obtenu
   - `createdAt` (String) - ISO 8601 timestamp
   - `updatedAt` (String) - ISO 8601 timestamp
 
 **Note**: Individual password attempts are stored in the Password Attempts Log table (see below).
+**Note**: `hintsRequested` est un compteur d'affichage et de score ; le détail de
+chaque demande vit dans la table Hint Requests. Ces deux champs remplacent
+`hintUsed` / `hintUsedAt`, retirés avec l'ancien mécanisme de PDF d'indice.
 
 **Example Item**:
 ```json
@@ -200,6 +209,53 @@ Tracks which parcours each team has unlocked.
 
 ---
 
+### Hint Requests Table: `rallye-hiver-backend-hint-requests-{stage}`
+Journal des demandes d'indices : une ligne par demande aboutie.
+
+- **Primary Key**: `requestId` (UUID)
+- **GSI**: `teamEnigmaKey-requestedAt-index` sur `teamEnigmaKey` (PK) + `requestedAt` (SK)
+- **DeletionPolicy**: Retain, comme les autres tables
+- **Attributes**:
+  - `requestId` (String) - UUID
+  - `teamId` (String) - Équipe demandeuse
+  - `enigmaId` (String) - Énigme concernée
+  - `teamEnigmaKey` (String) - Composite `"{teamId}#{enigmaId}"`, clé de la GSI
+  - `requestedAt` (String) - ISO 8601
+  - `requestedBy` (String) - userId de la personne qui a fait la demande
+  - `progressText` (String) - Texte libre écrit par l'équipe (20 à 3 000 caractères)
+  - `hintId` (String) - Identifiant de l'indice choisi, dans le tableau `hints` de l'énigme
+  - `hintText` (String) - Texte de l'indice tel qu'il a été livré (recopié, pas référencé)
+  - `justification` (String, nullable) - Note interne du modèle, jamais montrée à l'équipe
+  - `model` (String) - Identifiant du modèle appelé
+  - `inputTokens` (Number, nullable) - Jetons d'entrée, si l'API les a renvoyés
+  - `outputTokens` (Number, nullable) - Jetons de sortie
+  - `pointsCharged` (Number) - Points retirés pour cette demande
+
+**Écriture** : une ligne n'est écrite qu'après un choix d'indice abouti. Un appel
+au modèle en échec ne laisse rien et ne facture rien : l'absence de ligne est la
+garantie qu'aucun point n'a été prélevé.
+
+**Example Item**:
+```json
+{
+  "requestId": "9f1c1e0a-3b2d-4c5e-8a7f-0123456789ab",
+  "teamId": "t123e4567-e89b-12d3-a456-426614174002",
+  "enigmaId": "e123e4567-e89b-12d3-a456-426614174000",
+  "teamEnigmaKey": "t123e4567-e89b-12d3-a456-426614174002#e123e4567-e89b-12d3-a456-426614174000",
+  "requestedAt": "2026-01-20T14:02:10Z",
+  "requestedBy": "u123e4567-e89b-12d3-a456-426614174000",
+  "progressText": "On a relevé les sept horloges et tenté plusieurs additions, sans résultat.",
+  "hintId": "h2",
+  "hintText": "Relisez la lettre du propriétaire jusqu'au bout.",
+  "model": "claude-opus-5",
+  "inputTokens": 1840,
+  "outputTokens": 62,
+  "pointsCharged": 5
+}
+```
+
+---
+
 ## Access Patterns & Queries
 
 ### 1. Get all enigmas (ordered)
@@ -254,6 +310,20 @@ Tracks which parcours each team has unlocked.
 
 ---
 
+### 13. Indices déjà obtenus par une équipe sur une énigme
+```
+Query: teamEnigmaKey = "{teamId}#{enigmaId}" (GSI teamEnigmaKey-requestedAt-index)
+Sort: requestedAt ascendant
+```
+
+### 14. Journal des demandes d'indices (ADMIN)
+```
+Scan: table complète, puis filtrage (énigme, équipe) et tri en mémoire
+Volume attendu : quelques centaines de lignes par édition
+```
+
+---
+
 ## Data Relationships
 
 ```
@@ -285,12 +355,21 @@ interface Enigma {
   description?: string;
   pdfUrl: string;
   correctPassword: string;
+  solution?: string;        // Démarche de résolution, jamais exposée
+  hints?: EnigmaHint[];     // Indices pré-écrits, jamais exposés
   points: number;
   difficulty?: 'easy' | 'medium' | 'hard';
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
   gameId?: string;
+}
+
+// Indice pré-écrit, stocké dans l'énigme
+interface EnigmaHint {
+  id: string;               // Identifiant stable, jamais réattribué
+  order: number;            // Rang, du plus précoce au plus tardif
+  text: string;
 }
 
 // Parcours
@@ -317,8 +396,28 @@ interface TeamEnigmaProgress {
   attemptCount: number;
   lastAttemptAt?: string;
   firstAttemptAt?: string;
+  hintsRequested?: number;  // Indices obtenus sur cette énigme
+  lastHintAt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+// Demande d'indice (journal)
+interface HintRequest {
+  requestId: string;
+  teamId: string;
+  enigmaId: string;
+  teamEnigmaKey: string;    // composite: "teamId#enigmaId"
+  requestedAt: string;
+  requestedBy: string;
+  progressText: string;
+  hintId: string;
+  hintText: string;
+  justification?: string;
+  model: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  pointsCharged: number;
 }
 
 // Password Attempt Log (ADMIN)
@@ -379,7 +478,11 @@ interface Team {
    - `teamEnigma-index`: PK=`teamEnigmaKey`, SK=`attemptedAt`
    - Use case: Query attempts for specific team+enigma combination (admin logs)
 
-5. **Teams Table** (optional)
+5. **Hint Requests Table**
+   - `teamEnigmaKey-requestedAt-index`: PK=`teamEnigmaKey`, SK=`requestedAt`
+   - Use case: Indices déjà obtenus par une équipe sur une énigme, dans l'ordre
+
+6. **Teams Table** (optional)
    - `points-index`: PK=`points`, SK=`solvedAt` or `teamName`
    - Use case: Global leaderboard
 

@@ -1,7 +1,7 @@
 # API Contract
 
 **Last updated by**: backend agent
-**Last updated**: 2025-12-12
+**Last updated**: 2026-09-12
 **Base URL**: `https://rpg0alko8b.execute-api.eu-west-1.amazonaws.com/prod`
 
 ---
@@ -375,6 +375,44 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 **Notes**:
 - `pendingRequests` only returned to team leader
 
+### GET /teams/stats
+
+**Status**: ✅ Implemented (documenté le 2026-09-12, à l'occasion de la pénalité d'indices)
+**Purpose**: Statistiques de l'équipe de l'utilisateur connecté
+**Authentication**: Required
+
+**Response** (200):
+```json
+{
+  "teamName": "string",
+  "memberCount": number,
+  "enigmasSolved": number,
+  "totalEnigmas": number,
+  "parcoursCompleted": number,
+  "totalParcours": number,
+  "totalPoints": number,
+  "hintsRequestedCount": number,
+  "hintsPenalty": number,
+  "passwordAttemptsCount": number,
+  "attemptsRanking": number,
+  "attemptsRankingMessage": "string"
+}
+```
+
+**Notes**:
+- `totalPoints` : somme des points des énigmes résolues, **indices déduits**. Un
+  indice retire 25 % des points de son énigme, de façon cumulative, sans jamais
+  faire descendre le score d'une énigme sous 0
+- `hintsPenalty` : points retirés par les indices sur les énigmes résolues
+- `hintsRequestedCount` : nombre total d'indices obtenus, énigmes non résolues
+  comprises
+- Les indices pris sur une énigme non résolue ne coûtent rien tant qu'elle ne
+  rapporte rien : la pénalité s'applique au moment où l'énigme entre au score
+
+**Errors**:
+- `403`: L'utilisateur n'appartient à aucune équipe
+- `404`: Team not found
+
 ### POST /teams/{teamId}/join
 
 **Status**: ✅ Implemented (2025-11-15)
@@ -612,6 +650,7 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
       "description": "string",
       "pdfUrl": "string (S3 URL)",
       "points": number,
+      "hintsCount": number,
       "difficulty": "'easy' | 'medium' | 'hard'",
       "isActive": boolean,
       "createdAt": "ISO 8601 timestamp",
@@ -623,7 +662,9 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 ```
 
 **Notes**:
-- `correctPassword` is NEVER exposed to clients
+- `correctPassword`, `solution` et `hints` ne sont JAMAIS exposés aux clients
+- `hintsCount` : nombre d'indices pré-écrits existants. Le joueur en a besoin pour
+  savoir s'il peut demander un indice ; le texte des indices reste côté serveur
 - Returns all active enigmas
 
 #### GET /enigmas/{enigmaId}
@@ -642,6 +683,7 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
     "description": "string",
     "pdfUrl": "string",
     "points": number,
+    "hintsCount": number,
     "difficulty": "'easy' | 'medium' | 'hard'",
     "isActive": boolean,
     "createdAt": "ISO 8601 timestamp",
@@ -649,6 +691,9 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
   }
 }
 ```
+
+**Notes**:
+- `correctPassword`, `solution` et `hints` ne sont JAMAIS exposés aux clients
 
 **Errors**:
 - `404`: Enigma not found
@@ -1020,6 +1065,102 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 - **As of 2025-11-22**: Includes `completed` status set by frontend via `POST /parcours/{parcoursId}/complete`
 - `completed` defaults to `false` if never marked
 - `completedAt` is `null` until parcours is marked as complete
+
+---
+
+### Hint Endpoints
+
+Récupération d'indices par les équipes. L'équipe décrit son avancement en texte
+libre ; un modèle choisit, parmi les indices pré-écrits de l'énigme, celui qui
+correspond le mieux à ce qu'elle décrit.
+
+Le modèle ne rédige jamais rien qui atteigne le joueur : sa seule sortie possible
+est un appel d'outil désignant l'identifiant d'un indice existant, et le texte
+renvoyé est celui, pré-écrit, retrouvé par cet identifiant côté serveur. C'est ce
+qui rend le prompt hacking sans objet.
+
+#### GET /hints/{enigmaId}
+
+**Status**: ✅ Implemented (2026-09-12)
+**Purpose**: Indices déjà obtenus par l'équipe sur cette énigme, et coût du prochain
+**Authentication**: Required (équipe ayant réglé son inscription)
+
+**Response** (200):
+```json
+{
+  "enigmaId": "uuid",
+  "hints": [
+    {
+      "id": "string",
+      "text": "string",
+      "requestedAt": "ISO 8601 timestamp",
+      "pointsCharged": number
+    }
+  ],
+  "hintsRequested": number,
+  "remainingHints": number,
+  "nextHintCost": number,
+  "enigmaPoints": number,
+  "totalPointsCharged": number
+}
+```
+
+**Notes**:
+- Ne renvoie que les indices déjà payés par cette équipe. Les indices non obtenus
+  ne sortent jamais du backend
+- `nextHintCost` vaut 0 s'il ne reste aucun indice à donner
+- Aucun appel au modèle : cet endpoint est rapide et gratuit
+
+**Errors**:
+- `403`: L'utilisateur n'a pas d'équipe, ou l'équipe n'a pas réglé son inscription
+- `404`: Enigma not found
+
+#### POST /hints/{enigmaId}/request
+
+**Status**: ✅ Implemented (2026-09-12)
+**Purpose**: Demander un indice en décrivant son avancement
+**Authentication**: Required (équipe ayant réglé son inscription)
+
+**Request**:
+```json
+{
+  "progress": "string (obligatoire, 20 à 3 000 caractères)",
+  "requestKey": "string (optionnel, identifiant de la demande côté client)"
+}
+```
+
+**Response** (200):
+```json
+{
+  "hint": { "id": "string", "text": "string" },
+  "pointsCharged": number,
+  "hintsRequested": number,
+  "remainingHints": number,
+  "nextHintCost": number
+}
+```
+
+**Notes**:
+- `progress` est du contenu écrit par les joueurs. Il est transmis au modèle
+  entre balises, déclaré sans autorité, et n'est jamais interprété comme une
+  instruction
+- `requestKey` protège du double clic : deux envois portant la même clé pendant
+  qu'une demande est en vol donnent un `409` au second, pas une double
+  facturation. Le client en génère une par saisie
+- Coût par défaut : 25 % des points de l'énigme par indice, cumulatif, le score
+  d'une énigme ne descendant pas sous 0. La règle tient dans
+  `backend/src/utils/hintCost.ts`
+- L'appel au modèle prend quelques secondes (timeout lambda porté à 60 s)
+
+**Errors**:
+- `400`: `progress` absent, de moins de 20 caractères, ou de plus de 3 000
+- `403`: Pas d'équipe, équipe non payante, ou énigme inactive
+- `404`: Énigme inconnue, ou énigme sans aucun indice pré-écrit
+- `409`: Énigme déjà résolue par l'équipe, tous les indices déjà donnés, ou
+  demande concurrente portant la même clé
+- `502`: L'appel au modèle a échoué (réseau, réponse malformée, identifiant
+  inconnu). **Aucun point n'est facturé et aucune demande n'est archivée** :
+  l'équipe peut réessayer
 
 ---
 
@@ -1756,6 +1897,67 @@ data.attempts.forEach(attempt => {
 });
 ```
 
+##### GET /admin/hints/requests
+
+**Status**: ✅ Implemented (2026-09-12)
+**Purpose**: Journal des demandes d'indices, pour évaluer la fonctionnalité
+**Authentication**: Required (Admin)
+
+**Query parameters**:
+| Paramètre | Défaut | Description |
+|---|---|---|
+| `enigmaId` | — | Ne garder que les demandes sur cette énigme |
+| `teamId` | — | Ne garder que les demandes de cette équipe |
+| `sort` | `desc` | `desc` (plus récentes d'abord) ou `asc` |
+| `limit` | `50` | Taille de page, 1 à 200 |
+| `cursor` | — | Curseur renvoyé par la réponse précédente |
+
+**Response** (200):
+```json
+{
+  "requests": [
+    {
+      "requestId": "uuid",
+      "teamId": "uuid",
+      "teamName": "string",
+      "enigmaId": "uuid",
+      "enigmaNumber": number,
+      "enigmaTitle": "string",
+      "requestedAt": "ISO 8601 timestamp",
+      "requestedBy": "uuid (userId)",
+      "progressText": "string (texte intégral écrit par l'équipe)",
+      "hintId": "string",
+      "hintText": "string (texte intégral de l'indice livré)",
+      "justification": "string (note interne du modèle)",
+      "model": "string",
+      "inputTokens": number,
+      "outputTokens": number,
+      "pointsCharged": number
+    }
+  ],
+  "total": number,
+  "limit": number,
+  "cursor": "string | null",
+  "stats": {
+    "totalRequests": number,
+    "uniqueTeams": number,
+    "uniqueEnigmas": number,
+    "totalPointsCharged": number
+  }
+}
+```
+
+**Notes**:
+- Les équipes de test sont exclues, comme dans toutes les statistiques
+- `total` porte sur la sélection filtrée ; `stats` porte sur l'ensemble du journal
+- Les textes ne sont jamais tronqués : c'est l'objet même de cette page
+
+**Errors**:
+- `401`: Authentication required
+- `403`: Admin access required
+
+**Remplace** `GET /admin/hints/usage`, retiré avec l'ancien mécanisme de PDF d'indice.
+
 #### POST /admin/upload/generate-url
 
 **Status**: ✅ Implemented (2025-12-06)
@@ -1885,6 +2087,7 @@ data.attempts.forEach(attempt => {
 
 | Date | Endpoint | Change | Type | Impact |
 |------|----------|--------|------|--------|
+| 2026-09-12 | POST /hints/{enigmaId}/request, GET /hints/{enigmaId}, GET /admin/hints/requests | Nouvelle récupération d'indices : l'équipe décrit son avancement, un modèle choisit l'indice pré-écrit adapté. Remplace POST /hints/{enigmaId}/use et GET /admin/hints/usage, supprimés | Feature + Breaking | **Breaking** : les deux anciens endpoints n'existent plus ; `hintPdfUrl` et `hasHint` disparaissent de l'énigme au profit de `hintsCount`, `hintUsed`/`hintUsedAt` de la progression au profit de `hintsRequested`/`lastHintAt`. La pénalité de points, jusqu'ici annoncée mais jamais appliquée, est désormais déduite de `totalPoints` dans GET /teams/stats |
 | 2026-01-02 | GET /admin/attempts | Fixed pagination bug (Scan → Query) + added stats object + removed legacy count/total fields | Bug Fix + Breaking | **Critical fix**: Now returns ALL attempts (not just 1MB), shows correct success counts; **Breaking**: Removed `count` and `total` root fields - use `stats.totalAttempts` instead; **Frontend must use stats object for all statistics** |
 | 2024-12-24 | GET /enigmas/by-difficulty, GET /admin/enigmas/by-difficulty | Updated algorithm: removed A (abandonment), E now based on active teams only, T now from first attempt; sorting easiest→hardest; fixed enigma titles bug | Breaking | More accurate difficulty scores, better reflects actual challenge; **frontend must handle 3 metrics instead of 4** |
 | 2024-12-24 | GET /enigmas/by-difficulty | Added difficulty-sorted enigmas list with 24h cache | Feature | Users can see enigmas ranked by actual difficulty (0-10 scale based on team behavior) |

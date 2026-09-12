@@ -103,6 +103,10 @@ interface Enigma {
   description?: string;        // Short description
   pdfUrl: string;              // S3 URL to enigma PDF
   correctPassword: string;     // Solution (NOT exposed to clients)
+  solution?: string;           // Démarche de résolution détaillée, fausses pistes comprises
+                               // (NOT exposed to clients — sert au choix d'indice)
+  hints?: EnigmaHint[];        // Indices pré-écrits, ordre croissant
+                               // (NOT exposed to clients — seul hintsCount l'est)
   points: number;              // Points awarded when solved
   difficulty?: 'easy' | 'medium' | 'hard';  // Difficulty level
   isActive: boolean;           // Whether enigma is active (default: true)
@@ -129,7 +133,34 @@ interface Enigma {
 }
 ```
 
-**Security Note**: `correctPassword` is NEVER returned to clients via API
+**Security Note**: `correctPassword`, `solution` et `hints` ne sont JAMAIS renvoyés
+aux clients. `GET /enigmas` et `GET /enigmas/{enigmaId}` remplacent `hints` par
+`hintsCount` (un simple entier), qui suffit au joueur pour savoir s'il peut
+demander un indice. Le texte d'un indice n'atteint une équipe que par
+`POST /hints/{enigmaId}/request`, une fois payé.
+
+---
+
+### EnigmaHint
+
+Sous-objet stocké dans le tableau `hints` de l'énigme. Il n'a pas de table à lui :
+les indices n'existent que dans le contexte de leur énigme.
+
+```typescript
+interface EnigmaHint {
+  id: string;                  // Identifiant stable dans l'énigme (ex. "h1")
+  order: number;               // Rang, du plus précoce (1) au plus tardif
+  text: string;                // Texte affiché à l'équipe, tel quel
+}
+```
+
+`id` ne doit jamais être réattribué : une demande archivée y renvoie. Un
+réordonnancement change `order`, pas `id`.
+
+**Exemple** :
+```json
+{ "id": "h3", "order": 3, "text": "Retournez chaque cadran comme dans un miroir." }
+```
 
 ---
 
@@ -191,10 +222,15 @@ interface TeamEnigmaProgress {
   attemptCount: number;        // Total number of attempts (default: 0)
   lastAttemptAt?: string;      // ISO 8601 timestamp of last attempt
   firstAttemptAt?: string;     // ISO 8601 timestamp of first attempt
+  hintsRequested?: number;     // Nombre d'indices obtenus sur cette énigme
+  lastHintAt?: string;         // ISO 8601 timestamp du dernier indice obtenu
   createdAt: string;           // ISO 8601 timestamp
   updatedAt: string;           // ISO 8601 timestamp
 }
 ```
+
+Remplace les anciens champs `hintUsed` / `hintUsedAt` (booléen d'usage du PDF
+d'indice), retirés avec l'ancien mécanisme.
 
 **Example**:
 ```json
@@ -206,6 +242,8 @@ interface TeamEnigmaProgress {
   "attemptCount": 5,
   "lastAttemptAt": "2025-01-20T14:35:22Z",
   "firstAttemptAt": "2025-01-20T13:15:10Z",
+  "hintsRequested": 2,
+  "lastHintAt": "2025-01-20T14:02:10Z",
   "createdAt": "2025-01-20T13:15:10Z",
   "updatedAt": "2025-01-20T14:35:22Z"
 }
@@ -248,6 +286,68 @@ interface TeamParcoursAccess {
 **Access Patterns**:
 - Get accessible parcours for team: Query by `teamId`
 - Check specific parcours access: GetItem with `teamId` + `parcoursId`
+
+---
+
+### HintRequest
+**Table**: `rallye-hiver-backend-hint-requests-{stage}`
+**Primary Key**: `requestId` (UUID)
+**GSI**: `teamEnigmaKey-requestedAt-index` sur `teamEnigmaKey` + `requestedAt`
+
+Une ligne par demande d'indice. C'est à la fois le journal que l'organisateur
+relit et la source de vérité de ce qu'une équipe a déjà reçu : la liste des
+indices déjà donnés est reconstruite depuis cette table, pas depuis la
+progression.
+
+```typescript
+interface HintRequest {
+  requestId: string;           // UUID, clé primaire
+  teamId: string;              // Équipe demandeuse
+  enigmaId: string;            // Énigme concernée
+  teamEnigmaKey: string;       // Composite "teamId#enigmaId", clé de la GSI
+  requestedAt: string;         // ISO 8601
+  requestedBy: string;         // userId de la personne qui a cliqué
+  progressText: string;        // Texte libre écrit par l'équipe (20 à 3 000 car.)
+  hintId: string;              // Identifiant de l'indice choisi
+  hintText: string;            // Texte de l'indice tel qu'il a été livré
+  justification?: string;      // Note interne du modèle, jamais montrée à l'équipe
+  model: string;               // Identifiant du modèle appelé
+  inputTokens?: number;        // Jetons consommés, si l'API les a renvoyés
+  outputTokens?: number;
+  pointsCharged: number;       // Points retirés pour cette demande
+}
+```
+
+`hintText` est recopié plutôt que référencé : si l'organisateur réécrit un
+indice en cours de rallye, le journal garde ce que l'équipe a réellement lu.
+
+**Écriture** : une ligne n'est écrite qu'après un choix d'indice abouti. Un appel
+au modèle en échec n'en laisse aucune, et ne facture donc rien.
+
+**Access Patterns** :
+- Indices déjà obtenus par une équipe sur une énigme : Query GSI sur
+  `teamEnigmaKey = "{teamId}#{enigmaId}"`, trié par `requestedAt`
+- Journal de l'administrateur : Scan complet, filtré et trié en mémoire
+  (quelques centaines de lignes par édition)
+
+**Example**:
+```json
+{
+  "requestId": "9f1c1e0a-...",
+  "teamId": "t123e4567-...",
+  "enigmaId": "e123e4567-...",
+  "teamEnigmaKey": "t123e4567-...#e123e4567-...",
+  "requestedAt": "2026-01-20T14:02:10Z",
+  "requestedBy": "u123e4567-...",
+  "progressText": "On a relevé les sept horloges et tenté plusieurs additions...",
+  "hintId": "h2",
+  "hintText": "Relisez la lettre du propriétaire jusqu'au bout.",
+  "model": "claude-opus-5",
+  "inputTokens": 1840,
+  "outputTokens": 62,
+  "pointsCharged": 5
+}
+```
 
 ---
 
