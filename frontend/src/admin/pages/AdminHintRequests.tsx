@@ -10,6 +10,13 @@ import './AdminHintRequests.css';
  * il doit pouvoir lire, sans troncature, ce que l'équipe a écrit et ce qui lui
  * a été répondu, et croiser cela par énigme et par équipe.
  */
+/** Libellé lisible d'un statut. `processing` n'intéresse que le worker. */
+function libelleStatut(statut: string): string {
+  if (statut === 'done') return 'Indice livré';
+  if (statut === 'failed') return 'Échec';
+  return 'En attente';
+}
+
 const AdminHintRequests: React.FC = () => {
   const [filtreEnigme, setFiltreEnigme] = useState('');
   const [filtreEquipe, setFiltreEquipe] = useState('');
@@ -114,8 +121,8 @@ const AdminHintRequests: React.FC = () => {
               <div className="stat-label">Énigmes concernées</div>
             </div>
             <div className="stat-item">
-              <div className="stat-value">{stats.totalPointsCharged}</div>
-              <div className="stat-label">Points facturés</div>
+              <div className="stat-value">{stats.failed}</div>
+              <div className="stat-label">Échecs</div>
             </div>
           </div>
         </div>
@@ -213,15 +220,18 @@ const AdminHintRequests: React.FC = () => {
                     </span>
                   </div>
                   <div className="hint-request-meta">
+                    <span className={`hint-request-statut statut-${d.status}`}>
+                      {libelleStatut(d.status)}
+                    </span>
                     <span className="hint-request-date">
                       {new Date(d.requestedAt).toLocaleString('fr-FR', {
                         dateStyle: 'short',
                         timeStyle: 'medium',
                       })}
                     </span>
-                    <span className="hint-request-cost">
-                      {d.pointsCharged > 0 ? `-${d.pointsCharged} points` : 'sans coût'}
-                    </span>
+                    {d.pointsCharged > 0 && (
+                      <span className="hint-request-cost">-{d.pointsCharged} points</span>
+                    )}
                   </div>
                 </header>
 
@@ -230,12 +240,30 @@ const AdminHintRequests: React.FC = () => {
                   <p className="hint-request-progress">{d.progressText}</p>
                 </section>
 
-                <section className="hint-request-block">
-                  <h3>
-                    Indice livré <span className="hint-request-id">({d.hintId})</span>
-                  </h3>
-                  <p className="hint-request-hint">{d.hintText}</p>
-                </section>
+                {d.status === 'done' && (
+                  <section className="hint-request-block">
+                    <h3>
+                      Indice livré <span className="hint-request-id">({d.hintId})</span>
+                    </h3>
+                    <p className="hint-request-hint">{d.hintText}</p>
+                  </section>
+                )}
+
+                {d.status === 'failed' && (
+                  <section className="hint-request-block">
+                    <h3>Échec</h3>
+                    <p className="hint-request-echec">{d.failureReason || 'Raison non enregistrée'}</p>
+                  </section>
+                )}
+
+                {(d.status === 'pending' || d.status === 'processing') && (
+                  <section className="hint-request-block">
+                    <h3>En attente</h3>
+                    <p className="hint-request-attente">
+                      Le souffleur n'a pas encore traité cette demande.
+                    </p>
+                  </section>
+                )}
 
                 <footer className="hint-request-foot">
                   <button

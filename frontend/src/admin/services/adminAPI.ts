@@ -413,12 +413,15 @@ export const adminHintsAPI = {
       enigmaId: string;
       enigmaNumber: number;
       enigmaTitle: string;
+      status: 'pending' | 'processing' | 'done' | 'failed';
       requestedAt: string;
       requestedBy: string;
       progressText: string;
       hintId: string;
       hintText: string;
       justification?: string;
+      failureReason?: string;
+      completedAt?: string;
       model: string;
       inputTokens?: number;
       outputTokens?: number;
@@ -432,6 +435,8 @@ export const adminHintsAPI = {
       uniqueTeams: number;
       uniqueEnigmas: number;
       totalPointsCharged: number;
+      pending: number;
+      failed: number;
     };
   }> => {
     const response = await adminApi.get('/hints/requests', {

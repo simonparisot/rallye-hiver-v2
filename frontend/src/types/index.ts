@@ -218,20 +218,42 @@ export interface ObtainedHint {
   pointsCharged: number;
 }
 
+/** Statut d'une demande, tel que le frontend le voit. */
+export type HintRequestStatus = 'pending' | 'done' | 'failed';
+
+/** Suivi d'une demande : le texte n'arrive qu'une fois la demande aboutie. */
+export interface HintRequestTracking {
+  requestId: string;
+  status: HintRequestStatus;
+  requestedAt: string;
+  pointsCharged: number;
+  hint?: { id: string; text: string };
+  failureReason?: string;
+}
+
 export interface HintsListResponse {
   enigmaId: string;
   hints: ObtainedHint[];
+  requests: HintRequestTracking[];
   hintsRequested: number;
   remainingHints: number;
+  /** Vrai tant qu'une demande n'est pas conclue : le frontend réinterroge. */
+  pendingRequest: boolean;
   nextHintCost: number;
   enigmaPoints: number;
   totalPointsCharged: number;
 }
 
+/**
+ * Réponse a une demande. Selon le mode du serveur, elle est deja conclue
+ * (`done`, avec son indice) ou seulement enregistree (`pending`) : le frontend
+ * ne sait pas lequel des deux tourne, il lit le statut.
+ */
 export interface HintRequestResponse {
-  hint: { id: string; text: string };
+  requestId: string;
+  status: HintRequestStatus;
+  hint?: { id: string; text: string };
   pointsCharged: number;
   hintsRequested: number;
   remainingHints: number;
-  nextHintCost: number;
 }

@@ -260,16 +260,38 @@
   flex-wrap: wrap;
 }
 
-/* --- Chargement et erreur ---
-   L'appel prend quelques secondes : le dire vaut mieux qu'un bouton figé. */
+/* --- Le souffleur au travail ---
+   L'appel prend quelques secondes, parfois davantage quand il passe par la file
+   d'attente : le dire vaut mieux qu'un écran figé. */
 .hint-loading {
-  margin-top: 14px;
-  padding: 11px 14px;
+  margin: 14px 0;
+  padding: 12px 14px;
   background: rgba(86, 135, 168, .12);
   border-left: 3px solid var(--theatre-comedie, #5687A8);
-  font-size: 13.5px;
+  font-size: 15px;
+  font-weight: 600;
   line-height: 1.55;
   color: var(--theatre-comedie-sombre, #3F6A88);
+}
+
+.hint-loading-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--theatre-coulisse, #6B6357);
+}
+
+/* Au-delà de trois minutes, on cesse d'interroger et on l'annonce : la demande
+   n'est pas perdue, elle aboutira. */
+.hint-slow {
+  margin: 14px 0;
+  padding: 12px 14px;
+  background: var(--theatre-scene, #FBF9F5);
+  border-left: 3px solid var(--theatre-coulisse, #6B6357);
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--theatre-coulisse, #6B6357);
 }
 
 .hint-error {
