@@ -6,7 +6,9 @@ import { success, error } from '../../../utils/response';
 import { v4 as uuidv4 } from 'uuid';
 
 const s3Client = new S3Client({ region: 'eu-west-1' });
-const BUCKET_NAME = 'rallyehiver-enigmas';
+// Le bucket dépend de l'environnement (test, bacs à sable). Sans la variable,
+// on retombe sur celui de la production, seul cas où elle n'est pas définie.
+const BUCKET_NAME = process.env.S3_ENIGMAS_BUCKET || 'rallyehiver-enigmas';
 const YEAR = '2025';
 
 /**
