@@ -30,7 +30,7 @@ const ResultatLancer: React.FC<ResultatLancerProps> = ({ resultat, onFermer }) =
     </div>
 
     <p className="oie-resultat-trajet" data-testid="oie-trajet">
-      De la case {resultat.from} a la case {resultat.to}
+      De la case {resultat.from} à la case {resultat.to}
     </p>
 
     {resultat.journal.length > 0 && (
@@ -51,7 +51,7 @@ const ResultatLancer: React.FC<ResultatLancerProps> = ({ resultat, onFermer }) =
 
     {resultat.finished && (
       <p className="oie-resultat-arrivee" data-testid="oie-resultat-arrivee">
-        Vous etes arrives en case 63. Rideau.
+        Vous êtes arrivés en case 63. Rideau.
       </p>
     )}
   </section>

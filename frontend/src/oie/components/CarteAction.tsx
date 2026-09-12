@@ -38,13 +38,13 @@ const CarteAction: React.FC<CarteActionProps> = ({
       <section className="oie-carte oie-carte-arrivee" data-testid="oie-carte-action">
         <h2>Rideau</h2>
         <p data-testid="oie-arrivee-message">
-          Votre equipe est arrivee en case 63
-          {me.finishRank ? ` en ${me.finishRank}e position` : ''}. L'enigme est resolue.
+          Votre équipe est arrivée en case 63
+          {me.finishRank ? ` en ${me.finishRank}e position` : ''}. L'énigme est résolue.
         </p>
         <dl className="oie-chiffres">
           <div><dt>Lancers</dt><dd>{me.totalRolls}</dd></div>
-          <div><dt>Mauvaises reponses</dt><dd>{me.wrongAnswers}</dd></div>
-          <div><dt>63 rates</dt><dd>{me.overshootCount}</dd></div>
+          <div><dt>Mauvaises réponses</dt><dd>{me.wrongAnswers}</dd></div>
+          <div><dt>63 ratés</dt><dd>{me.overshootCount}</dd></div>
         </dl>
       </section>
     );
@@ -53,7 +53,7 @@ const CarteAction: React.FC<CarteActionProps> = ({
   return (
     <section className="oie-carte" data-testid="oie-carte-action">
       <header className="oie-carte-entete">
-        <h2>Votre equipe</h2>
+        <h2>Votre équipe</h2>
         <p className="oie-carte-position" data-testid="oie-ma-position">
           Case {me.position}
           {me.flavor ? ` : ${me.flavor}` : ''}
@@ -64,19 +64,19 @@ const CarteAction: React.FC<CarteActionProps> = ({
         <form className="oie-question" onSubmit={soumettre} data-testid="oie-formulaire-reponse">
           <p className="oie-question-texte" data-testid="oie-question">{me.question}</p>
           <div className="oie-question-saisie">
-            <label className="oie-champ-label" htmlFor="oie-reponse">Votre reponse</label>
+            <label className="oie-champ-label" htmlFor="oie-reponse">Votre réponse</label>
             <input
               id="oie-reponse"
               type="text"
               value={reponse}
               onChange={(event) => setReponse(event.target.value)}
-              placeholder="Votre reponse"
+              placeholder="Votre réponse"
               disabled={occupe}
               data-testid="oie-champ-reponse"
               autoComplete="off"
             />
             <button type="submit" disabled={occupe || !reponse.trim()} data-testid="oie-bouton-repondre">
-              {occupe ? 'Envoi...' : 'Repondre'}
+              {occupe ? 'Envoi...' : 'Répondre'}
             </button>
           </div>
 
@@ -104,7 +104,7 @@ const CarteAction: React.FC<CarteActionProps> = ({
 
       {me.questionPending && !me.question && (
         <p className="oie-attente" data-testid="oie-question-absente">
-          La question de cette case n'est pas encore ecrite. Prevenez l'organisation.
+          La question de cette case n'est pas encore écrite. Prévenez l'organisation.
         </p>
       )}
 
@@ -125,7 +125,7 @@ const CarteAction: React.FC<CarteActionProps> = ({
           disabled={!me.canRoll || occupe}
           data-testid="oie-bouton-lancer"
         >
-          {occupe ? 'Les des roulent...' : 'Lancer les des'}
+          {occupe ? 'Les dés roulent...' : 'Lancer les dés'}
         </button>
 
         <p className="oie-quota" data-testid="oie-quota">

@@ -212,17 +212,20 @@ describe('Jeu de l\'oie', () => {
       );
     });
 
-    avecAdmin('un second lancer est refusé tant que le quota du jour est épuisé', async () => {
+    avecAdmin('un second lancer est refusé, et pour le motif annoncé', async () => {
       const plateau = await joueur.get('/oie');
 
-      // Le refus ne vaut que si le quota est bien à zéro et qu'aucune question
-      // n'attend : sinon, c'est un autre motif de refus qui s'appliquerait.
-      if (plateau.data.me.rollsRemainingToday > 0) return;
+      // Après le lancer précédent, deux motifs de refus peuvent s'appliquer :
+      // la question de la case d'arrivée, et le quota du jour. Plutôt que de
+      // deviner lequel, on vérifie la propriété qui compte vraiment : le refus
+      // opposé au lancer est exactement celui que le plateau annonçait.
+      expect(plateau.data.me.canRoll).toBe(false);
+      expect(typeof plateau.data.me.rollRefusal).toBe('string');
 
       const lancer = await joueur.post('/oie/roll');
 
       expect(lancer.status).toBe(400);
-      expect(lancer.data.error).toMatch(/lancer|jour/i);
+      expect(lancer.data.error).toBe(plateau.data.me.rollRefusal);
     });
 
     avecAdmin('une mauvaise réponse ne rend pas le droit de lancer', async () => {

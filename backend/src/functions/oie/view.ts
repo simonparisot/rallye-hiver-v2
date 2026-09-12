@@ -123,7 +123,7 @@ export async function buildBoardView(
     .filter((state) => state.teamId === myTeamId || !names.get(state.teamId)?.isTest)
     .map((state) => ({
       teamId: state.teamId,
-      teamName: names.get(state.teamId)?.teamName || 'Equipe inconnue',
+      teamName: names.get(state.teamId)?.teamName || 'Équipe inconnue',
       position: state.position,
       status: teamStatus(state, today, board.rollsPerDay),
       inPuits: state.inPuits,

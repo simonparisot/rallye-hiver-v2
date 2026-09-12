@@ -23,7 +23,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const square = findSquare(board.squares, state.position);
 
     if (!squareHasHint(square)) {
-      return error('Le souffleur n\'a rien a dire sur cette case', 404);
+      return error('Le souffleur n\'a rien à dire sur cette case', 404);
     }
 
     const alreadyAsked = (state.hintedSquares || []).includes(state.position);

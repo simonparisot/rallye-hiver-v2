@@ -16,7 +16,7 @@ const LIBELLES: Record<string, string> = {
   loge: 'La loge',
   puits: 'Le puits',
   prison: 'La prison',
-  mort: 'La repetition',
+  mort: 'La répétition',
   arrivee: 'Rideau',
 };
 
@@ -105,9 +105,9 @@ const Plateau: React.FC<PlateauProps> = ({ squares, teams, caseSurlignee }) => {
         <li><span className="oie-puce oie-case-oie" /> L'acteur sur son oie : on rejoue</li>
         <li><span className="oie-puce oie-case-souffleur" /> Le souffleur : un indice sur demande</li>
         <li><span className="oie-puce oie-case-loge" /> La loge : on passe un tour</li>
-        <li><span className="oie-puce oie-case-puits" /> Le puits : on attend d'etre repeche</li>
-        <li><span className="oie-puce oie-case-prison" /> La prison : deux tours, sauf delivrance</li>
-        <li><span className="oie-puce oie-case-mort" /> La repetition : retour a la case 0</li>
+        <li><span className="oie-puce oie-case-puits" /> Le puits : on attend d'être repêché</li>
+        <li><span className="oie-puce oie-case-prison" /> La prison : deux tours, sauf délivrance</li>
+        <li><span className="oie-puce oie-case-mort" /> La répétition : retour à la case 0</li>
       </ul>
     </div>
   );

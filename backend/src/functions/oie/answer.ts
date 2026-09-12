@@ -19,7 +19,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const answer = typeof body.answer === 'string' ? body.answer : '';
 
     if (!answer.trim()) {
-      return error('Saisissez une reponse', 400);
+      return error('Saisissez une réponse', 400);
     }
 
     const now = new Date();
@@ -30,17 +30,17 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const state = await getTeamState(player.teamId, today, nowIso);
 
     if (state.finishedAt) {
-      return error('Votre equipe est deja arrivee en case 63', 400);
+      return error('Votre équipe est déjà arrivée en case 63', 400);
     }
 
     if (!state.questionPending) {
-      return error('Aucune question n\'est en attente pour votre equipe', 400);
+      return error('Aucune question n\'est en attente pour votre équipe', 400);
     }
 
     const square = findSquare(board.squares, state.position);
 
     if (!squareHasQuestion(square)) {
-      return error('Cette case n\'a pas encore de question configuree', 409);
+      return error('Cette case n\'a pas encore de question configurée', 409);
     }
 
     const correct = isAnswerCorrect(answer, square.acceptedAnswers);
@@ -54,7 +54,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       userId: player.userId,
       occurredAt: nowIso,
       message: correct
-        ? `${player.teamName} repond juste en case ${state.position}`
+        ? `${player.teamName} répond juste en case ${state.position}`
         : `${player.teamName} se trompe en case ${state.position}`,
       detail: { squareNumber: state.position, answer },
     });
@@ -76,11 +76,16 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       today
     );
 
+    // Annoncer « vous pouvez relancer » alors que le quota du jour est epuise
+    // serait contradictoire avec le message de blocage juste en dessous : la
+    // bonne reponse ne promet un lancer que s'il est reellement disponible.
     return success({
       correct,
       message: correct
-        ? 'Bonne reponse. Vous pouvez relancer les des.'
-        : 'Ce n\'est pas la bonne reponse. Reessayez.',
+        ? view.me.canRoll
+          ? 'Bonne réponse. Vous pouvez relancer les dés.'
+          : 'Bonne réponse.'
+        : 'Ce n\'est pas la bonne réponse. Réessayez.',
       ...view,
     });
   } catch (err: any) {
@@ -91,6 +96,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error(err.message, 409);
     }
     console.error('Error answering an oie question:', err);
-    return error(err.message || 'Impossible d\'enregistrer la reponse');
+    return error(err.message || 'Impossible d\'enregistrer la réponse');
   }
 };

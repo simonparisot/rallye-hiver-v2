@@ -106,7 +106,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       teamName: player.teamName,
       userId: player.userId,
       occurredAt: horodatage(),
-      message: `${player.teamName} lance ${dice[0]} et ${dice[1]} (${total}) et avance de la case ${state.position} a la case ${move.position}`,
+      message: `${player.teamName} lance ${dice[0]} et ${dice[1]} (${total}) et avance de la case ${state.position} à la case ${move.position}`,
       detail: { dice, total, from: state.position, to: move.position },
     });
 
@@ -141,8 +141,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
         const prisonerName = names.get(prisoner.teamId)?.teamName || 'Une equipe';
         const message = move.inPuits
-          ? `${player.teamName} repeche ${prisonerName} du puits`
-          : `${player.teamName} fait liberer ${prisonerName} de la prison`;
+          ? `${player.teamName} repêche ${prisonerName} du puits`
+          : `${player.teamName} fait libérer ${prisonerName} de la prison`;
         releases.push(message);
 
         await logEvent({
@@ -203,7 +203,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error(err.message, 409);
     }
     console.error('Error rolling the oie dice:', err);
-    return error(err.message || 'Impossible de lancer les des');
+    return error(err.message || 'Impossible de lancer les dés');
   }
 };
 

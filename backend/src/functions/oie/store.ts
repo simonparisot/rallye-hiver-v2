@@ -188,7 +188,7 @@ export async function putTeamState(next: OieTeamState, expectedVersion: number):
   } catch (err: any) {
     if (err?.name === 'ConditionalCheckFailedException') {
       throw new OieConflictError(
-        'Votre equipe vient de jouer depuis un autre appareil. Rechargez le plateau.'
+        'Votre équipe vient de jouer depuis un autre appareil. Rechargez le plateau.'
       );
     }
     throw err;

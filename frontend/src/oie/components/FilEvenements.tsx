@@ -40,13 +40,13 @@ const FilEvenements: React.FC<FilEvenementsProps> = ({ evenements, teams }) => {
             >
               <span className="oie-classement-nom">{team.teamName}</span>
               <span className="oie-classement-case">
-                {team.finishedAt ? 'arrivee' : `case ${team.position}`}
+                {team.finishedAt ? 'arrivée' : `case ${team.position}`}
                 {team.inPuits ? ' (puits)' : ''}
                 {team.inPrison ? ' (prison)' : ''}
               </span>
             </li>
           ))}
-          {classement.length === 0 && <li className="oie-vide">Aucune equipe n'a encore joue.</li>}
+          {classement.length === 0 && <li className="oie-vide">Aucune équipe n'a encore joué.</li>}
         </ol>
       </section>
 

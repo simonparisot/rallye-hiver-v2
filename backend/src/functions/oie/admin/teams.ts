@@ -23,7 +23,7 @@ export const listHandler = async (event: APIGatewayProxyEvent): Promise<APIGatew
     const teams = states
       .map((state) => ({
         teamId: state.teamId,
-        teamName: names.get(state.teamId)?.teamName || 'Equipe inconnue',
+        teamName: names.get(state.teamId)?.teamName || 'Équipe inconnue',
         isTestTeam: names.get(state.teamId)?.isTest || false,
         position: state.position,
         status: teamStatus(state, today, board.rollsPerDay),
@@ -45,7 +45,7 @@ export const listHandler = async (event: APIGatewayProxyEvent): Promise<APIGatew
     return success({ teams, count: teams.length, rollsPerDay: board.rollsPerDay, today });
   } catch (err: any) {
     console.error('Error listing the oie team states:', err);
-    return error(err.message || 'Impossible de charger les equipes', err.message === 'Admin access required' ? 403 : 500);
+    return error(err.message || 'Impossible de charger les équipes', err.message === 'Admin access required' ? 403 : 500);
   }
 };
 
@@ -74,7 +74,7 @@ export const resetHandler = async (event: APIGatewayProxyEvent): Promise<APIGate
     await putTeamState({ ...fresh, createdAt: current.createdAt, version: current.version }, current.version);
 
     const names = await getTeamNames();
-    const teamName = names.get(teamId)?.teamName || 'Equipe inconnue';
+    const teamName = names.get(teamId)?.teamName || 'Équipe inconnue';
 
     await logEvent({
       type: 'reinitialisation',
@@ -86,9 +86,9 @@ export const resetHandler = async (event: APIGatewayProxyEvent): Promise<APIGate
       detail: { previousPosition: current.position },
     });
 
-    return success({ teamId, teamName, message: 'Equipe remise a zero' });
+    return success({ teamId, teamName, message: 'Équipe remise à zéro' });
   } catch (err: any) {
     console.error('Error resetting an oie team state:', err);
-    return error(err.message || 'Impossible de remettre l\'equipe a zero', err.message === 'Admin access required' ? 403 : 500);
+    return error(err.message || 'Impossible de remettre l\'équipe à zéro', err.message === 'Admin access required' ? 403 : 500);
   }
 };

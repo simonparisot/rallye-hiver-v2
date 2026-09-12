@@ -82,7 +82,7 @@ const OiePage: React.FC = () => {
       queryClient.setQueryData(['oie-board'], data);
     },
     onError: (err: any) => {
-      setErreur(err?.response?.data?.error || 'La reponse n\'a pas pu etre enregistree.');
+      setErreur(err?.response?.data?.error || 'La réponse n\'a pas pu être enregistrée.');
       queryClient.invalidateQueries({ queryKey: ['oie-board'] });
     },
   });
@@ -94,7 +94,7 @@ const OiePage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['oie-board'] });
     },
     onError: (err: any) => {
-      setErreur(err?.response?.data?.error || 'Le souffleur n\'a pas repondu.');
+      setErreur(err?.response?.data?.error || 'Le souffleur n\'a pas répondu.');
     },
   });
 
@@ -130,8 +130,8 @@ const OiePage: React.FC = () => {
         <div className="oie-etat" data-testid="oie-sans-acces">
           <p>
             {!hasAccess
-              ? "Rejoignez une equipe a jour de son inscription pour jouer au jeu de l'oie."
-              : "Le rallye n'a pas encore commence."}
+              ? "Rejoignez une équipe à jour de son inscription pour jouer au jeu de l'oie."
+              : "Le rallye n'a pas encore commencé."}
           </p>
           <Link className="oie-bouton-secondaire" to="/">Retour au jeu</Link>
         </div>
@@ -145,8 +145,8 @@ const OiePage: React.FC = () => {
         <div>
           <h1 data-testid="oie-titre">{edition.enigmeOie?.titre || "Le jeu de l'oie"}</h1>
           <p className="oie-sous-titre">
-            Toutes les equipes jouent sur le meme plateau. Repondez a la question de votre case
-            pour retrouver le droit de lancer les des.
+            Toutes les équipes jouent sur le même plateau. Répondez à la question de votre case
+            pour retrouver le droit de lancer les dés.
           </p>
         </div>
         <Link className="oie-bouton-secondaire" to="/" data-testid="oie-retour">Retour au jeu</Link>
@@ -162,7 +162,7 @@ const OiePage: React.FC = () => {
 
       {erreurPlateau && (
         <p className="oie-etat oie-message-erreur" data-testid="oie-plateau-erreur">
-          Le plateau n'a pas pu etre charge. Rechargez la page.
+          Le plateau n'a pas pu être chargé. Rechargez la page.
         </p>
       )}
 

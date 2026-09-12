@@ -305,22 +305,22 @@ export function rollRefusal(
   rollsPerDay: number
 ): string | null {
   if (state.finishedAt) {
-    return 'Votre equipe est deja arrivee en case 63.';
+    return 'Votre équipe est déjà arrivée en case 63.';
   }
   if (state.questionPending) {
-    return 'Repondez d\'abord a la question de votre case.';
+    return 'Répondez d\'abord à la question de votre case.';
   }
   if (state.inPuits) {
-    return 'Vous etes dans le puits : attendez qu\'une autre equipe y tombe pour vous repecher.';
+    return 'Vous êtes dans le puits : attendez qu\'une autre équipe y tombe pour vous repêcher.';
   }
   if (daysBetween(today, state.nextRollAllowedDay) > 0) {
     const remaining = daysBetween(today, state.nextRollAllowedDay);
     return state.inPrison
-      ? `Vous etes en prison : encore ${remaining} jour(s) sans lancer.`
+      ? `Vous êtes en prison : encore ${remaining} jour(s) sans lancer.`
       : `Vous passez un tour : encore ${remaining} jour(s) sans lancer.`;
   }
   if (rollsRemaining(state, today, rollsPerDay) <= 0) {
-    return 'Vous avez utilise tous vos lancers du jour. Revenez demain.';
+    return 'Vous avez utilisé tous vos lancers du jour. Revenez demain.';
   }
   return null;
 }

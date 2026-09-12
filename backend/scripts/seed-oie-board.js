@@ -97,7 +97,7 @@ async function main() {
 
   const rollsPerDay = Number(args['rolls-per-day'] || payload.rollsPerDay || 1);
   if (!Number.isInteger(rollsPerDay) || rollsPerDay < 1 || rollsPerDay > 20) {
-    fail('rollsPerDay doit etre un entier entre 1 et 20');
+    fail('rollsPerDay doit être un entier entre 1 et 20');
   }
 
   const enigmaId = (args['enigma-id'] || payload.enigmaId || '').trim();
@@ -107,10 +107,10 @@ async function main() {
   const byNumber = new Map();
   payload.squares.forEach((square) => {
     if (!Number.isInteger(square.squareNumber) || square.squareNumber < 0 || square.squareNumber > FINISH_SQUARE) {
-      fail(`numero de case invalide : ${JSON.stringify(square.squareNumber)}`);
+      fail(`numéro de case invalide : ${JSON.stringify(square.squareNumber)}`);
     }
     if (byNumber.has(square.squareNumber)) {
-      fail(`la case ${square.squareNumber} est definie deux fois`);
+      fail(`la case ${square.squareNumber} est définie deux fois`);
     }
     byNumber.set(square.squareNumber, square);
   });
@@ -148,24 +148,24 @@ async function main() {
   console.log(`Plateau lu : ${filePath}`);
   console.log(`  cases avec question : ${squares.filter((s) => s.question).length}`);
   console.log(`  lancers par jour    : ${rollsPerDay}`);
-  console.log(`  enigmaId            : ${enigmaId || '(non defini, l\'arrivee ne marquera pas l\'enigme resolue)'}`);
+  console.log(`  enigmaId            : ${enigmaId || '(non défini, l\'arrivée ne marquera pas l\'énigme résolue)'}`);
 
   if (manquantes.length > 0) {
     console.log(`  ATTENTION, cases sans question : ${manquantes.join(', ')}`);
-    console.log('  Une equipe qui s\'y arrete pourra relancer sans repondre.');
+    console.log('  Une équipe qui s\'y arrête pourra relancer sans répondre.');
   }
   if (indicesManquants.length > 0) {
     console.log(`  ATTENTION, cases du souffleur sans indice : ${indicesManquants.join(', ')}`);
   }
 
   if (args['dry-run']) {
-    console.log('\n--dry-run : rien n\'a ete ecrit.');
+    console.log('\n--dry-run : rien n\'a été écrit.');
     return;
   }
 
   const table = args.table || process.env.OIE_BOARD_TABLE;
   if (!table) {
-    fail('precisez la table avec --table <nom> ou la variable OIE_BOARD_TABLE');
+    fail('précisez la table avec --table <nom> ou la variable OIE_BOARD_TABLE');
   }
 
   const region = args.region || process.env.AWS_REGION || 'eu-west-1';
@@ -185,7 +185,7 @@ async function main() {
     enigmaIdFinal = await ensureEnigma(client, enigmasTable, {
       enigmaId: enigmaIdFinal,
       enigmaNumber: Number(args['enigma-number'] || 1),
-      title: args['enigma-title'] || "Le jeu de l'oie du theatre",
+      title: args['enigma-title'] || "Le jeu de l'oie du théâtre",
     });
   }
 
@@ -203,11 +203,11 @@ async function main() {
     })
   );
 
-  console.log(`\nPlateau ecrit dans ${table} (region ${region}).`);
+  console.log(`\nPlateau écrit dans ${table} (région ${region}).`);
   if (enigmaIdFinal) {
     console.log(`enigmaId du plateau : ${enigmaIdFinal}`);
-    console.log('Cote frontend, poser REACT_APP_OIE_ENIGMA_ID avec cette valeur');
-    console.log('pour que l\'entree de la liste des enigmes mene au plateau.');
+    console.log('Côté frontend, poser REACT_APP_OIE_ENIGMA_ID avec cette valeur');
+    console.log('pour que l\'entrée de la liste des énigmes mène au plateau.');
   }
 }
 
@@ -227,7 +227,7 @@ async function ensureEnigma(client, enigmasTable, { enigmaId, enigmaNumber, titl
   );
 
   if (deja) {
-    console.log(`Enigme du jeu de l'oie deja presente : ${deja.enigmaId} (« ${deja.title} »)`);
+    console.log(`Énigme du jeu de l'oie déjà présente : ${deja.enigmaId} (« ${deja.title} »)`);
     return deja.enigmaId;
   }
 
@@ -237,7 +237,7 @@ async function ensureEnigma(client, enigmasTable, { enigmaId, enigmaNumber, titl
     enigmaNumber,
     title,
     description:
-      "Une des vingt enigmes, jouee sur un plateau de jeu de l'oie partage par toutes les equipes.",
+      "Une des vingt énigmes, jouée sur un plateau de jeu de l'oie partagé par toutes les équipes.",
     // Ni enonce ni mot de passe : la resolution vient de l'arrivee en case 63.
     pdfUrl: '',
     correctPassword: '',
@@ -250,7 +250,7 @@ async function ensureEnigma(client, enigmasTable, { enigmaId, enigmaNumber, titl
   };
 
   await client.send(new PutCommand({ TableName: enigmasTable, Item: item }));
-  console.log(`Enigme du jeu de l'oie creee : ${item.enigmaId} (numero ${enigmaNumber})`);
+  console.log(`Énigme du jeu de l'oie créée : ${item.enigmaId} (numéro ${enigmaNumber})`);
 
   return item.enigmaId;
 }

@@ -15,15 +15,15 @@ import './AdminOie.css';
  */
 
 const LIBELLES_TYPE: Record<string, string> = {
-  depart: 'Depart',
+  depart: 'Départ',
   normale: 'Ordinaire',
   oie: "L'oie (on rejoue)",
   souffleur: 'Souffleur (indice)',
   loge: 'La loge (passer un tour)',
   puits: 'Le puits',
   prison: 'La prison (2 tours)',
-  mort: 'La repetition (retour a 0)',
-  arrivee: 'Arrivee',
+  mort: 'La répétition (retour à 0)',
+  arrivee: 'Arrivée',
 };
 
 /** Cases ou une equipe ne s'arrete jamais : elles n'ont pas besoin de question. */
@@ -61,13 +61,13 @@ const AdminOie: React.FC = () => {
   const enregistrer = useMutation({
     mutationFn: () => oieAdminAPI.saveBoard({ squares, rollsPerDay, enigmaId: enigmaId.trim() || undefined }),
     onSuccess: () => {
-      setMessage({ texte: 'Plateau enregistre.', type: 'succes' });
+      setMessage({ texte: 'Plateau enregistré.', type: 'succes' });
       setModifie(false);
       queryClient.invalidateQueries({ queryKey: ['adminOieBoard'] });
     },
     onError: (err: any) => {
       setMessage({
-        texte: err?.response?.data?.error || "L'enregistrement a echoue.",
+        texte: err?.response?.data?.error || "L'enregistrement a échoué.",
         type: 'erreur',
       });
     },
@@ -81,7 +81,7 @@ const AdminOie: React.FC = () => {
     },
     onError: (err: any) => {
       setMessage({
-        texte: err?.response?.data?.error || 'La remise a zero a echoue.',
+        texte: err?.response?.data?.error || 'La remise à zéro a échoué.',
         type: 'erreur',
       });
     },
@@ -148,7 +148,7 @@ const AdminOie: React.FC = () => {
       if (typeof contenu.enigmaId === 'string') setEnigmaId(contenu.enigmaId);
 
       setModifie(true);
-      setMessage({ texte: 'Fichier importe. Pensez a enregistrer.', type: 'succes' });
+      setMessage({ texte: 'Fichier importé. Pensez à enregistrer.', type: 'succes' });
     } catch (err: any) {
       setMessage({ texte: `Import impossible : ${err.message}`, type: 'erreur' });
     } finally {
@@ -161,7 +161,7 @@ const AdminOie: React.FC = () => {
   }
 
   if (error) {
-    return <div className="error" data-testid="admin-oie-error">Le plateau n'a pas pu etre charge.</div>;
+    return <div className="error" data-testid="admin-oie-error">Le plateau n'a pas pu être chargé.</div>;
   }
 
   const manquantes = squares.filter(
@@ -176,7 +176,7 @@ const AdminOie: React.FC = () => {
         <div>
           <h1>Jeu de l'oie</h1>
           <p className="admin-page-subtitle">
-            Les questions du plateau partage, le quota de lancers et l'etat des equipes
+            Les questions du plateau partagé, le quota de lancers et l'état des équipes
           </p>
         </div>
         <div className="admin-oie-actions">
@@ -220,13 +220,13 @@ const AdminOie: React.FC = () => {
 
       {modifie && (
         <div className="admin-oie-message admin-oie-message-alerte" data-testid="admin-oie-modifie">
-          Des modifications ne sont pas encore enregistrees.
+          Des modifications ne sont pas encore enregistrées.
         </div>
       )}
 
       <div className="card admin-oie-reglages">
         <div className="admin-oie-reglage">
-          <label htmlFor="oie-rolls-per-day">Lancers par jour et par equipe</label>
+          <label htmlFor="oie-rolls-per-day">Lancers par jour et par équipe</label>
           <input
             id="oie-rolls-per-day"
             type="number"
@@ -240,13 +240,13 @@ const AdminOie: React.FC = () => {
             data-testid="admin-oie-rolls-per-day"
           />
           <p className="admin-oie-aide">
-            La journee change a minuit, heure de Paris. Augmenter ce nombre rend immediatement
-            des lancers aux equipes qui avaient epuise leur quota du jour.
+            La journée change à minuit, heure de Paris. Augmenter ce nombre rend immédiatement
+            des lancers aux équipes qui avaient épuisé leur quota du jour.
           </p>
         </div>
 
         <div className="admin-oie-reglage">
-          <label htmlFor="oie-enigma-id">Identifiant de l'enigme associee</label>
+          <label htmlFor="oie-enigma-id">Identifiant de l'énigme associée</label>
           <input
             id="oie-enigma-id"
             type="text"
@@ -255,11 +255,11 @@ const AdminOie: React.FC = () => {
               setEnigmaId(event.target.value);
               setModifie(true);
             }}
-            placeholder="enigmaId de l'enigme creee pour le jeu de l'oie"
+            placeholder="enigmaId de l'énigme créée pour le jeu de l'oie"
             data-testid="admin-oie-enigma-id"
           />
           <p className="admin-oie-aide">
-            Sans lui, l'arrivee en case 63 ne marque aucune enigme comme resolue et le
+            Sans lui, l'arrivée en case 63 ne marque aucune énigme comme résolue et le
             classement ne compte rien.
           </p>
         </div>
@@ -271,7 +271,7 @@ const AdminOie: React.FC = () => {
           {manquantes.length > 0 && (
             <p className="admin-oie-aide admin-oie-aide-alerte" data-testid="admin-oie-manquantes">
               Cases sans question : {manquantes.map((square) => square.squareNumber).join(', ')}.
-              Une equipe qui s'y arrete pourra relancer sans repondre.
+              Une équipe qui s'y arrête pourra relancer sans répondre.
             </p>
           )}
         </div>
@@ -280,7 +280,7 @@ const AdminOie: React.FC = () => {
       <div className="card">
         <h2>Les 63 cases</h2>
         <p className="admin-oie-aide">
-          Separez les reponses acceptees par un point virgule. La comparaison ignore la casse,
+          Séparez les réponses acceptées par un point virgule. La comparaison ignore la casse,
           les accents, les espaces et la ponctuation.
         </p>
         <div className="admin-oie-tableau">
@@ -290,7 +290,7 @@ const AdminOie: React.FC = () => {
                 <th>Case</th>
                 <th>Nature</th>
                 <th>Question</th>
-                <th>Reponses acceptees</th>
+                <th>Réponses acceptées</th>
                 <th>Indice du souffleur</th>
                 <th>Ambiance</th>
               </tr>
@@ -353,19 +353,19 @@ const AdminOie: React.FC = () => {
       </div>
 
       <div className="card">
-        <h2>Les equipes sur le plateau</h2>
+        <h2>Les équipes sur le plateau</h2>
         <table className="admin-table" data-testid="admin-oie-equipes">
           <thead>
             <tr>
-              <th>Equipe</th>
+              <th>Équipe</th>
               <th>Case</th>
-              <th>Etat</th>
+              <th>État</th>
               <th>Lancers restants</th>
               <th>Total lancers</th>
               <th>Erreurs</th>
               <th>Indices</th>
-              <th>63 rates</th>
-              <th>Arrivee</th>
+              <th>63 ratés</th>
+              <th>Arrivée</th>
               <th />
             </tr>
           </thead>
@@ -391,14 +391,14 @@ const AdminOie: React.FC = () => {
                     disabled={reinitialiser.isPending}
                     data-testid={`admin-oie-reset-${equipe.teamId}`}
                   >
-                    Remettre a zero
+                    Remettre à zéro
                   </button>
                 </td>
               </tr>
             ))}
             {(equipesData?.teams || []).length === 0 && (
               <tr>
-                <td colSpan={10}>Aucune equipe n'a encore ouvert le plateau.</td>
+                <td colSpan={10}>Aucune équipe n'a encore ouvert le plateau.</td>
               </tr>
             )}
           </tbody>

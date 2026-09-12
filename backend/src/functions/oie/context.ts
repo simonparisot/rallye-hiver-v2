@@ -37,16 +37,16 @@ export async function requirePlayer(event: APIGatewayProxyEvent): Promise<OiePla
 
   const user = await getUserById(userId);
   if (!user || !user.teamId) {
-    throw new OieAccessError('Vous devez appartenir a une equipe pour jouer au jeu de l\'oie', 403);
+    throw new OieAccessError('Vous devez appartenir à une équipe pour jouer au jeu de l\'oie', 403);
   }
 
   const team = await getTeamById(user.teamId);
   if (!team) {
-    throw new OieAccessError('Equipe introuvable', 404);
+    throw new OieAccessError('Équipe introuvable', 404);
   }
 
   if (!team.hasPaid) {
-    throw new OieAccessError('Votre equipe doit avoir regle son inscription', 403);
+    throw new OieAccessError('Votre équipe doit avoir réglé son inscription', 403);
   }
 
   return { userId, teamId: team.teamId, teamName: team.teamName };
@@ -65,15 +65,15 @@ export function narrateEffect(teamName: string, effect: OieMoveEffect): string |
     case 'oie':
       return `${teamName} tombe sur l'acteur et son oie en case ${effect.at} et rejoue`;
     case 'rebond':
-      return `${teamName} depasse la case 63 de ${effect.depassement} et recule en case ${effect.to}`;
+      return `${teamName} dépasse la case 63 de ${effect.depassement} et recule en case ${effect.to}`;
     case 'metteur_en_scene':
-      return `Le metteur en scene place ${teamName} directement en case 63`;
+      return `Le metteur en scène place ${teamName} directement en case 63`;
     case 'mort':
-      return `${teamName} tombe sur la repetition en case ${effect.from} et repart de la case 0`;
+      return `${teamName} tombe sur la répétition en case ${effect.from} et repart de la case 0`;
     case 'puits':
       return `${teamName} tombe dans le puits en case ${effect.at}`;
     case 'prison':
-      return `${teamName} est enferme dans la prison en case ${effect.at}`;
+      return `${teamName} est enfermé dans la prison en case ${effect.at}`;
     case 'loge':
       return `${teamName} s'attarde dans la loge en case ${effect.at} et passe un tour`;
     case 'souffleur':

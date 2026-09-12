@@ -40,12 +40,12 @@ export const putHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewa
     const body = JSON.parse(event.body || '{}');
 
     if (!Array.isArray(body.squares)) {
-      return error('Le champ squares est obligatoire et doit etre un tableau', 400);
+      return error('Le champ squares est obligatoire et doit être un tableau', 400);
     }
 
     const rollsPerDay = Number(body.rollsPerDay);
     if (!Number.isInteger(rollsPerDay) || rollsPerDay < 1 || rollsPerDay > 20) {
-      return error('rollsPerDay doit etre un entier entre 1 et 20', 400);
+      return error('rollsPerDay doit être un entier entre 1 et 20', 400);
     }
 
     const invalid = body.squares.find(
@@ -55,7 +55,7 @@ export const putHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewa
         square.squareNumber > FINISH_SQUARE
     );
     if (invalid) {
-      return error(`Numero de case invalide : ${JSON.stringify(invalid?.squareNumber)}`, 400);
+      return error(`Numéro de case invalide : ${JSON.stringify(invalid?.squareNumber)}`, 400);
     }
 
     const squares: OieSquare[] = body.squares.map((square: any) => ({
