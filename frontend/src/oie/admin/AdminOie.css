@@ -1,0 +1,131 @@
+/**
+ * Page d'administration du jeu de l'oie.
+ *
+ * Elle s'appuie sur les classes deja fournies par admin/styles/admin.css
+ * (card, admin-table, btn, admin-page-header) ; ce fichier ne contient que ce
+ * qui lui est propre, et reutilise les variables existantes.
+ */
+
+.admin-oie-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm, 8px);
+}
+
+.admin-oie-message {
+  margin-bottom: var(--spacing-md, 16px);
+  padding: 10px 14px;
+  border-radius: var(--border-radius, 6px);
+  font-size: 0.92rem;
+}
+
+.admin-oie-message-succes {
+  background: var(--color-primary-green, #28a745);
+  color: #fff;
+}
+
+.admin-oie-message-erreur {
+  background: var(--color-primary-red, #DC143C);
+  color: #fff;
+}
+
+.admin-oie-message-alerte {
+  background: var(--color-primary-yellow, #FFD700);
+  color: var(--color-neutral-black, #1A1A1A);
+}
+
+.admin-oie-reglages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--spacing-lg, 24px);
+}
+
+.admin-oie-reglage label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.admin-oie-reglage input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--text-secondary, #333);
+  border-radius: var(--border-radius, 6px);
+  font: inherit;
+}
+
+.admin-oie-aide {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary, #333);
+}
+
+.admin-oie-aide-alerte {
+  color: var(--color-primary-red, #DC143C);
+  font-weight: 600;
+}
+
+.admin-oie-compteur {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+/* Le tableau des 64 cases est large : il defile horizontalement plutot que de
+   comprimer les champs jusqu'a l'illisible. */
+.admin-oie-tableau {
+  overflow-x: auto;
+}
+
+.admin-oie-tableau table {
+  min-width: 900px;
+}
+
+.admin-oie-tableau input {
+  width: 100%;
+  min-width: 140px;
+  padding: 6px 8px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.admin-oie-tableau input:disabled {
+  background: var(--color-neutral-gray, #F5F5F5);
+  color: rgba(0, 0, 0, 0.35);
+}
+
+.admin-oie-numero {
+  font-weight: 700;
+  text-align: center;
+}
+
+.admin-oie-type {
+  white-space: nowrap;
+  font-size: 0.82rem;
+}
+
+.admin-oie-ligne-speciale {
+  background: rgba(255, 215, 0, 0.12);
+}
+
+.admin-oie-badge {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--color-secondary-purple, #6B46C1);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .admin-oie-actions {
+    width: 100%;
+  }
+
+  .admin-oie-actions .btn {
+    flex: 1 1 auto;
+  }
+}
