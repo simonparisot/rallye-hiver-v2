@@ -1,5 +1,7 @@
 // Admin-specific types extending base types
-import { BackendEnigma, BackendParcours, Team, TeamEnigmaProgress } from '../../types';
+import { BackendEnigma, BackendParcours, Team, TeamEnigmaProgress, EnigmaHint } from '../../types';
+
+export type { EnigmaHint };
 
 export interface AdminUser {
   userId: string;
@@ -53,7 +55,8 @@ export interface CreateEnigmaRequest {
   title: string;
   correctPassword: string;
   pdfUrl: string;  // TODO: Replace with file upload once S3 integration is ready
-  hintPdfUrl?: string;  // Optional hint PDF URL
+  solution?: string;      // Demarche de resolution detaillee, fausses pistes comprises
+  hints?: EnigmaHint[];   // Indices pre-ecrits, du plus precoce au plus tardif
   isActive: boolean;
 }
 

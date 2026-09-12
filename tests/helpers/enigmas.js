@@ -28,3 +28,33 @@ export async function enigmaWithSolution() {
     solution: utilisable.correctPassword,
   };
 }
+
+/**
+ * Une énigme dotée d'indices pré-écrits, ou `null` s'il n'y en a aucune.
+ *
+ * Les tests d'indices n'ont de sens que sur une énigme qui en a : sans elle ils
+ * s'abstiennent plutôt que d'échouer, parce qu'un environnement fraîchement
+ * provisionné n'en contient pas encore.
+ *
+ * Comme `enigmaWithSolution`, cette fonction lit la base directement : ni la
+ * solution ni le texte des indices ne sortent de l'API, et c'est bien ce que
+ * vérifient les tests.
+ */
+export async function enigmaWithHints() {
+  const enigmas = await dynamo().send(new ScanCommand({
+    TableName: table(TABLES.enigmas),
+  }));
+
+  const utilisable = (enigmas.Items ?? [])
+    .filter((e) => e.isActive && Array.isArray(e.hints) && e.hints.length > 0)
+    .sort((a, b) => a.enigmaNumber - b.enigmaNumber)[0];
+
+  if (!utilisable) return null;
+
+  return {
+    enigmaId: utilisable.enigmaId,
+    enigmaNumber: utilisable.enigmaNumber,
+    title: utilisable.title,
+    hintsCount: utilisable.hints.length,
+  };
+}

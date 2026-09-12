@@ -1,0 +1,79 @@
+[
+  {
+    "enigmaNumber": 901,
+    "title": "Le Carillon de la Maison Vide",
+    "correctPassword": "MERIDIENNE",
+    "points": 20,
+    "difficulty": "medium",
+    "description": "Une maison abandonnee, sept horloges arretees, et une lettre qui parle d'un rendez-vous manque. Retrouvez le mot que le proprietaire a cache dans sa derniere lettre.",
+    "solution": "Demarche attendue.\n\n1. Le PDF montre sept horloges arretees a des heures differentes : 3h10, 7h45, 1h20, 11h05, 6h30, 9h55, 2h40. Les equipes commencent presque toujours par chercher une suite arithmetique dans ces heures : il n'y en a pas, c'est voulu.\n\n2. La lettre jointe mentionne \"j'ai toujours prefere lire l'heure a l'envers, comme on lit un miroir\". C'est le declencheur : chaque horloge doit etre lue par symetrie axiale verticale. 3h10 devient 8h50, 7h45 devient 4h15, et ainsi de suite.\n\n3. Une fois les sept heures retournees, on les convertit en minutes depuis minuit, puis on prend le reste de la division par 26. On obtient la suite 12, 4, 17, 8, 3, 8, 13.\n\n4. Ces sept nombres, lus comme des rangs dans l'alphabet (A = 0), donnent M, E, R, I, D, I, E. Le huitieme caractere manque : la lettre se termine par \"et la derniere horloge, je l'ai emportee\". Il faut deviner que le mot est un mot francais complet. Le seul mot de dix lettres commencant par MERIDIE est MERIDIENNE : les equipes doivent completer NNE.\n\n5. Le mot de passe est MERIDIENNE.\n\nFAUSSE PISTE PRINCIPALE (cachee) : le papier peint de la piece est constitue de motifs qui ressemblent a un alphabet pigpen. Il n'encode rien du tout : c'est un motif decoratif genere aleatoirement. Beaucoup d'equipes y passent une heure. Si une equipe parle du papier peint, du pigpen ou de symboles graphiques sur les murs, elle est sur cette fausse piste et il faut l'en sortir.\n\nFAUSSE PISTE SECONDAIRE : le nom du proprietaire, \"A. Nerio\", est une anagramme de \"Aronie\". C'est fortuit et cela ne mene nulle part.",
+    "hints": [
+      {
+        "id": "h1",
+        "order": 1,
+        "text": "Tout se joue sur les sept horloges. Le reste de la piece est du decor : si vous passez du temps sur les murs, vous perdez du temps."
+      },
+      {
+        "id": "h2",
+        "order": 2,
+        "text": "Relisez la lettre du proprietaire jusqu'au bout. Une phrase y dit comment il lisait l'heure, et ce n'est pas la facon habituelle."
+      },
+      {
+        "id": "h3",
+        "order": 3,
+        "text": "\"Lire a l'envers comme dans un miroir\" est a prendre au pied de la lettre : retournez chaque cadran par symetrie verticale avant toute chose."
+      },
+      {
+        "id": "h4",
+        "order": 4,
+        "text": "Une fois les heures retournees, convertissez-les en minutes depuis minuit. Vous cherchez ensuite a ramener chaque nombre entre 0 et 25."
+      },
+      {
+        "id": "h5",
+        "order": 5,
+        "text": "Les sept nombres obtenus sont des rangs dans l'alphabet, avec A valant zero. Ils donnent les sept premieres lettres du mot de passe."
+      },
+      {
+        "id": "h6",
+        "order": 6,
+        "text": "Vous avez MERIDIE. La huitieme horloge a ete emportee : le mot de passe est le seul mot francais de dix lettres qui commence ainsi."
+      }
+    ]
+  },
+  {
+    "enigmaNumber": 902,
+    "title": "Le Manifeste du Typographe",
+    "correctPassword": "GARAMOND",
+    "points": 15,
+    "difficulty": "easy",
+    "description": "Un imprimeur en colere a place un message dans son propre manifeste. Trouvez ce qu'il reproche vraiment a ses confreres.",
+    "solution": "Demarche attendue.\n\n1. Le PDF est un texte de trois pages, un pamphlet d'imprimeur du dix-neuvieme siecle contre ses confreres. Le texte est lisible et coherent : rien n'y est chiffre.\n\n2. La cle est typographique. Huit lettres du texte, et huit seulement, sont composees dans une police differente du reste. La difference est tres legere a l'ecran : elle saute aux yeux une fois le PDF imprime, ou zoome fortement.\n\n3. Ces huit lettres, dans l'ordre de lecture, sont G, A, R, A, M, O, N, D.\n\n4. Le mot de passe est GARAMOND.\n\nFAUSSE PISTE PRINCIPALE (cachee) : le texte contient trois fois l'expression \"la troisieme ligne\", ce qui pousse les equipes a construire un acrostiche a partir de la troisieme ligne de chaque paragraphe. Cela produit une suite de lettres presque prononcable, BONIFACE, qui n'est pas le mot de passe et qui retient les equipes tres longtemps parce qu'elle a l'air d'un resultat. Si une equipe mentionne BONIFACE, un acrostiche ou des troisiemes lignes, elle est sur cette fausse piste.\n\nFAUSSE PISTE SECONDAIRE : les numeros de page sont en chiffres romains, ce qui suggere une conversion numerique. Ils sont simplement decoratifs.",
+    "hints": [
+      {
+        "id": "h1",
+        "order": 1,
+        "text": "Le texte se lit normalement : il n'y a rien a dechiffrer dans les mots eux-memes. Ce que vous cherchez se voit, ne se decode pas."
+      },
+      {
+        "id": "h2",
+        "order": 2,
+        "text": "L'auteur est imprimeur, et le sujet de sa colere est son metier. Cherchez ce qu'un imprimeur, lui, remarquerait immediatement dans cette page."
+      },
+      {
+        "id": "h3",
+        "order": 3,
+        "text": "Imprimez le PDF, ou zoomez fortement. Toutes les lettres ne sont pas composees de la meme facon."
+      },
+      {
+        "id": "h4",
+        "order": 4,
+        "text": "Huit lettres, et huit seulement, sont dans une autre police. Relevez-les dans l'ordre de lecture : elles forment le mot de passe."
+      },
+      {
+        "id": "h5",
+        "order": 5,
+        "text": "Le mot cherche est le nom d'un graveur de caracteres francais du seizieme siecle, devenu le nom d'une police tres repandue."
+      }
+    ]
+  }
+]

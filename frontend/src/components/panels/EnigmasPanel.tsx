@@ -4,10 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Enigma } from '../../types';
 import { edition } from '../../editions';
 import { getEnigmasWithProgress, getEnigmasPreview, submitPasswordAttempt } from '../../services/gameService';
-import { teamAPI, hintsAPI } from '../../services/api';
+import { teamAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import PDFViewer from '../PDFViewer';
-import ConfirmationModal from '../ConfirmationModal';
+import HintRequestSection from './HintRequestSection';
 import './EnigmasPanel.css';
 import ResultatTentative from '../ResultatTentative';
 
@@ -72,12 +72,6 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
   const [attemptMessage, setAttemptMessage] = useState('');
   const [attemptSuccess, setAttemptSuccess] = useState<boolean | null>(null);
 
-  // Hint state
-  const [showHintModal, setShowHintModal] = useState(false);
-  const [hintPdfUrl, setHintPdfUrl] = useState<string | null>(null);
-  const [showingHint, setShowingHint] = useState(false);
-  const [hintLoading, setHintLoading] = useState(false);
-
   const passwordMutation = useMutation({
     mutationFn: ({ enigmaId, password }: { enigmaId: string; password: string }) =>
       submitPasswordAttempt(enigmaId, password),
@@ -103,55 +97,9 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
     setPassword('');
     setAttemptMessage('');
     setAttemptSuccess(null);
-    // Reset hint state
-    setShowingHint(false);
-    setHintPdfUrl(null);
     if (!isExpanded) {
       onExpand();
     }
-  };
-
-  const handleHintClick = async () => {
-    if (!selectedEnigma) return;
-
-    // If hint already used, just fetch and show it
-    if (selectedEnigma.hintUsed) {
-      setHintLoading(true);
-      try {
-        const result = await hintsAPI.useHint(selectedEnigma.id);
-        setHintPdfUrl(result.hintPdfUrl);
-        setShowingHint(true);
-      } catch (error) {
-        console.error('Failed to get hint:', error);
-      } finally {
-        setHintLoading(false);
-      }
-    } else {
-      // Show confirmation modal for first use
-      setShowHintModal(true);
-    }
-  };
-
-  const handleHintConfirm = async () => {
-    setShowHintModal(false);
-    if (!selectedEnigma) return;
-
-    setHintLoading(true);
-    try {
-      const result = await hintsAPI.useHint(selectedEnigma.id);
-      setHintPdfUrl(result.hintPdfUrl);
-      setShowingHint(true);
-      // Refresh enigmas to update hintUsed status
-      queryClient.invalidateQueries({ queryKey: ['enigmas-with-progress'] });
-    } catch (error) {
-      console.error('Failed to use hint:', error);
-    } finally {
-      setHintLoading(false);
-    }
-  };
-
-  const handleBackToEnigma = () => {
-    setShowingHint(false);
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -328,39 +276,10 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                     reussi={attemptSuccess === true}
                     onFermer={() => setAttemptMessage('')}
                   />
-                  {/* Hint button and toggle */}
-                  {selectedEnigma.hasHint && !selectedEnigma.isSolved && (
-                    <div className="hint-section" data-testid="hint-section">
-                      {showingHint ? (
-                        <button
-                          data-testid="hint-back-button"
-                          className="hint-button hint-back-btn"
-                          onClick={handleBackToEnigma}
-                        >
-                          Retour a l'enigme
-                        </button>
-                      ) : (
-                        <button
-                          data-testid="hint-button"
-                          className={`hint-button ${selectedEnigma.hintUsed ? 'hint-used' : ''}`}
-                          onClick={handleHintClick}
-                          disabled={hintLoading}
-                        >
-                          {hintLoading ? 'Chargement...' : selectedEnigma.hintUsed ? 'Revoir l\'indice' : 'Avoir un indice'}
-                        </button>
-                      )}
-                      {selectedEnigma.hintUsed && !showingHint && (
-                        <span className="hint-used-badge" data-testid="hint-used-badge">Indice utilise</span>
-                      )}
-                    </div>
-                  )}
-                  {/* PDF Viewer - show hint or enigma */}
-                  {showingHint && hintPdfUrl ? (
-                    <div className="enigma-pdf-container hint-pdf" data-testid="hint-pdf-container">
-                      <div className="hint-pdf-header">Indice</div>
-                      <PDFViewer pdfUrl={hintPdfUrl} title={`Indice - ${selectedEnigma.title}`} />
-                    </div>
-                  ) : selectedEnigma.pdfUrl ? (
+                  {/* La demande d'indice garde la place du bandeau qu'elle
+                      remplace : après la barre de réponse, avant l'énoncé. */}
+                  <HintRequestSection enigma={selectedEnigma} />
+                  {selectedEnigma.pdfUrl ? (
                     <div className="enigma-pdf-container" data-testid="enigma-pdf-container">
                       <PDFViewer pdfUrl={selectedEnigma.pdfUrl} title={selectedEnigma.title} />
                     </div>
@@ -381,17 +300,6 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
         )}
       </div>
 
-      {/* Hint confirmation modal */}
-      <ConfirmationModal
-        isOpen={showHintModal}
-        title="Utiliser un indice"
-        message="Attention ! L'utilisation d'un indice coute 25% des points de cette enigme. Cette action est irreversible. Voulez-vous continuer ?"
-        confirmText="Voir l'indice"
-        cancelText="Annuler"
-        onConfirm={handleHintConfirm}
-        onCancel={() => setShowHintModal(false)}
-        variant="warning"
-      />
     </div>
   );
 };

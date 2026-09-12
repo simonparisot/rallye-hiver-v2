@@ -7,7 +7,7 @@ import AdminParcours from './pages/AdminParcours';
 import AdminTeams from './pages/AdminTeams';
 import AdminUsers from './pages/AdminUsers';
 import AdminAttempts from './pages/AdminAttempts';
-import AdminHintUsage from './pages/AdminHintUsage';
+import AdminHintRequests from './pages/AdminHintRequests';
 import AdminLogin from './pages/AdminLogin';
 import { useAdminAuth } from './contexts/AdminAuthContext';
 import { edition } from '../editions';
@@ -40,8 +40,8 @@ const AdminApp: React.FC = () => {
         <Route path="/teams" element={<AdminTeams />} />
         <Route path="/users" element={<AdminUsers />} />
         <Route path="/attempts" element={<AdminAttempts />} />
-        <Route path="/hints" element={<AdminHintUsage />} />
-        {/* Jeu de l'oie : seulement pour une edition qui le declare */}
+        <Route path="/hints" element={<AdminHintRequests />} />
+        {/* Jeu de l'oie : seulement pour une édition qui le déclare */}
         {edition.enigmeOie && <Route path="/oie" element={<AdminOie />} />}
       </Routes>
     </AdminLayout>

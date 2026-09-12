@@ -1,0 +1,315 @@
+/* ---------------------------------------------------------------------------
+   Demander un indice — édition 2027
+
+   La zone prend la place du bandeau d'indice qu'elle remplace : entre la barre
+   de réponse et l'énoncé. Elle en garde l'or patiné, seule couleur que la
+   refonte a laissée à l'indice, et hérite du fond clair de `.enigma-viewer` :
+   un énoncé se lit sur du papier, ce qui vaut aussi pour ce qui l'entoure.
+
+   Tout tient dans ce fichier, sans couleur écrite en dur autrement que comme
+   valeur de repli d'une variable de l'édition.
+   --------------------------------------------------------------------------- */
+
+.hint-zone {
+  padding: 20px 22px 22px;
+  background: rgba(194, 168, 104, .12);
+  border-bottom: 1px solid rgba(169, 143, 76, .28);
+  font-family: var(--font-body);
+  color: var(--theatre-salle, #1B1720);
+}
+
+.hint-zone-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+/* Abril Fatface s'épaissit et devient illisible en petit corps : la borne de
+   l'édition empêche la police de titre de descendre dans le texte courant. */
+.hint-zone-header h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: max(var(--display-taille-mini, 22px), 23px);
+  line-height: 1.15;
+  font-weight: 400;
+  color: #7A6428;
+}
+
+.hint-zone-meta {
+  font-size: 13px;
+  color: var(--theatre-coulisse, #6B6357);
+}
+
+/* --- Indices déjà obtenus ------------------------------------------------
+   Ils restent lisibles sans nouvelle dépense : c'est du papier de programme,
+   pas une alerte. */
+.hint-obtained-list {
+  list-style: none;
+  margin: 0 0 16px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hint-obtained {
+  padding: 12px 14px;
+  background: var(--theatre-scene, #FBF9F5);
+  border-left: 3px solid var(--theatre-dorure, #A98F4C);
+  border-top: 1px solid var(--theatre-filet, #D6CFC4);
+  border-right: 1px solid var(--theatre-filet, #D6CFC4);
+  border-bottom: 1px solid var(--theatre-filet, #D6CFC4);
+}
+
+.hint-obtained-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hint-obtained-rank {
+  color: #7A6428;
+}
+
+.hint-obtained-cost {
+  color: var(--theatre-coulisse-pale, #8B8275);
+}
+
+.hint-obtained-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  color: var(--theatre-salle, #1B1720);
+}
+
+/* --- L'indice qui vient d'arriver ---
+   Mis en avant le temps de la visite : c'est ce que l'équipe vient de payer. */
+.hint-fresh {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  background: var(--theatre-scene, #FBF9F5);
+  border-top: 3px solid var(--theatre-dorure, #A98F4C);
+  box-shadow: 0 6px 20px rgba(27, 23, 32, .12);
+}
+
+.hint-fresh-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7A6428;
+}
+
+.hint-fresh p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* --- Saisie de l'avancement --------------------------------------------- */
+.hint-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hint-help {
+  margin: 0 0 10px 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--theatre-coulisse, #6B6357);
+}
+
+.hint-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--theatre-salle, #1B1720);
+  background: var(--theatre-scene, #FBF9F5);
+  border: 1px solid var(--theatre-filet, #D6CFC4);
+  border-radius: 0;
+  resize: vertical;
+}
+
+.hint-textarea::placeholder {
+  color: var(--theatre-coulisse-pale, #8B8275);
+}
+
+.hint-textarea:focus {
+  outline: 2px solid var(--theatre-comedie, #5687A8);
+  outline-offset: -1px;
+  border-color: var(--theatre-comedie, #5687A8);
+}
+
+.hint-textarea:disabled {
+  background: var(--etat-vierge-fond, #E8E3DA);
+  cursor: not-allowed;
+}
+
+.hint-counter {
+  margin-top: 5px;
+  font-size: 12.5px;
+  color: var(--theatre-coulisse-pale, #8B8275);
+  text-align: right;
+}
+
+/* --- Avertissement de coût ---
+   Un filet, pas un panneau : l'information doit se lire, pas alarmer. */
+.hint-warning {
+  margin: 14px 0;
+  padding: 11px 14px;
+  background: var(--theatre-scene, #FBF9F5);
+  border-left: 3px solid var(--theatre-tragedie, #A9503F);
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--theatre-salle, #1B1720);
+}
+
+.hint-warning strong {
+  color: var(--theatre-tragedie, #A9503F);
+}
+
+/* --- Boutons ---
+   Le rouge du rideau reste au geste central du rallye, « Valider ma réponse ».
+   Demander un indice se tient en retrait, dans l'or de l'édition. */
+.hint-action-btn {
+  padding: 11px 24px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  border: 1px solid rgba(169, 143, 76, .55);
+  background: transparent;
+  color: #7A6428;
+  transition: background-color .15s, border-color .15s;
+}
+
+.hint-action-btn:hover:not(:disabled) {
+  background: rgba(194, 168, 104, .18);
+  border-color: rgba(169, 143, 76, .8);
+}
+
+.hint-action-btn:focus-visible {
+  outline: 3px solid var(--theatre-comedie, #5687A8);
+  outline-offset: 2px;
+}
+
+.hint-action-btn:disabled {
+  background: var(--etat-vierge-fond, #E8E3DA);
+  border-color: var(--theatre-filet, #D6CFC4);
+  color: var(--etat-vierge-texte, #6B6357);
+  cursor: not-allowed;
+}
+
+/* La confirmation est le point de non-retour : elle seule est pleine. */
+.hint-action-confirm:not(:disabled) {
+  background: var(--theatre-dorure, #A98F4C);
+  border-color: var(--theatre-dorure, #A98F4C);
+  color: #2A2205;
+}
+
+.hint-action-confirm:hover:not(:disabled) {
+  background: var(--theatre-dorure-claire, #C2A868);
+  border-color: var(--theatre-dorure-claire, #C2A868);
+}
+
+.hint-action-cancel {
+  border-color: var(--theatre-filet, #D6CFC4);
+  color: var(--theatre-coulisse, #6B6357);
+}
+
+.hint-action-cancel:hover:not(:disabled) {
+  background: rgba(27, 23, 32, .05);
+  border-color: var(--theatre-coulisse-pale, #8B8275);
+}
+
+/* --- Confirmation ------------------------------------------------------- */
+.hint-confirm {
+  padding: 14px 16px;
+  background: var(--theatre-scene, #FBF9F5);
+  border-top: 3px solid var(--theatre-dorure, #A98F4C);
+}
+
+.hint-confirm-question {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.hint-confirm-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* --- Le souffleur au travail ---
+   L'appel prend quelques secondes, parfois davantage quand il passe par la file
+   d'attente : le dire vaut mieux qu'un écran figé. */
+.hint-loading {
+  margin: 14px 0;
+  padding: 12px 14px;
+  background: rgba(86, 135, 168, .12);
+  border-left: 3px solid var(--theatre-comedie, #5687A8);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--theatre-comedie-sombre, #3F6A88);
+}
+
+.hint-loading-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--theatre-coulisse, #6B6357);
+}
+
+/* Au-delà de trois minutes, on cesse d'interroger et on l'annonce : la demande
+   n'est pas perdue, elle aboutira. */
+.hint-slow {
+  margin: 14px 0;
+  padding: 12px 14px;
+  background: var(--theatre-scene, #FBF9F5);
+  border-left: 3px solid var(--theatre-coulisse, #6B6357);
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--theatre-coulisse, #6B6357);
+}
+
+.hint-error {
+  margin-top: 14px;
+  padding: 11px 14px;
+  background: var(--theatre-scene, #FBF9F5);
+  border-left: 3px solid var(--theatre-tragedie, #A9503F);
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--theatre-tragedie-sombre, #8C3E30);
+}
+
+@media (max-width: 768px) {
+  .hint-zone {
+    padding: 16px 14px 18px;
+  }
+
+  .hint-confirm-actions .hint-action-btn {
+    flex: 1 1 100%;
+  }
+}

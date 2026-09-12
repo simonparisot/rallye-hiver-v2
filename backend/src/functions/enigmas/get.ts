@@ -16,8 +16,13 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error('Enigma not found', 404);
     }
 
-    // Don't expose the correct password to clients
-    const { correctPassword, ...sanitizedEnigma } = enigma as any;
+    // Ni le mot de passe, ni la demarche de resolution, ni le texte des indices
+    // ne doivent atteindre un client.
+    const { correctPassword, solution, hints, ...rest } = enigma as any;
+    const sanitizedEnigma = {
+      ...rest,
+      hintsCount: Array.isArray(hints) ? hints.length : 0,
+    };
 
     return success({
       enigma: sanitizedEnigma,

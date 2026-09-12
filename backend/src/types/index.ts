@@ -60,8 +60,15 @@ export interface Enigma {
   title: string;
   description?: string;
   pdfUrl: string;
-  hintPdfUrl?: string; // Optional hint PDF URL
   correctPassword: string;
+  /**
+   * Demarche de resolution complete, redigee par l'organisateur : le chemin
+   * attendu, les etapes intermediaires et les fausses pistes. Jamais exposee
+   * aux joueurs ; elle ne sert qu'au choix d'indice cote serveur.
+   */
+  solution?: string;
+  /** Indices pre-ecrits, du plus precoce au plus tardif (ordre croissant). */
+  hints?: EnigmaHint[];
   points: number;
   difficulty?: 'easy' | 'medium' | 'hard';
   isActive: boolean;
@@ -94,8 +101,8 @@ export interface TeamEnigmaProgress {
   attemptCount: number;
   lastAttemptAt?: string;
   firstAttemptAt?: string;
-  hintUsed?: boolean; // Whether the team used the hint for this enigma
-  hintUsedAt?: string; // ISO 8601 timestamp when hint was used
+  hintsRequested?: number; // How many hints the team has obtained for this enigma
+  lastHintAt?: string; // ISO 8601 timestamp of the latest hint obtained
   createdAt: string;
   updatedAt: string;
 }
@@ -132,4 +139,50 @@ export interface GameStatus {
   startedBy?: string; // Admin userId who started the game
   createdAt: string;
   updatedAt: string;
+}
+
+// Hint Interfaces
+
+export interface EnigmaHint {
+  id: string;
+  order: number;
+  text: string;
+}
+
+/**
+ * Etat d'une demande d'indice.
+ *
+ * En mode `anthropic`, une demande nait `done` : l'appel au modele a lieu dans
+ * la lambda et la reponse est synchrone. En mode `queue`, elle nait `pending`,
+ * un worker exterieur la prend (`processing`) puis la conclut.
+ */
+export type HintRequestStatus = 'pending' | 'processing' | 'done' | 'failed';
+
+/**
+ * Une demande d'indice, telle qu'elle est archivee. Une ligne par demande :
+ * c'est le journal que l'organisateur relit pour juger de l'essai.
+ */
+export interface HintRequest {
+  requestId: string;
+  teamId: string;
+  enigmaId: string;
+  status: HintRequestStatus;
+  requestedAt: string; // ISO 8601
+  requestedBy: string; // userId
+  progressText: string; // Le texte libre ecrit par l'equipe
+  /** Identifiants des indices deja donnes a l'equipe au moment de la demande. */
+  excludedHintIds?: string[];
+  /** Renseignes une fois la demande conclue avec succes. */
+  hintId?: string;
+  hintText?: string; // Le texte de l'indice tel qu'il a ete livre
+  justification?: string;
+  model?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  /** Renseigne quand la demande echoue, pour le journal de l'organisateur. */
+  failureReason?: string;
+  /** Pose au moment ou un worker prend la demande, pour deverrouiller un worker mort. */
+  processingStartedAt?: string;
+  completedAt?: string;
+  pointsCharged: number;
 }

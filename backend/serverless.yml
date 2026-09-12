@@ -9,6 +9,11 @@ provider:
   stage: prod
   memorySize: 256
   timeout: 30
+  # Pas de ressource AWS::Lambda::Version par fonction. Elles ne servaient a
+  # rien ici : aucun alias n'est defini et API Gateway appelle l'ARN non
+  # qualifie. En revanche elles comptaient dans la limite CloudFormation de
+  # 500 ressources, que la pile a fini par depasser.
+  versionFunctions: false
   apiGateway:
     shouldStartNameWithService: true
     minimumCompressionSize: 1024
@@ -27,6 +32,7 @@ provider:
     TEAM_PARCOURS_ACCESS_TABLE: ${self:service}-team-parcours-access
     GAME_STATUS_TABLE: ${self:service}-game-status
     ENIGMA_DIFFICULTY_CACHE_TABLE: ${self:service}-enigma-difficulty-cache
+    HINT_REQUESTS_TABLE: ${self:service}-hint-requests
     # Secrets et identifiants lus dans SSM Parameter Store au moment du
     # déploiement, sous /rallye-hiver/<stage>/. Plus rien n'a donc à être fourni
     # en variables d'environnement pour déployer.
@@ -41,6 +47,18 @@ provider:
     OIE_BOARD_TABLE: ${self:service}-oie-board
     OIE_TEAM_STATE_TABLE: ${self:service}-oie-team-state
     OIE_EVENTS_TABLE: ${self:service}-oie-events
+    # Defaut vide : en mode `queue` aucune clef n'est necessaire, et un stage
+    # sans ce parametre doit pouvoir se deployer. En mode `anthropic`, une clef
+    # absente se voit au premier appel, pas au deploiement.
+    ANTHROPIC_API_KEY: ${ssm:/rallye-hiver/${self:provider.stage}/anthropic-api-key, ''}
+    # Modele charge de choisir l'indice. Parametrable sans redeploiement de code.
+    HINT_MODEL: ${env:HINT_MODEL, 'claude-opus-5'}
+    # Deux facons d'appeler le modele. `anthropic` : la lambda appelle l'API,
+    # reponse synchrone, c'est la production. `queue` : la lambda enregistre la
+    # demande et un worker exterieur la traite via l'abonnement Claude du
+    # commanditaire, sans clef d'API. Le defaut vaut pour les stages ou le
+    # parametre n'existe pas.
+    HINT_PROVIDER: ${ssm:/rallye-hiver/${self:provider.stage}/hint-provider, 'anthropic'}
   iam:
     role:
       statements:
@@ -66,6 +84,8 @@ provider:
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PASSWORD_ATTEMPTS_TABLE}/index/*
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TEAM_PARCOURS_ACCESS_TABLE}
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.GAME_STATUS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.HINT_REQUESTS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.HINT_REQUESTS_TABLE}/index/*
         - Effect: Allow
           Action:
             - cognito-idp:AdminCreateUser
@@ -96,14 +116,6 @@ provider:
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.OIE_TEAM_STATE_TABLE}
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.OIE_EVENTS_TABLE}
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.OIE_EVENTS_TABLE}/index/*
-
-  # 76 lambdas x 1 AWS::Lambda::Version faisaient passer la pile de 466 a 542
-  # ressources, au-dela des 500 que CloudFormation accepte : plus aucune
-  # fonction ne pouvait etre ajoutee. Ces versions ne servaient a rien ici,
-  # aucun alias ni concurrence provisionnee ne s'y rattache, et API Gateway
-  # appelle l'ARN non qualifie de la fonction. Les supprimer ne change donc
-  # rien au comportement, seulement le nombre de ressources.
-  versionFunctions: false
 
 build:
   esbuild:
@@ -533,12 +545,26 @@ functions:
             resultTtlInSeconds: 0
 
   # Hint endpoints
-  useHint:
-    handler: src/functions/hints/useHint.handler
+  requestHint:
+    handler: src/functions/hints/requestHint.handler
+    # Le choix de l'indice passe par un appel au modele : quelques secondes,
+    # parfois davantage. Le defaut de 30 s ne laisse pas de marge.
+    timeout: 60
     events:
       - http:
-          path: /hints/{enigmaId}/use
+          path: /hints/{enigmaId}/request
           method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  listHints:
+    handler: src/functions/hints/listHints.handler
+    events:
+      - http:
+          path: /hints/{enigmaId}
+          method: get
           cors: true
           authorizer:
             name: authorizer
@@ -850,11 +876,11 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
-  adminHintsUsage:
-    handler: src/functions/admin/hints/usage.handler
+  adminHintRequests:
+    handler: src/functions/admin/hints/requests.handler
     events:
       - http:
-          path: /admin/hints/usage
+          path: /admin/hints/requests
           method: get
           cors: true
           authorizer:
@@ -1238,6 +1264,33 @@ resources:
               - AttributeName: teamId
                 KeyType: HASH
               - AttributeName: occurredAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+
+    HintRequestsTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
+      Properties:
+        TableName: ${self:provider.environment.HINT_REQUESTS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: requestId
+            AttributeType: S
+          - AttributeName: teamEnigmaKey
+            AttributeType: S
+          - AttributeName: requestedAt
+            AttributeType: S
+        KeySchema:
+          - AttributeName: requestId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: teamEnigmaKey-requestedAt-index
+            KeySchema:
+              - AttributeName: teamEnigmaKey
+                KeyType: HASH
+              - AttributeName: requestedAt
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL

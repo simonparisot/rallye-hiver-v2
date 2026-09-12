@@ -44,8 +44,9 @@ export interface BackendEnigma {
   title: string;
   description?: string;
   pdfUrl: string;
-  hintPdfUrl?: string;  // Full URL for admin
-  hasHint?: boolean;    // Boolean for player (URL hidden)
+  hintsCount?: number;  // Nombre d'indices existants (le texte reste cote serveur)
+  solution?: string;    // Demarche de resolution, cote admin uniquement
+  hints?: EnigmaHint[]; // Indices pre-ecrits, cote admin uniquement
   points: number;
   difficulty?: 'easy' | 'medium' | 'hard';
   isActive: boolean;
@@ -74,8 +75,8 @@ export interface TeamEnigmaProgress {
   attemptCount: number;
   lastAttemptAt?: string;
   firstAttemptAt?: string;
-  hintUsed?: boolean;     // Whether the team used the hint
-  hintUsedAt?: string;    // When the hint was used
+  hintsRequested?: number; // Nombre d'indices obtenus sur cette enigme
+  lastHintAt?: string;     // Date du dernier indice obtenu
   createdAt: string;
   updatedAt: string;
 }
@@ -151,8 +152,8 @@ export interface Enigma {
   solvedAt?: string;
   attemptCount?: number;
   difficulty?: 'easy' | 'medium' | 'hard';
-  hasHint?: boolean;      // Whether a hint is available
-  hintUsed?: boolean;     // Whether the team has used the hint
+  hintsCount?: number;     // Nombre d'indices existants pour cette enigme
+  hintsRequested?: number; // Nombre d'indices deja obtenus par l'equipe
 }
 
 export interface Parcours {
@@ -183,6 +184,7 @@ export interface TeamStats {
   parcoursCompleted: number;
   totalParcours: number;
   totalPoints: number;
+  hintsRequestedCount?: number; // Indices demandés, sans effet sur le score
   passwordAttemptsCount: number;
   attemptsRanking: number;
   attemptsRankingMessage: string;
@@ -197,4 +199,60 @@ export interface AuthTokens {
 export interface PendingRequest {
   teamId: string;
   teamName: string;
+}
+
+// ==================== INDICES ====================
+
+export interface EnigmaHint {
+  id: string;
+  order: number;
+  text: string;
+}
+
+/** Un indice deja obtenu par l'equipe, tel qu'il lui a ete livre. */
+export interface ObtainedHint {
+  id: string;
+  text: string;
+  requestedAt: string;
+  pointsCharged: number;
+}
+
+/** Statut d'une demande, tel que le frontend le voit. */
+export type HintRequestStatus = 'pending' | 'done' | 'failed';
+
+/** Suivi d'une demande : le texte n'arrive qu'une fois la demande aboutie. */
+export interface HintRequestTracking {
+  requestId: string;
+  status: HintRequestStatus;
+  requestedAt: string;
+  pointsCharged: number;
+  hint?: { id: string; text: string };
+  failureReason?: string;
+}
+
+export interface HintsListResponse {
+  enigmaId: string;
+  hints: ObtainedHint[];
+  requests: HintRequestTracking[];
+  hintsRequested: number;
+  remainingHints: number;
+  /** Vrai tant qu'une demande n'est pas conclue : le frontend réinterroge. */
+  pendingRequest: boolean;
+  nextHintCost: number;
+  enigmaPoints: number;
+  totalPointsCharged: number;
+}
+
+/**
+ * Réponse a une demande. Selon le mode du serveur, elle est deja conclue
+ * (`done`, avec son indice) ou seulement enregistree (`pending`) : le frontend
+ * ne sait pas lequel des deux tourne, il lit le statut.
+ */
+export interface HintRequestResponse {
+  requestId: string;
+  status: HintRequestStatus;
+  hint?: { id: string; text: string };
+  pointsCharged: number;
+  hintsRequested: number;
+  remainingHints: number;
 }

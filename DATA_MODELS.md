@@ -103,6 +103,10 @@ interface Enigma {
   description?: string;        // Short description
   pdfUrl: string;              // S3 URL to enigma PDF
   correctPassword: string;     // Solution (NOT exposed to clients)
+  solution?: string;           // Démarche de résolution détaillée, fausses pistes comprises
+                               // (NOT exposed to clients — sert au choix d'indice)
+  hints?: EnigmaHint[];        // Indices pré-écrits, ordre croissant
+                               // (NOT exposed to clients — seul hintsCount l'est)
   points: number;              // Points awarded when solved
   difficulty?: 'easy' | 'medium' | 'hard';  // Difficulty level
   isActive: boolean;           // Whether enigma is active (default: true)
@@ -129,7 +133,34 @@ interface Enigma {
 }
 ```
 
-**Security Note**: `correctPassword` is NEVER returned to clients via API
+**Security Note**: `correctPassword`, `solution` et `hints` ne sont JAMAIS renvoyés
+aux clients. `GET /enigmas` et `GET /enigmas/{enigmaId}` remplacent `hints` par
+`hintsCount` (un simple entier), qui suffit au joueur pour savoir s'il peut
+demander un indice. Le texte d'un indice n'atteint une équipe que par
+`POST /hints/{enigmaId}/request`, une fois payé.
+
+---
+
+### EnigmaHint
+
+Sous-objet stocké dans le tableau `hints` de l'énigme. Il n'a pas de table à lui :
+les indices n'existent que dans le contexte de leur énigme.
+
+```typescript
+interface EnigmaHint {
+  id: string;                  // Identifiant stable dans l'énigme (ex. "h1")
+  order: number;               // Rang, du plus précoce (1) au plus tardif
+  text: string;                // Texte affiché à l'équipe, tel quel
+}
+```
+
+`id` ne doit jamais être réattribué : une demande archivée y renvoie. Un
+réordonnancement change `order`, pas `id`.
+
+**Exemple** :
+```json
+{ "id": "h3", "order": 3, "text": "Retournez chaque cadran comme dans un miroir." }
+```
 
 ---
 
@@ -191,10 +222,17 @@ interface TeamEnigmaProgress {
   attemptCount: number;        // Total number of attempts (default: 0)
   lastAttemptAt?: string;      // ISO 8601 timestamp of last attempt
   firstAttemptAt?: string;     // ISO 8601 timestamp of first attempt
+  hintsRequested?: number;     // Nombre d'indices demandés sur cette énigme
+                               // (compteur d'usage : aucun effet sur le score
+                               //  pendant l'essai)
+  lastHintAt?: string;         // ISO 8601 timestamp du dernier indice obtenu
   createdAt: string;           // ISO 8601 timestamp
   updatedAt: string;           // ISO 8601 timestamp
 }
 ```
+
+Remplace les anciens champs `hintUsed` / `hintUsedAt` (booléen d'usage du PDF
+d'indice), retirés avec l'ancien mécanisme.
 
 **Example**:
 ```json
@@ -206,6 +244,8 @@ interface TeamEnigmaProgress {
   "attemptCount": 5,
   "lastAttemptAt": "2025-01-20T14:35:22Z",
   "firstAttemptAt": "2025-01-20T13:15:10Z",
+  "hintsRequested": 2,
+  "lastHintAt": "2025-01-20T14:02:10Z",
   "createdAt": "2025-01-20T13:15:10Z",
   "updatedAt": "2025-01-20T14:35:22Z"
 }
@@ -248,6 +288,94 @@ interface TeamParcoursAccess {
 **Access Patterns**:
 - Get accessible parcours for team: Query by `teamId`
 - Check specific parcours access: GetItem with `teamId` + `parcoursId`
+
+---
+
+### HintRequest
+**Table**: `rallye-hiver-backend-hint-requests-{stage}`
+**Primary Key**: `requestId` (UUID)
+**GSI**: `teamEnigmaKey-requestedAt-index` sur `teamEnigmaKey` + `requestedAt`
+
+Une ligne par demande d'indice. C'est à la fois le journal que l'organisateur
+relit et la source de vérité de ce qu'une équipe a déjà reçu : la liste des
+indices déjà donnés est reconstruite depuis cette table, pas depuis la
+progression.
+
+```typescript
+type HintRequestStatus = 'pending' | 'processing' | 'done' | 'failed';
+
+interface HintRequest {
+  requestId: string;           // UUID, clé primaire
+  teamId: string;              // Équipe demandeuse
+  enigmaId: string;            // Énigme concernée
+  teamEnigmaKey: string;       // Composite "teamId#enigmaId", clé de la GSI
+  status: HintRequestStatus;   // Voir ci-dessous
+  requestedAt: string;         // ISO 8601
+  requestedBy: string;         // userId de la personne qui a cliqué
+  progressText: string;        // Texte libre écrit par l'équipe (20 à 3 000 car.)
+  excludedHintIds?: string[];  // Indices déjà donnés au moment de la demande
+  hintId?: string;             // Identifiant de l'indice choisi (status done)
+  hintText?: string;           // Texte de l'indice tel qu'il a été livré
+  justification?: string;      // Note interne du modèle, jamais montrée à l'équipe
+  model?: string;              // Identifiant du modèle appelé
+  inputTokens?: number;        // Jetons consommés, si connus
+  outputTokens?: number;
+  failureReason?: string;      // Renseignée quand status vaut failed
+  processingStartedAt?: string;// Pose du verrou par le worker
+  completedAt?: string;
+  pointsCharged: number;       // 0 pendant l'essai (barème en sommeil)
+}
+```
+
+**Cycle de vie du statut.** Il dépend du réglage `HINT_PROVIDER` :
+
+| Mode | Naissance | Suite |
+|---|---|---|
+| `anthropic` | `done` directement | la lambda appelle l'API et conclut dans la même requête |
+| `queue` | `pending` | le worker la prend (`pending` -> `processing`, écriture conditionnelle), puis `done` ou `failed` |
+
+Le passage `pending` -> `processing` est une écriture conditionnelle : c'est ce
+qui garantit qu'une demande n'est jamais traitée deux fois, même si deux workers
+tournent par mégarde.
+
+Seules les demandes `done` consomment un indice. Une demande `failed` n'a rien
+livré : l'indice reste disponible et l'équipe peut redemander.
+
+`hintText` est recopié plutôt que référencé : si l'organisateur réécrit un
+indice en cours de rallye, le journal garde ce que l'équipe a réellement lu.
+
+**Écriture** : en mode `anthropic`, une ligne n'est écrite qu'après un choix
+d'indice abouti, et un appel en échec n'en laisse aucune. En mode `queue`, la
+ligne est écrite dès la demande, avec le statut `pending` ; c'est le statut, et
+non la présence de la ligne, qui dit si l'indice a été livré.
+
+**Access Patterns** :
+- Indices déjà obtenus par une équipe sur une énigme : Query GSI sur
+  `teamEnigmaKey = "{teamId}#{enigmaId}"`, trié par `requestedAt`
+- Demandes à traiter (worker) : Scan filtré sur `status = "pending"`. Pas d'index
+  dédié : une poignée de lignes en attente à un instant donné ne le justifie pas
+- Journal de l'administrateur : Scan complet, filtré et trié en mémoire
+  (quelques centaines de lignes par édition)
+
+**Example**:
+```json
+{
+  "requestId": "9f1c1e0a-...",
+  "teamId": "t123e4567-...",
+  "enigmaId": "e123e4567-...",
+  "teamEnigmaKey": "t123e4567-...#e123e4567-...",
+  "requestedAt": "2026-01-20T14:02:10Z",
+  "requestedBy": "u123e4567-...",
+  "progressText": "On a relevé les sept horloges et tenté plusieurs additions...",
+  "hintId": "h2",
+  "hintText": "Relisez la lettre du propriétaire jusqu'au bout.",
+  "status": "done",
+  "model": "claude-fable-5-1",
+  "inputTokens": 1840,
+  "outputTokens": 62,
+  "pointsCharged": 0
+}
+```
 
 ---
 

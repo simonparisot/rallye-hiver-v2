@@ -357,8 +357,8 @@
    Placés en tête de l'énigme : l'énoncé est un PDF long, souvent déjà lu, et
    ce que l'on vient faire en rouvrant une énigme, c'est répondre.
 
-   Le bandeau d'indice était en jaune vif — la dernière couleur criarde de
-   l'écran. Il prend l'or patiné de l'édition.
+   La demande d'indice se tient entre les deux, à la place du bandeau qu'elle
+   remplace ; son habillage vit dans HintRequestSection.css.
    --------------------------------------------------------------------------- */
 .section .password-form,
 .section .password-form-compact {
@@ -366,22 +366,9 @@
   border-bottom: 1px solid var(--theatre-filet, #D6CFC4);
 }
 
-.section .hint-section {
-  background: rgba(194, 168, 104, .12);
-  border-bottom: 1px solid rgba(169, 143, 76, .28);
-}
-
-.section .hint-button {
-  background: transparent;
-  border: 1px solid rgba(169, 143, 76, .55);
-  color: #7A6428;
-  font-weight: 600;
-}
-.section .hint-button:hover:not(:disabled) {
-  background: rgba(194, 168, 104, .18);
-  border-color: rgba(169, 143, 76, .8);
-}
-.section .hint-used-badge { color: #7A6428; }
+/* L'or du bandeau d'indice a suivi la fonctionnalité : la demande d'indice
+   porte désormais son propre habillage, dans HintRequestSection.css. Rien ne
+   reste ici, sans quoi ces règles viseraient des classes disparues. */
 
 /* Le reste à faire, sous la barre de progression. */
 .section .stat-reste {

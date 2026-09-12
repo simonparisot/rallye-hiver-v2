@@ -53,11 +53,21 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const parcoursAccess = await getAllTeamParcoursAccess(teamId);
     const completedParcours = parcoursAccess.filter((p: any) => p.completed);
 
-    // Calculate points
+    // Points acquis. Les indices ne retirent rien pendant l'essai : le
+    // commanditaire veut d'abord juger le mécanisme de choix, et facturer des
+    // points brouillerait cette seule question. Le barème dort dans
+    // utils/hintCost.ts, avec la marche à suivre pour le rebrancher.
     const totalPoints = solvedEnigmas.reduce((sum: number, p: any) => {
       const enigma = allEnigmas.find((e: any) => e.enigmaId === p.enigmaId);
       return sum + (enigma?.points || 0);
     }, 0);
+
+    // Compté et renvoyé, mais sans effet sur le score : c'est une mesure
+    // d'usage de la fonctionnalité, pas une pénalité.
+    const hintsRequestedCount = progress.reduce(
+      (sum: number, p: any) => sum + (p.hintsRequested || 0),
+      0
+    );
 
     // Get password attempts for this team
     const teamAttempts = await getPasswordAttemptsByTeam(teamId, 10000);
@@ -114,6 +124,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       parcoursCompleted: completedParcours.length,
       totalParcours: allParcours.length,
       totalPoints,
+      hintsRequestedCount,
       passwordAttemptsCount,
       attemptsRanking: percentile,
       attemptsRankingMessage: rankingMessage,
