@@ -105,6 +105,84 @@ https://{api-id}.execute-api.eu-west-1.amazonaws.com/prod
 
 **Note**: The `/prod` path is required by AWS API Gateway stage naming.
 
+## Bacs à sable
+
+Un bac à sable est une pile AWS complète et isolée, montée pour un agent ou un
+chantier, dans le compte de test (`516341735006`, profil `rallye-test`). Deux
+chantiers parallèles peuvent ainsi déployer et tester leur backend sans que l'un
+écrase les lambdas de l'autre, et sans toucher à la pile de test qui sert
+`test.rallyehiver.fr`.
+
+### Mécanisme
+
+Les tables sont nommées `${self:service}-<table>` et le pool Cognito
+`${self:service}-user-pool` : changer le seul nom de service suffit à obtenir
+des tables vides, un pool vide, une API distincte et une pile CloudFormation
+distincte. `scripts/sandbox.sh` génère `backend/.sandbox-<nom>.yml` à partir du
+`serverless-test.yml` **du worktree courant**, si bien que chaque agent déploie
+sa branche, en n'y changeant que le nom de service, le stage, le bucket des
+énigmes et le suffixe d'URL. Le fichier généré est ignoré par git.
+
+### Les deux commandes
+
+```bash
+./scripts/sandbox.sh create <nom> <port>   # montage complet, une seule fois
+./scripts/sandbox.sh deploy <nom>          # à chaque itération backend
+```
+
+`<nom>` respecte `^[a-z][a-z0-9-]{1,20}$` et ne peut être ni `test` ni `prod`.
+`<port>` est celui du frontend local, qui devient l'origine CORS du bac à sable.
+
+### Amorçage Cognito
+
+Le bloc `provider.environment` lit les identifiants Cognito dans SSM, sous
+`/rallye-hiver/<nom>/`, alors que le pool et son client sont créés par la pile
+elle-même : il faut donc deux passages. `create` pose des valeurs provisoires
+(`eu-west-1_AMORCAGE`, `amorcage`), déploie, lit les vrais identifiants dans les
+Outputs CloudFormation (`UserPoolId`, `UserPoolClientId`), met SSM à jour et
+redéploie. Il vérifie pour finir que la lambda `login` porte bien les vrais
+identifiants, car ce sont les variables d'environnement des lambdas qui comptent,
+pas le contenu de SSM.
+
+### Partagé, pas partagé
+
+| Partagé avec la pile de test | Propre au bac à sable |
+|---|---|
+| Clés Stripe de test (`stripe-secret-key`, `stripe-webhook-secret`, `stripe-price-id`), recopiées depuis `/rallye-hiver/test/` | Tables DynamoDB, pool et client Cognito, API Gateway, lambdas |
+| Rien d'autre | Bucket `rallyehiver-enigmas-<nom>`, privé, CORS sur `http://localhost:<port>` |
+| | `cors-origin`, `anthropic-api-key` |
+
+`anthropic-api-key` est posée à `A-REMPLACER` : la vraie clé est fournie par le
+commanditaire. Le bucket du bac à sable reste privé, contrairement au bucket de
+test qui porte encore une politique de lecture publique héritée.
+
+### Coût
+
+Négligeable : DynamoDB en pay-per-request sur des tables vides, lambdas
+facturées à l'appel, API Gateway à la requête. Un bac à sable inactif ne coûte
+pratiquement rien.
+
+### Démontage
+
+Il n'est pas outillé, volontairement : la suppression d'une pile et de ses tables
+se décide, elle ne s'automatise pas dans le même script que la création. À noter
+pour ce jour-là : les tables et le pool portent `DeletionPolicy: Retain` et
+survivent donc à la suppression de la pile, y compris quand CloudFormation
+annule un premier déploiement raté. `create` détecte ce cas (tables présentes
+sans pile) et s'arrête avec un message explicite plutôt que de laisser
+CloudFormation échouer sur un « table already exists ».
+
+### Décor de test et compte d'administration
+
+```bash
+cd tests && TEST_ENV=<nom> npm run provision                       # comptes e2e + équipe de test
+cd tests && TEST_ENV=<nom> node scripts/make-admin.js <email> <mdp>  # compte du back-office
+```
+
+Le back-office ne s'appuie sur aucun groupe Cognito : `requireAdmin()` lit
+l'attribut `isAdmin` de l'enregistrement DynamoDB du compte, qu'aucun endpoint
+n'expose. `make-admin.js` crée le compte au besoin puis pose cet attribut.
+
 ### View Logs
 
 ```bash
