@@ -7,11 +7,11 @@ import { enigmaWithHints } from '../helpers/enigmas.js';
  * Contrat de l'API des indices.
  *
  * Ces tests ne cherchent pas à provoquer un appel réussi au modèle : une
- * demande aboutie coûte de l'argent, met quelques secondes et retire des points
- * à l'équipe de test. Ils vérifient ce qui ne dépend pas du modèle — le
- * contrôle d'accès, la validation de la saisie, le refus sur une énigme sans
- * indice, et l'absence de fuite de la solution — puis lisent les indices déjà
- * obtenus, qui ne déclenchent aucun appel.
+ * demande aboutie coûte de l'argent et, en mode file d'attente, suppose qu'un
+ * worker tourne. Ils vérifient ce qui ne dépend pas du modèle — le contrôle
+ * d'accès, la validation de la saisie, le refus sur une énigme sans indice, et
+ * l'absence de fuite de la solution — puis lisent les demandes déjà passées,
+ * qui ne déclenchent aucun appel.
  *
  * Le parcours complet, indice livré compris, est exercé en test unitaire avec
  * un faux client (`backend/src/functions/hints/__tests__/requestHint.test.ts`).
@@ -93,11 +93,23 @@ describe("Indices", () => {
 
       expect(reponse.status).toBe(200);
       expect(Array.isArray(reponse.data.hints)).toBe(true);
-      expect(typeof reponse.data.nextHintCost).toBe('number');
       expect(typeof reponse.data.remainingHints).toBe('number');
+      expect(typeof reponse.data.pendingRequest).toBe('boolean');
+      expect(Array.isArray(reponse.data.requests)).toBe(true);
 
-      // Seuls les indices payés sont renvoyés : jamais la liste complète.
+      // Seuls les indices livrés sont renvoyés : jamais la liste complète.
       expect(reponse.data.hints.length).toBe(reponse.data.hintsRequested);
+
+      // Une demande non conclue ne porte aucun texte d'indice.
+      for (const demande of reponse.data.requests) {
+        expect(['pending', 'done', 'failed']).toContain(demande.status);
+        if (demande.status !== 'done') {
+          expect(demande.hint).toBeUndefined();
+        }
+      }
+
+      // Rien n'est facturé pendant l'essai.
+      expect(reponse.data.nextHintCost).toBe(0);
     });
 
     test('refuse une énigme inexistante', async () => {

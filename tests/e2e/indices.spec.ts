@@ -46,7 +46,7 @@ test.describe('Demande d\'indice', () => {
     await expect(page.getByTestId('hint-counter')).toContainText('caractères');
   });
 
-  test('le coût est annoncé avant la confirmation, et l\'annulation ne coûte rien', async ({ page }) => {
+  test('le risque est annoncé avant la confirmation, et l\'annulation ne demande rien', async ({ page }) => {
     await page.goto('/');
     await page.getByTestId(`enigma-card-${enigme!.enigmaNumber}`).click();
 
@@ -58,17 +58,31 @@ test.describe('Demande d\'indice', () => {
     const bouton = page.getByTestId('hint-request-button');
     await expect(bouton).toBeEnabled();
 
-    // L'avertissement de coût est lisible avant toute action irréversible.
-    await expect(page.getByTestId('hint-cost-warning')).toContainText('point');
+    // L'avertissement est lisible avant toute action irréversible. Aucun chiffre
+    // n'y figure : rien n'est facturé pendant l'essai, et annoncer un montant qui
+    // changera vaudrait moins que prévenir sans en donner.
+    await expect(page.getByTestId('hint-cost-warning')).toContainText('coûter des points');
 
     await bouton.click();
     await expect(page.getByTestId('hint-confirm')).toBeVisible();
     await expect(page.getByTestId('hint-confirm-button')).toBeVisible();
 
-    // On s'arrête ici : confirmer appellerait le modèle et facturerait l'équipe.
+    // On s'arrête ici : confirmer appellerait le modèle, ce qui coûte de l'argent
+    // et prend plusieurs secondes.
     await page.getByTestId('hint-cancel-button').click();
     await expect(page.getByTestId('hint-confirm')).toBeHidden();
     await expect(page.getByTestId('hint-request-button')).toBeVisible();
+  });
+
+  test('la zone annonce le risque sans chiffrer le coût', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId(`enigma-card-${enigme!.enigmaNumber}`).click();
+
+    const avertissement = page.getByTestId('hint-cost-warning');
+    await expect(avertissement).toBeVisible();
+    // Aucun montant : le barème n'est pas fixé, et un chiffre faux serait pire
+    // que pas de chiffre du tout.
+    await expect(avertissement).not.toContainText(/\d+\s*point/);
   });
 
   test('changer d\'énigme vide le champ de la précédente', async ({ page }) => {

@@ -184,8 +184,7 @@ export interface TeamStats {
   parcoursCompleted: number;
   totalParcours: number;
   totalPoints: number;
-  hintsRequestedCount?: number; // Indices demandes, toutes enigmes confondues
-  hintsPenalty?: number;        // Points retires par les indices
+  hintsRequestedCount?: number; // Indices demandés, sans effet sur le score
   passwordAttemptsCount: number;
   attemptsRanking: number;
   attemptsRankingMessage: string;
