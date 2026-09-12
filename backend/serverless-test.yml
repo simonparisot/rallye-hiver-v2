@@ -107,6 +107,14 @@ provider:
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.OIE_EVENTS_TABLE}
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.OIE_EVENTS_TABLE}/index/*
 
+  # 76 lambdas x 1 AWS::Lambda::Version faisaient passer la pile de 466 a 542
+  # ressources, au-dela des 500 que CloudFormation accepte : plus aucune
+  # fonction ne pouvait etre ajoutee. Ces versions ne servaient a rien ici,
+  # aucun alias ni concurrence provisionnee ne s'y rattache, et API Gateway
+  # appelle l'ARN non qualifie de la fonction. Les supprimer ne change donc
+  # rien au comportement, seulement le nombre de ressources.
+  versionFunctions: false
+
 build:
   esbuild:
     bundle: true

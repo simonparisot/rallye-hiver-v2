@@ -40,6 +40,24 @@ export const MAX_OVERSHOOTS = 3;
 /** Guards the oie chain: a roll can never resolve for ever. */
 const MAX_MOVE_ITERATIONS = 32;
 
+/**
+ * Historical exception of the very first roll.
+ *
+ * From square 0, a total of 9 lands on an oie, which sends nine squares
+ * further, onto another oie, and so on: 9, 18, 27, 36, 45, 54, 63. The game
+ * would be won on the first throw, and a total of 9 comes up once in nine.
+ * Verified on the sandbox before this exception existed: one roll, 4 and 5,
+ * straight to square 63.
+ *
+ * The classic game has always carried the rule that fixes it: a first 9 made
+ * of 6 and 3 goes to 26, a first 9 made of 5 and 4 goes to 53, and the oie
+ * chain does not apply. It is kept here, keyed on the square rather than on
+ * the number of rolls so that coming back to 0 through la mort cannot reopen
+ * the same shortcut.
+ */
+export const PREMIER_NEUF_6_3 = 26;
+export const PREMIER_NEUF_5_4 = 53;
+
 /** Type of a square, derived from its number alone. */
 export function squareType(squareNumber: number): OieSquareType {
   if (squareNumber === 0) return 'depart';
@@ -135,11 +153,13 @@ export function rollDice(random: () => number = Math.random): [number, number] {
  * @param startPosition where the team stands before the roll
  * @param total sum of the two dice
  * @param overshootCount failures to land exactly on 63 so far
+ * @param dice the two dice, needed only for the first-nine exception
  */
 export function resolveMove(
   startPosition: number,
   total: number,
-  overshootCount: number
+  overshootCount: number,
+  dice?: [number, number]
 ): OieMoveResult {
   const effects: OieMoveEffect[] = [];
   let position = startPosition;
@@ -149,6 +169,22 @@ export function resolveMove(
   let inPuits = false;
   let inPrison = false;
   let skippedDays = 0;
+
+  // Exception du premier neuf : sans elle, un lancer sur neuf gagne la partie
+  // d'un coup depuis la case 0, en enchainant les six cases de l'oie.
+  if (startPosition === 0 && total === 9) {
+    const arrivee = dice && (dice[0] === 6 || dice[0] === 3) ? PREMIER_NEUF_6_3 : PREMIER_NEUF_5_4;
+    effects.push({ kind: 'avance', from: 0, to: arrivee });
+    return {
+      position: arrivee,
+      finished: false,
+      overshootCount: overshoots,
+      inPuits: false,
+      inPrison: false,
+      skippedDays: 0,
+      effects,
+    };
+  }
 
   for (let iteration = 0; iteration < MAX_MOVE_ITERATIONS; iteration += 1) {
     const target = position + step;

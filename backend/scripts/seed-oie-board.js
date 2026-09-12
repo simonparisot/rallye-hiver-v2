@@ -11,14 +11,24 @@
  *   node scripts/seed-oie-board.js --file scripts/mon-plateau.json --enigma-id abc-123 --rolls-per-day 2
  *   node scripts/seed-oie-board.js --dry-run          (verifie le fichier sans rien ecrire)
  *
+ * Sur un environnement neuf, l'enigme ordinaire qui porte le jeu de l'oie
+ * n'existe pas encore. --create-enigma la cree et rattache le plateau a son
+ * identifiant, ce qui evite d'avoir a passer par le back-office pour amorcer :
+ *
+ *   node scripts/seed-oie-board.js --profile rallye-test \
+ *     --table rallye-hiver-backend-oie-oie-board \
+ *     --enigmas-table rallye-hiver-backend-oie-enigmas \
+ *     --create-enigma --enigma-number 7
+ *
  * Aucune valeur par defaut ne pointe vers la production : la table doit etre
  * nommee explicitement, ou fournie par la variable OIE_BOARD_TABLE.
  */
 
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, PutCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 
 const FINISH_SQUARE = 63;
 const OIE_SQUARES = [9, 18, 27, 36, 45, 54];
@@ -165,6 +175,20 @@ async function main() {
 
   const client = DynamoDBDocumentClient.from(new DynamoDBClient({ region }));
 
+  let enigmaIdFinal = enigmaId;
+
+  if (args['create-enigma']) {
+    const enigmasTable = args['enigmas-table'] || process.env.ENIGMAS_TABLE;
+    if (!enigmasTable) {
+      fail('--create-enigma exige --enigmas-table <nom> (ou la variable ENIGMAS_TABLE)');
+    }
+    enigmaIdFinal = await ensureEnigma(client, enigmasTable, {
+      enigmaId: enigmaIdFinal,
+      enigmaNumber: Number(args['enigma-number'] || 1),
+      title: args['enigma-title'] || "Le jeu de l'oie du theatre",
+    });
+  }
+
   await client.send(
     new PutCommand({
       TableName: table,
@@ -172,7 +196,7 @@ async function main() {
         boardId: 'default',
         squares,
         rollsPerDay,
-        ...(enigmaId ? { enigmaId } : {}),
+        ...(enigmaIdFinal ? { enigmaId: enigmaIdFinal } : {}),
         updatedAt: new Date().toISOString(),
         updatedBy: 'scripts/seed-oie-board.js',
       },
@@ -180,6 +204,55 @@ async function main() {
   );
 
   console.log(`\nPlateau ecrit dans ${table} (region ${region}).`);
+  if (enigmaIdFinal) {
+    console.log(`enigmaId du plateau : ${enigmaIdFinal}`);
+    console.log('Cote frontend, poser REACT_APP_OIE_ENIGMA_ID avec cette valeur');
+    console.log('pour que l\'entree de la liste des enigmes mene au plateau.');
+  }
+}
+
+/**
+ * Cree l'enigme ordinaire qui porte le jeu de l'oie, si elle n'existe pas deja.
+ *
+ * Elle n'a ni PDF ni mot de passe utile : c'est le plateau qui la resout. Mais
+ * elle doit exister comme les dix-neuf autres pour que le classement et les
+ * statistiques la comptent sans traitement particulier.
+ *
+ * Idempotent : une enigme deja marquee `isOieBoard` est reutilisee telle quelle.
+ */
+async function ensureEnigma(client, enigmasTable, { enigmaId, enigmaNumber, title }) {
+  const existantes = await client.send(new ScanCommand({ TableName: enigmasTable }));
+  const deja = (existantes.Items || []).find(
+    (enigme) => enigme.isOieBoard === true || (enigmaId && enigme.enigmaId === enigmaId)
+  );
+
+  if (deja) {
+    console.log(`Enigme du jeu de l'oie deja presente : ${deja.enigmaId} (« ${deja.title} »)`);
+    return deja.enigmaId;
+  }
+
+  const now = new Date().toISOString();
+  const item = {
+    enigmaId: enigmaId || crypto.randomUUID(),
+    enigmaNumber,
+    title,
+    description:
+      "Une des vingt enigmes, jouee sur un plateau de jeu de l'oie partage par toutes les equipes.",
+    // Ni enonce ni mot de passe : la resolution vient de l'arrivee en case 63.
+    pdfUrl: '',
+    correctPassword: '',
+    points: 0,
+    isActive: true,
+    // Marqueur du script, pour rester idempotent sans deviner sur le titre.
+    isOieBoard: true,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await client.send(new PutCommand({ TableName: enigmasTable, Item: item }));
+  console.log(`Enigme du jeu de l'oie creee : ${item.enigmaId} (numero ${enigmaNumber})`);
+
+  return item.enigmaId;
 }
 
 main().catch((err) => {

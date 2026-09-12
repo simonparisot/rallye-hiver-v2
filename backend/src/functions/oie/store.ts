@@ -20,6 +20,21 @@ export const BOARD_ID = 'default';
 /** Quota applied until an admin sets one. */
 export const DEFAULT_ROLLS_PER_DAY = 1;
 
+/**
+ * Removes the keys whose value is undefined.
+ *
+ * The shared document client is not configured with removeUndefinedValues, and
+ * refuses to write such a value. Several fields here are legitimately absent:
+ * a square without a question, a team that has not arrived yet.
+ */
+function sansUndefined<T extends Record<string, any>>(item: T): T {
+  const clean: Record<string, any> = {};
+  Object.entries(item).forEach(([key, value]) => {
+    if (value !== undefined) clean[key] = value;
+  });
+  return clean as T;
+}
+
 /** Raised when a conditional write loses a race against a concurrent click. */
 export class OieConflictError extends Error {
   constructor(message: string) {
@@ -68,14 +83,17 @@ export function normalizeSquares(squares: OieSquare[]): OieSquare[] {
     const stored = byNumber.get(fallback.squareNumber);
     if (!stored) return fallback;
 
+    // Les champs absents sont omis plutot que poses a undefined : le client
+    // DynamoDB refuse d'ecrire une valeur undefined, et une case sans question
+    // est le cas normal (case 0, case 63, cases oie).
     return {
       squareNumber: fallback.squareNumber,
       // The type is never taken from the payload: it belongs to the rules.
       type: fallback.type,
-      question: stored.question,
+      ...(stored.question ? { question: stored.question } : {}),
       acceptedAnswers: Array.isArray(stored.acceptedAnswers) ? stored.acceptedAnswers : [],
-      hint: stored.hint,
-      flavor: stored.flavor,
+      ...(stored.hint ? { hint: stored.hint } : {}),
+      ...(stored.flavor ? { flavor: stored.flavor } : {}),
     };
   });
 }
@@ -99,9 +117,10 @@ export async function saveBoard(
     boardId: BOARD_ID,
     squares: normalizeSquares(squares),
     rollsPerDay,
-    enigmaId,
+    // Meme raison que dans normalizeSquares : jamais de undefined a l'ecriture.
+    ...(enigmaId ? { enigmaId } : {}),
     updatedAt: new Date().toISOString(),
-    updatedBy,
+    ...(updatedBy ? { updatedBy } : {}),
   };
 
   await dynamoDb.send(new PutCommand({ TableName: OIE_BOARD_TABLE, Item: board }));
@@ -152,7 +171,7 @@ export async function getAllTeamStates(): Promise<OieTeamState[]> {
  * twice for one quota. The version carried by the item is the guard.
  */
 export async function putTeamState(next: OieTeamState, expectedVersion: number): Promise<OieTeamState> {
-  const item: OieTeamState = { ...next, version: expectedVersion + 1 };
+  const item: OieTeamState = sansUndefined({ ...next, version: expectedVersion + 1 });
 
   try {
     await dynamoDb.send(
@@ -250,7 +269,7 @@ export async function logEvent(input: {
     detail: input.detail,
   };
 
-  await dynamoDb.send(new PutCommand({ TableName: OIE_EVENTS_TABLE, Item: event }));
+  await dynamoDb.send(new PutCommand({ TableName: OIE_EVENTS_TABLE, Item: sansUndefined(event) }));
   return event;
 }
 

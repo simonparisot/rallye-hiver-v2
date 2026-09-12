@@ -54,7 +54,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     const dice = rollDice();
     const total = dice[0] + dice[1];
-    const move = resolveMove(state.position, total, state.overshootCount);
+    const move = resolveMove(state.position, total, state.overshootCount, dice);
 
     const landedSquare = findSquare(board.squares, move.position);
 
@@ -92,13 +92,20 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // d'autre ne doit avoir bouge sur le plateau.
     await putTeamState(next, state.version);
 
+    // Un lancer produit plusieurs lignes de journal. Sans decalage elles
+    // porteraient toutes le meme horodatage, et la cle de tri les departagerait
+    // par identifiant, donc au hasard : le fil raconterait l'histoire dans le
+    // desordre. Une milliseconde par ligne suffit a la remettre droite.
+    let rang = 0;
+    const horodatage = () => new Date(now.getTime() + rang++).toISOString();
+
     const journal: string[] = [];
     await logEvent({
       type: 'lancer',
       teamId: player.teamId,
       teamName: player.teamName,
       userId: player.userId,
-      occurredAt: nowIso,
+      occurredAt: horodatage(),
       message: `${player.teamName} lance ${dice[0]} et ${dice[1]} (${total}) et avance de la case ${state.position} a la case ${move.position}`,
       detail: { dice, total, from: state.position, to: move.position },
     });
@@ -112,7 +119,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         teamId: player.teamId,
         teamName: player.teamName,
         userId: player.userId,
-        occurredAt: nowIso,
+        occurredAt: horodatage(),
         message,
         detail: { effect },
       });
@@ -143,7 +150,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           teamId: prisoner.teamId,
           teamName: prisonerName,
           userId: player.userId,
-          occurredAt: nowIso,
+          occurredAt: horodatage(),
           message,
           detail: { freedBy: player.teamId, field },
         });
@@ -159,7 +166,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         teamId: player.teamId,
         teamName: player.teamName,
         userId: player.userId,
-        occurredAt: nowIso,
+        occurredAt: horodatage(),
         message: `${player.teamName} termine le jeu de l'oie (rang ${next.finishRank})`,
         detail: {
           finishRank: next.finishRank,

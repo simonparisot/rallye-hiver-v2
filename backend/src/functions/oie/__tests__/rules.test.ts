@@ -16,6 +16,8 @@ import {
   isAnswerCorrect,
   normalizeAnswer,
   parisDay,
+  PREMIER_NEUF_5_4,
+  PREMIER_NEUF_6_3,
   resolveMove,
   rollDice,
   rollRefusal,
@@ -83,11 +85,19 @@ describe('L\'acteur sur son oie', () => {
   });
 
   test('enchaine les cases oie tant qu\'elles se suivent', () => {
-    // Depuis 0 avec un total de 9 : 9, 18, 27, 36, 45, 54, puis 63 pile.
-    const move = resolveMove(0, 9, 0);
+    // Depuis 1 avec un total de 8 : 9, puis 17. Une seule oie traversee.
+    const move = resolveMove(1, 8, 0);
+    expect(move.position).toBe(17);
+    expect(move.effects.filter((effect) => effect.kind === 'oie')).toHaveLength(1);
+  });
+
+  test('enchaine plusieurs oies d\'affilee', () => {
+    // Depuis 45 avec un total de 9 : 54, puis 63 pile. Deux cases oie possibles
+    // sur le trajet, la seconde etant l'arrivee.
+    const move = resolveMove(45, 9, 0);
     expect(move.position).toBe(FINISH_SQUARE);
     expect(move.finished).toBe(true);
-    expect(move.effects.filter((effect) => effect.kind === 'oie')).toHaveLength(6);
+    expect(move.effects.filter((effect) => effect.kind === 'oie')).toHaveLength(1);
   });
 
   test('l\'enchainement se termine toujours', () => {
@@ -98,6 +108,44 @@ describe('L\'acteur sur son oie', () => {
         expect(move.position).toBeLessThanOrEqual(FINISH_SQUARE);
       }
     }
+  });
+});
+
+describe('Exception du premier neuf', () => {
+  /**
+   * Sans elle, un 9 depuis la case 0 enchaine 9, 18, 27, 36, 45, 54, 63 et
+   * gagne la partie du premier coup. Le cas s'est produit au premier essai sur
+   * le bac a sable : des 4 et 5, arrivee immediate en 63.
+   */
+  test('un 6 et un 3 mene en case 26, sans enchainement', () => {
+    const move = resolveMove(0, 9, 0, [6, 3]);
+    expect(move.position).toBe(PREMIER_NEUF_6_3);
+    expect(move.finished).toBe(false);
+    expect(move.effects.some((effect) => effect.kind === 'oie')).toBe(false);
+  });
+
+  test('un 3 et un 6 mene aussi en case 26', () => {
+    expect(resolveMove(0, 9, 0, [3, 6]).position).toBe(PREMIER_NEUF_6_3);
+  });
+
+  test('un 5 et un 4 mene en case 53', () => {
+    expect(resolveMove(0, 9, 0, [5, 4]).position).toBe(PREMIER_NEUF_5_4);
+    expect(resolveMove(0, 9, 0, [4, 5]).position).toBe(PREMIER_NEUF_5_4);
+  });
+
+  test('l\'exception est attachee a la case 0, pas au nombre de lancers', () => {
+    // Revenir en case 0 par la mort ne doit pas rouvrir le raccourci.
+    expect(resolveMove(0, 9, 0, [4, 5]).finished).toBe(false);
+  });
+
+  test('elle ne vaut que pour un total de neuf', () => {
+    expect(resolveMove(0, 8, 0, [4, 4]).position).toBe(8);
+    expect(resolveMove(0, 10, 0, [5, 5]).position).toBe(10);
+  });
+
+  test('ailleurs qu\'en case 0, un neuf se joue normalement', () => {
+    const move = resolveMove(4, 9, 0, [4, 5]);
+    expect(move.position).toBe(13);
   });
 });
 
