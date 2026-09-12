@@ -19,6 +19,9 @@ backend/.env.test
 frontend/.env.local
 frontend/.env.test
 frontend/.env.production.local
+# Bacs à sable : configuration générée par scripts/sandbox.sh, propre à un agent
+backend/.sandbox-*.yml
+frontend/.env.sandbox-*
 
 # IDE
 .idea/
