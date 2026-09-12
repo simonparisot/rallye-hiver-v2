@@ -1,0 +1,35 @@
+[
+  {
+    "enigmaNumber": 11,
+    "title": "La liste du Toubib Soncarré",
+    "correctPassword": "SCORPION",
+    "points": 10,
+    "difficulty": "hard",
+    "pdfUrl": "https://rallyehiver-enigmas-indices.s3.eu-west-1.amazonaws.com/2019/fd97018b-1c78-41c5-bc88-8274fc0baf1b.pdf",
+    "description": "Transcription de l'énoncé, qui est une image : le modèle ne la voit pas.\n\nPage encadrée d'un bandeau jaune. En haut, une étiquette grise : « Enigme n°11 ».\nTitre sur deux lignes, en grosses capitales noires : « La liste du » puis\n« Toubib Soncarré ».\n\nSous le titre, une pastille ronde jaune montrant une règle et un crayon croisés,\ndessinés au trait noir.\n\nPuis une liste de sept lignes, centrées, en écriture cursive vert turquoise :\n  chatouilleur rigolo\n  voeux de papillon\n  clé à tranche\n  cheville à cheville\n  coeur chatouilleur\n  cheval de raccordement\n  papillon de brioche\n\nSous la liste, une large flèche grise dirigée vers le bas.\n\nSous la flèche, deux pastilles rondes qui se chevauchent légèrement : celle de\ngauche est vert turquoise et porte le symbole astrologique du Lion, celle de\ndroite est rouge et porte le symbole astrologique du Taureau.\n\nEn pied de page, le logo « RH 2019 ».",
+    "solution": "Le titre nous met sur la voie : \"Toubib\" fait penser à \"Docteur\" et \"Son-carré\" fait penser à \"Ma-boule\". Donc \"Docteur Maboul\", le jeu de société classique.\n\nLe petit dessin jaune avec une règle et un crayon laisse penser qu'il faudra tracer quelque chose.\n\nLa liste : chaque item correspond à l'association de deux organes du Docteur Maboul :\n- chatouilleur rigolo : \"Papillon chatouilleur\" et \"Os rigolo\"\n- voeux de papillon : \"Os de vœux\" et \"Papillon chatouilleur\"\n- clé à tranche : \"Clé à la cheville\" et \"Tranche de brioche\"\n- cheville à cheville : \"Clé à la cheville\" et \"Raccordement de la cheville au genou\"\n- coeur chatouilleur : \"Cœur brisé\" et \"Papillon chatouilleur\"\n- cheval de raccordement : \"Fièvre de cheval\" et \"Raccordement de la cheville au genou\"\n- papillon de brioche : \"Papillon chatouilleur\" et \"Tranche de brioche\"\n\nsur l'image d'un plateau de docteur maboul, en reliant les points 2 par 2, on obtient un dessin.\n\nles deux derniers symboles sur l'énigme, en vert et rouge, correspondent à des signes du zodiaque : Lion et Taureau\n\nOr le dessin obtenu sur le docteur maboul c'est le dessin de la constellation du scorpion.\n\nLe mot de passe est donc \"SCORPION\"",
+    "hints": [
+      {
+        "id": "h1",
+        "order": 1,
+        "text": "Le Toubib Soncarré ? Quel drôle de nom. Toubib => Docteur ! Son Carré => Ma Boule ! Pour commencer, partez de ce jeu de société classique."
+      },
+      {
+        "id": "h2",
+        "order": 2,
+        "text": "La liste est composée d'associations de 2 organes du Docteur Maboul. Exemple : chatouilleur rigolo = Papillon chatouilleur (Butterflies in stomach) et Os rigolo (Funny bone)."
+      },
+      {
+        "id": "h3",
+        "order": 3,
+        "text": "Vous avez tous les organes de la liste. Comme indiqué par le petit symbole règle/crayon, il s'agit maintenant de tracer ! Trouvez une image du plateau de Docteur Maboul et reliez les organes entre eux."
+      },
+      {
+        "id": "h4",
+        "order": 4,
+        "text": "Vous avez un beau dessin sur ce plateau de docteur Maboul. Et à la fin de l'énigme, deux symboles du zodiaque. Trouvez la constellation du zodiaque correspondant à votre dessin."
+      }
+    ],
+    "isActive": true
+  }
+]
