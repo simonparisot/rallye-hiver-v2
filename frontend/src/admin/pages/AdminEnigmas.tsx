@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { adminEnigmasAPI, adminUploadAPI } from '../services/adminAPI';
-import { EnigmaWithStats, CreateEnigmaRequest } from '../types';
+import { EnigmaWithStats, CreateEnigmaRequest, EnigmaHint } from '../types';
 import './AdminEnigmas.css';
 
 const AdminEnigmas: React.FC = () => {
@@ -15,13 +15,12 @@ const AdminEnigmas: React.FC = () => {
     title: '',
     correctPassword: '',
     pdfUrl: '',
-    hintPdfUrl: '',
+    solution: '',
+    hints: [],
     isActive: true,
   });
   const [uploadingPdf, setUploadingPdf] = useState(false);
-  const [uploadingHintPdf, setUploadingHintPdf] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
-  const [hintUploadProgress, setHintUploadProgress] = useState<string>('');
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['adminEnigmas'],
@@ -64,7 +63,8 @@ const AdminEnigmas: React.FC = () => {
       title: '',
       correctPassword: '',
       pdfUrl: '',
-      hintPdfUrl: '',
+      solution: '',
+      hints: [],
       isActive: true,
     });
     setEditingEnigma(null);
@@ -78,7 +78,8 @@ const AdminEnigmas: React.FC = () => {
       title: enigma.title,
       correctPassword: '', // Don't populate for security
       pdfUrl: enigma.pdfUrl,
-      hintPdfUrl: enigma.hintPdfUrl || '',
+      solution: enigma.solution || '',
+      hints: enigma.hints ? enigma.hints.map((h) => ({ ...h })) : [],
       isActive: enigma.isActive,
     });
     setShowForm(true);
@@ -140,42 +141,39 @@ const AdminEnigmas: React.FC = () => {
     }
   };
 
-  const handleHintPdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // --- Liste d'indices ---------------------------------------------------
+  // Les identifiants servent de cle stable cote serveur : une demande archivee
+  // renvoie a l'identifiant de l'indice livre. On ne les reattribue donc jamais
+  // lors d'un reordonnancement, seul `order` change.
 
-    if (file.type !== 'application/pdf') {
-      alert('Seuls les fichiers PDF sont acceptés');
-      return;
-    }
+  const indices = formData.hints || [];
 
-    try {
-      setUploadingHintPdf(true);
-      setHintUploadProgress('Génération de l\'URL d\'upload...');
+  const majIndices = (nouveaux: EnigmaHint[]) => {
+    setFormData({ ...formData, hints: nouveaux.map((h, i) => ({ ...h, order: i + 1 })) });
+  };
 
-      // Step 1: Get presigned URL from backend
-      const { uploadUrl, fileUrl } = await adminUploadAPI.generateUploadUrl();
+  const ajouterIndice = () => {
+    const existants = new Set(indices.map((h) => h.id));
+    let n = indices.length + 1;
+    while (existants.has(`h${n}`)) n += 1;
+    majIndices([...indices, { id: `h${n}`, order: indices.length + 1, text: '' }]);
+  };
 
-      setHintUploadProgress('Upload du PDF d\'indice vers S3...');
+  const modifierIndice = (index: number, texte: string) => {
+    majIndices(indices.map((h, i) => (i === index ? { ...h, text: texte } : h)));
+  };
 
-      // Step 2: Upload PDF to S3
-      await adminUploadAPI.uploadPdf(uploadUrl, file);
+  const supprimerIndice = (index: number) => {
+    majIndices(indices.filter((_, i) => i !== index));
+  };
 
-      setHintUploadProgress('Upload terminé !');
-
-      // Step 3: Update form data with the file URL
-      setFormData({ ...formData, hintPdfUrl: fileUrl });
-
-      setTimeout(() => {
-        setHintUploadProgress('');
-        setUploadingHintPdf(false);
-      }, 1500);
-    } catch (error: any) {
-      console.error('Hint PDF upload failed:', error);
-      alert('Échec de l\'upload du PDF d\'indice: ' + (error.response?.data?.error || error.message));
-      setHintUploadProgress('');
-      setUploadingHintPdf(false);
-    }
+  const deplacerIndice = (index: number, delta: number) => {
+    const cible = index + delta;
+    if (cible < 0 || cible >= indices.length) return;
+    const copie = [...indices];
+    const [retire] = copie.splice(index, 1);
+    copie.splice(cible, 0, retire);
+    majIndices(copie);
   };
 
   const handleDragEnd = async (result: DropResult) => {
@@ -299,32 +297,92 @@ const AdminEnigmas: React.FC = () => {
                 <small className="form-help">Sélectionnez un fichier PDF à uploader sur S3</small>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="enigma-hint-pdf">PDF Indice (optionnel)</label>
-                <div className="pdf-upload-container">
-                  <input data-testid="admin-enigmas-hint-pdf-input"
-                    id="enigma-hint-pdf-file"
-                    type="file"
-                    accept="application/pdf,.pdf"
-                    onChange={handleHintPdfUpload}
-                    disabled={uploadingHintPdf}
-                    style={{ marginBottom: '10px' }}
-                  />
-                  {uploadingHintPdf && (
-                    <div className="upload-progress">
-                      <span className="spinner">⏳</span> {hintUploadProgress}
-                    </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group form-group-full">
+                <label htmlFor="enigma-solution">Solution détaillée</label>
+                <textarea
+                  data-testid="admin-enigmas-solution-input"
+                  id="enigma-solution"
+                  value={formData.solution || ''}
+                  onChange={(e) => setFormData({ ...formData, solution: e.target.value })}
+                  rows={10}
+                  placeholder={"Démarche attendue, étape par étape.\n\nMentionnez explicitement les fausses pistes cachées et à quoi on les reconnaît dans le texte d'une équipe : c'est ce qui permet de repérer une équipe égarée."}
+                />
+                <small className="form-help">
+                  Confidentielle. Elle ne sort jamais du serveur : elle sert uniquement à choisir
+                  l'indice adapté à l'avancement décrit par l'équipe.
+                </small>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group form-group-full">
+                <label>Indices, du plus précoce au plus tardif</label>
+                <div className="hints-editor" data-testid="admin-enigmas-hints-editor">
+                  {indices.length === 0 && (
+                    <p className="hints-empty" data-testid="admin-enigmas-hints-empty">
+                      Aucun indice. Sans indice, les équipes ne peuvent pas en demander sur cette énigme.
+                    </p>
                   )}
-                  {formData.hintPdfUrl && !uploadingHintPdf && (
-                    <div className="pdf-url-display">
-                      <span className="pdf-success">✓ Indice uploadé</span>
-                      <a href={formData.hintPdfUrl} target="_blank" rel="noopener noreferrer" className="pdf-preview-link">
-                        💡 Voir l'indice
-                      </a>
+                  {indices.map((indice, index) => (
+                    <div className="hint-row" key={indice.id} data-testid={`admin-enigmas-hint-row-${indice.id}`}>
+                      <div className="hint-row-head">
+                        <span className="hint-row-rank">Indice {index + 1}</span>
+                        <span className="hint-row-id">identifiant {indice.id}</span>
+                        <div className="hint-row-actions">
+                          <button
+                            type="button"
+                            className="btn btn-small btn-secondary"
+                            data-testid={`admin-enigmas-hint-up-${indice.id}`}
+                            onClick={() => deplacerIndice(index, -1)}
+                            disabled={index === 0}
+                          >
+                            Monter
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-small btn-secondary"
+                            data-testid={`admin-enigmas-hint-down-${indice.id}`}
+                            onClick={() => deplacerIndice(index, 1)}
+                            disabled={index === indices.length - 1}
+                          >
+                            Descendre
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-small btn-danger"
+                            data-testid={`admin-enigmas-hint-remove-${indice.id}`}
+                            onClick={() => supprimerIndice(index)}
+                          >
+                            Supprimer
+                          </button>
+                        </div>
+                      </div>
+                      <textarea
+                        className="hint-row-text"
+                        data-testid={`admin-enigmas-hint-text-${indice.id}`}
+                        value={indice.text}
+                        onChange={(e) => modifierIndice(index, e.target.value)}
+                        rows={3}
+                        placeholder="Texte de l'indice, tel qu'il sera affiché à l'équipe."
+                      />
                     </div>
-                  )}
+                  ))}
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    data-testid="admin-enigmas-hint-add"
+                    onClick={ajouterIndice}
+                  >
+                    + Ajouter un indice
+                  </button>
                 </div>
-                <small className="form-help">PDF d'indice (coûte 25% des points aux joueurs)</small>
+                <small className="form-help">
+                  L'ordre compte : le premier indice est le plus léger, le dernier celui qui permet
+                  de conclure. Un indice déjà donné à une équipe garde son identifiant.
+                </small>
               </div>
             </div>
 
@@ -356,7 +414,7 @@ const AdminEnigmas: React.FC = () => {
             )}
 
             <div className="form-actions">
-              <button data-testid="admin-enigmas-submit" type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || uploadingPdf || uploadingHintPdf}>
+              <button data-testid="admin-enigmas-submit" type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || uploadingPdf}>
                 {editingEnigma ? '💾 Mettre à jour' : '✨ Créer l\'énigme'}
               </button>
               <button data-testid="admin-enigmas-cancel" type="button" className="btn btn-secondary" onClick={resetForm}>
@@ -398,7 +456,7 @@ const AdminEnigmas: React.FC = () => {
                 <th>Titre</th>
                 <th style={{ width: '150px' }}>Stats</th>
                 <th style={{ width: '80px' }}>PDF</th>
-                <th style={{ width: '60px' }}>Indice</th>
+                <th style={{ width: '60px' }}>Indices</th>
                 <th style={{ width: '100px' }}></th>
               </tr>
             </thead>
@@ -445,16 +503,10 @@ const AdminEnigmas: React.FC = () => {
                             )}
                           </td>
                           <td>
-                            {enigma.hintPdfUrl ? (
-                              <a
-                                href={enigma.hintPdfUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hint-link"
-                                title="Voir l'indice"
-                              >
-                                💡
-                              </a>
+                            {enigma.hints && enigma.hints.length > 0 ? (
+                              <span className="hint-count" title="Indices pré-écrits">
+                                {enigma.hints.length}
+                              </span>
                             ) : (
                               <span className="no-hint">-</span>
                             )}

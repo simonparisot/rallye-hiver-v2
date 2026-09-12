@@ -1,0 +1,235 @@
+/* Journal des demandes d'indices */
+
+.admin-hint-requests {
+  padding: var(--spacing-lg) 0;
+}
+
+/* Statistiques */
+.hint-stats {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-lg);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-lg);
+}
+
+.stat-item {
+  text-align: center;
+  padding: var(--spacing-md);
+  background: var(--color-neutral-gray);
+  border-radius: 8px;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Filtres */
+.hint-filters {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.hint-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 200px;
+}
+
+.hint-filter label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.hint-filter select {
+  padding: 8px 10px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: #fff;
+  max-width: 320px;
+}
+
+.hint-filter-count {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Une demande */
+.hint-request-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.hint-request {
+  padding: var(--spacing-lg);
+}
+
+.hint-request-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: var(--spacing-md);
+}
+
+.hint-request-who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hint-request-team {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.hint-request-enigma {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.hint-request-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.hint-request-date {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.hint-request-cost {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #b45309;
+}
+
+.hint-request-block {
+  margin-bottom: var(--spacing-md);
+}
+
+.hint-request-block h3 {
+  margin: 0 0 6px 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.hint-request-id {
+  font-family: monospace;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Les deux textes sont affichés en entier : c'est tout l'intérêt du journal. */
+.hint-request-progress,
+.hint-request-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 10px 12px;
+  border-radius: 6px;
+}
+
+.hint-request-progress {
+  background: #f6f8fa;
+  border-left: 3px solid #94a3b8;
+}
+
+.hint-request-hint {
+  background: #fff8ec;
+  border-left: 3px solid #f59e0b;
+}
+
+.hint-request-foot {
+  border-top: 1px solid #e5e7eb;
+  padding-top: var(--spacing-sm);
+}
+
+.hint-request-tech {
+  margin-top: var(--spacing-sm);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.hint-request-tech p {
+  margin: 0 0 4px 0;
+}
+
+.hint-request-ids {
+  font-family: monospace;
+  font-size: 0.7rem;
+  overflow-wrap: anywhere;
+}
+
+/* Pagination */
+.hint-pagination {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: center;
+  margin-top: var(--spacing-lg);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .hint-filter {
+    min-width: 100%;
+  }
+
+  .hint-filter-count {
+    margin-left: 0;
+  }
+
+  .hint-request-meta {
+    align-items: flex-start;
+  }
+}

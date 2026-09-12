@@ -398,25 +398,51 @@ export const adminUsersAPI = {
 
 // Admin Hints API
 export const adminHintsAPI = {
-  getUsage: async (): Promise<{
-    usages: Array<{
+  /** Journal des demandes d'indices, filtrable et pagine. */
+  getRequests: async (params?: {
+    enigmaId?: string;
+    teamId?: string;
+    sort?: 'asc' | 'desc';
+    limit?: number;
+    cursor?: string | null;
+  }): Promise<{
+    requests: Array<{
+      requestId: string;
       teamId: string;
       teamName: string;
       enigmaId: string;
       enigmaNumber: number;
       enigmaTitle: string;
-      hintUsedAt: string;
-      solved: boolean;
-      solvedAt?: string;
+      requestedAt: string;
+      requestedBy: string;
+      progressText: string;
+      hintId: string;
+      hintText: string;
+      justification?: string;
+      model: string;
+      inputTokens?: number;
+      outputTokens?: number;
+      pointsCharged: number;
     }>;
+    total: number;
+    limit: number;
+    cursor: string | null;
     stats: {
-      totalUsages: number;
+      totalRequests: number;
       uniqueTeams: number;
       uniqueEnigmas: number;
-      solvedAfterHint: number;
+      totalPointsCharged: number;
     };
   }> => {
-    const response = await adminApi.get('/hints/usage');
+    const response = await adminApi.get('/hints/requests', {
+      params: {
+        enigmaId: params?.enigmaId || undefined,
+        teamId: params?.teamId || undefined,
+        sort: params?.sort || 'desc',
+        limit: params?.limit || 50,
+        cursor: params?.cursor || undefined,
+      },
+    });
     return response.data;
   },
 };
