@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Enigma } from '../../types';
+import { editionCourante } from '../../editions/2027';
 import { getEnigmasWithProgress, getEnigmasPreview, submitPasswordAttempt } from '../../services/gameService';
 import { teamAPI, hintsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,6 +19,14 @@ interface EnigmasPanelProps {
 const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onExpand }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  // Edition 2027 : une des vingt enigmes se joue sur un plateau de jeu de l'oie
+  // partage. Elle reste une enigme ordinaire dans cette liste, mais son entree
+  // mene a /oie au lieu d'ouvrir un PDF et un champ de mot de passe.
+  const enigmeOie = editionCourante.enigmeOie;
+  const estEnigmeOie = (enigmaId: string) =>
+    !!enigmeOie?.enigmaId && enigmaId === enigmeOie.enigmaId;
 
   const { data: team } = useQuery({
     queryKey: ['team', user?.teamId],
@@ -60,6 +70,11 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
   });
 
   const handleEnigmaSelect = (enigma: Enigma) => {
+    if (estEnigmeOie(enigma.id) && enigmeOie) {
+      navigate(enigmeOie.route);
+      return;
+    }
+
     setSelectedEnigma(enigma);
     setPassword('');
     setAttemptMessage('');
@@ -210,6 +225,9 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
               >
                 <span className="enigma-number">{enigma.order}</span>
                 <span className="enigma-title-compact">{enigma.title}</span>
+                {estEnigmeOie(enigma.id) && (
+                  <span className="enigma-oie-badge" data-testid={`enigma-oie-badge-${enigma.order}`}>Plateau</span>
+                )}
                 {enigma.isSolved && <span className="solved-badge-small" data-testid={`enigma-solved-badge-${enigma.order}`}>Résolu</span>}
               </div>
             ))}
@@ -230,7 +248,12 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                   <div className="enigma-header-item">
                     <span className="enigma-number">{enigma.order}</span>
                     <span className="enigma-title">{enigma.title}</span>
-                    {enigma.pdfUrl && selectedEnigma?.id === enigma.id && (
+                    {estEnigmeOie(enigma.id) && (
+                      <span className="enigma-oie-badge" data-testid={`enigma-oie-badge-${enigma.order}`}>
+                        Plateau partage
+                      </span>
+                    )}
+                    {!estEnigmeOie(enigma.id) && enigma.pdfUrl && selectedEnigma?.id === enigma.id && (
                       <button
                         data-testid={`enigma-download-button-${enigma.order}`}
                         className="enigma-download-btn"

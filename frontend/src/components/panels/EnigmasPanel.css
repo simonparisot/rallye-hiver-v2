@@ -541,3 +541,17 @@
     padding: 8px 12px;
   }
 }
+
+/* Edition 2027 : enigme jouee sur un plateau de jeu de l'oie partage.
+   Le badge previent que l'entree ne mene pas a un PDF mais a une autre page. */
+.enigma-oie-badge {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-secondary-purple, #6B46C1);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}

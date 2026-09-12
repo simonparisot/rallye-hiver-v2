@@ -1,0 +1,53 @@
+/**
+ * Theme visuel de l'edition 2027 : le theatre.
+ *
+ * Velours rouge, or patine, bois de plateau, lumiere chaude de la rampe.
+ * Tout est porte par des variables, et la portee est limitee a
+ * `.edition-2027` : aucune autre edition n'est touchee par ce fichier.
+ *
+ * Les composants du jeu de l'oie n'utilisent que ces variables, jamais une
+ * couleur en dur, pour que le jour ou la direction artistique change, un seul
+ * fichier suffise.
+ */
+
+.edition-2027 {
+  /* Velours et bois */
+  --th-velours: #7b1521;
+  --th-velours-sombre: #4d0d15;
+  --th-velours-clair: #a82233;
+  --th-bois: #2a1d16;
+  --th-bois-clair: #3d2c22;
+
+  /* Or et lumiere */
+  --th-or: #d9a441;
+  --th-or-clair: #f0cd82;
+  --th-rampe: #ffe6b0;
+
+  /* Papier et encre */
+  --th-papier: #f6efe2;
+  --th-papier-ombre: #e6dcc9;
+  --th-encre: #221913;
+  --th-encre-douce: #6b5a4a;
+
+  /* Signaux */
+  --th-succes: #2f6b46;
+  --th-alerte: #b3541e;
+  --th-erreur: #94202c;
+
+  /* Rythme */
+  --th-rayon: 6px;
+  --th-rayon-large: 12px;
+  --th-trait: 2px;
+  --th-ombre: 0 2px 10px rgba(34, 25, 19, 0.28);
+  --th-ombre-forte: 0 6px 24px rgba(34, 25, 19, 0.4);
+
+  /* Typographie : on reste sur les familles deja chargees par l'application */
+  --th-titre: var(--font-display, Georgia, 'Times New Roman', serif);
+  --th-texte: var(--font-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+
+  color: var(--th-papier);
+  font-family: var(--th-texte);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 230, 176, 0.16), transparent 62%),
+    linear-gradient(170deg, var(--th-velours-sombre) 0%, var(--th-bois) 68%);
+}
