@@ -12,7 +12,9 @@ import {
   PasswordAttemptResponse,
   TeamProgressResponse,
   AccessibleParcoursResponse,
-  ParcoursAccessResponse
+  ParcoursAccessResponse,
+  HintsListResponse,
+  HintRequestResponse
 } from '../types';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
@@ -294,12 +296,23 @@ export const progressAPI = {
 
 // Hints API (Game)
 export const hintsAPI = {
-  useHint: async (enigmaId: string): Promise<{
-    success: boolean;
-    hintPdfUrl: string;
-    isFirstUse: boolean;
-  }> => {
-    const response = await api.post(`/hints/${enigmaId}/use`);
+  /** Indices deja obtenus par l'equipe sur cette enigme, et cout du prochain. */
+  listHints: async (enigmaId: string): Promise<HintsListResponse> => {
+    const response = await api.get(`/hints/${enigmaId}`);
+    return response.data;
+  },
+
+  /**
+   * Demande un indice. `requestKey` est genere par l'appelant et identifie la
+   * demande : un second envoi avec la meme cle (double clic) est refuse cote
+   * serveur plutot que facture deux fois.
+   */
+  requestHint: async (
+    enigmaId: string,
+    progress: string,
+    requestKey: string
+  ): Promise<HintRequestResponse> => {
+    const response = await api.post(`/hints/${enigmaId}/request`, { progress, requestKey });
     return response.data;
   },
 };

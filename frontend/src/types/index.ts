@@ -44,8 +44,9 @@ export interface BackendEnigma {
   title: string;
   description?: string;
   pdfUrl: string;
-  hintPdfUrl?: string;  // Full URL for admin
-  hasHint?: boolean;    // Boolean for player (URL hidden)
+  hintsCount?: number;  // Nombre d'indices existants (le texte reste cote serveur)
+  solution?: string;    // Demarche de resolution, cote admin uniquement
+  hints?: EnigmaHint[]; // Indices pre-ecrits, cote admin uniquement
   points: number;
   difficulty?: 'easy' | 'medium' | 'hard';
   isActive: boolean;
@@ -74,8 +75,8 @@ export interface TeamEnigmaProgress {
   attemptCount: number;
   lastAttemptAt?: string;
   firstAttemptAt?: string;
-  hintUsed?: boolean;     // Whether the team used the hint
-  hintUsedAt?: string;    // When the hint was used
+  hintsRequested?: number; // Nombre d'indices obtenus sur cette enigme
+  lastHintAt?: string;     // Date du dernier indice obtenu
   createdAt: string;
   updatedAt: string;
 }
@@ -151,8 +152,8 @@ export interface Enigma {
   solvedAt?: string;
   attemptCount?: number;
   difficulty?: 'easy' | 'medium' | 'hard';
-  hasHint?: boolean;      // Whether a hint is available
-  hintUsed?: boolean;     // Whether the team has used the hint
+  hintsCount?: number;     // Nombre d'indices existants pour cette enigme
+  hintsRequested?: number; // Nombre d'indices deja obtenus par l'equipe
 }
 
 export interface Parcours {
@@ -183,6 +184,8 @@ export interface TeamStats {
   parcoursCompleted: number;
   totalParcours: number;
   totalPoints: number;
+  hintsRequestedCount?: number; // Indices demandes, toutes enigmes confondues
+  hintsPenalty?: number;        // Points retires par les indices
   passwordAttemptsCount: number;
   attemptsRanking: number;
   attemptsRankingMessage: string;
@@ -197,4 +200,38 @@ export interface AuthTokens {
 export interface PendingRequest {
   teamId: string;
   teamName: string;
+}
+
+// ==================== INDICES ====================
+
+export interface EnigmaHint {
+  id: string;
+  order: number;
+  text: string;
+}
+
+/** Un indice deja obtenu par l'equipe, tel qu'il lui a ete livre. */
+export interface ObtainedHint {
+  id: string;
+  text: string;
+  requestedAt: string;
+  pointsCharged: number;
+}
+
+export interface HintsListResponse {
+  enigmaId: string;
+  hints: ObtainedHint[];
+  hintsRequested: number;
+  remainingHints: number;
+  nextHintCost: number;
+  enigmaPoints: number;
+  totalPointsCharged: number;
+}
+
+export interface HintRequestResponse {
+  hint: { id: string; text: string };
+  pointsCharged: number;
+  hintsRequested: number;
+  remainingHints: number;
+  nextHintCost: number;
 }
