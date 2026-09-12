@@ -39,6 +39,43 @@ export const ENVIRONMENTS = {
     ephemeralEmailPrefix: 'e2e',
   },
 
+  /**
+   * Bacs à sable : piles AWS isolées du compte de test, montées par
+   * `scripts/sandbox.sh` pour que deux chantiers parallèles ne se marchent pas
+   * dessus. Même compte et même profil que « test », mais tables, pool Cognito
+   * et API distincts, et un frontend servi en local. Capacité `full` : ces
+   * environnements sont jetables, rien de réel n'y vit.
+   */
+  indices: {
+    name: 'indices',
+    apiUrl: 'https://l0n9mn4ig9.execute-api.eu-west-1.amazonaws.com/indices',
+    siteUrl: 'http://localhost:3002',
+    awsProfile: 'rallye-test',
+    awsAccount: '516341735006',
+    cognitoUserPoolId: 'eu-west-1_2nztr0KPU',
+    tablePrefix: 'rallye-hiver-backend-indices-',
+    enigmasBucket: 'rallyehiver-enigmas-indices',
+    capability: FULL,
+    requiresOptIn: false,
+    scopedEmailPattern: /@rallyehiver\.fr$/,
+    ephemeralEmailPrefix: 'e2e',
+  },
+
+  oie: {
+    name: 'oie',
+    apiUrl: 'https://r9c7lyh149.execute-api.eu-west-1.amazonaws.com/oie',
+    siteUrl: 'http://localhost:3003',
+    awsProfile: 'rallye-test',
+    awsAccount: '516341735006',
+    cognitoUserPoolId: 'eu-west-1_O550F0iL9',
+    tablePrefix: 'rallye-hiver-backend-oie-',
+    enigmasBucket: 'rallyehiver-enigmas-oie',
+    capability: FULL,
+    requiresOptIn: false,
+    scopedEmailPattern: /@rallyehiver\.fr$/,
+    ephemeralEmailPrefix: 'e2e',
+  },
+
   prod: {
     name: 'prod',
     apiUrl: 'https://rpg0alko8b.execute-api.eu-west-1.amazonaws.com/prod',
