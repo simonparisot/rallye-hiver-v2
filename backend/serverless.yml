@@ -9,6 +9,11 @@ provider:
   stage: prod
   memorySize: 256
   timeout: 30
+  # Pas de ressource AWS::Lambda::Version par fonction. Elles ne servaient a
+  # rien ici : aucun alias n'est defini et API Gateway appelle l'ARN non
+  # qualifie. En revanche elles comptaient dans la limite CloudFormation de
+  # 500 ressources, que la pile a fini par depasser.
+  versionFunctions: false
   apiGateway:
     shouldStartNameWithService: true
     minimumCompressionSize: 1024
@@ -38,9 +43,18 @@ provider:
     STRIPE_WEBHOOK_SECRET: ${ssm:/rallye-hiver/${self:provider.stage}/stripe-webhook-secret}
     STRIPE_PRICE_ID: ${ssm:/rallye-hiver/${self:provider.stage}/stripe-price-id}
     CORS_ORIGIN: ${ssm:/rallye-hiver/${self:provider.stage}/cors-origin}
-    ANTHROPIC_API_KEY: ${ssm:/rallye-hiver/${self:provider.stage}/anthropic-api-key}
+    # Defaut vide : en mode `queue` aucune clef n'est necessaire, et un stage
+    # sans ce parametre doit pouvoir se deployer. En mode `anthropic`, une clef
+    # absente se voit au premier appel, pas au deploiement.
+    ANTHROPIC_API_KEY: ${ssm:/rallye-hiver/${self:provider.stage}/anthropic-api-key, ''}
     # Modele charge de choisir l'indice. Parametrable sans redeploiement de code.
     HINT_MODEL: ${env:HINT_MODEL, 'claude-opus-5'}
+    # Deux facons d'appeler le modele. `anthropic` : la lambda appelle l'API,
+    # reponse synchrone, c'est la production. `queue` : la lambda enregistre la
+    # demande et un worker exterieur la traite via l'abonnement Claude du
+    # commanditaire, sans clef d'API. Le defaut vaut pour les stages ou le
+    # parametre n'existe pas.
+    HINT_PROVIDER: ${ssm:/rallye-hiver/${self:provider.stage}/hint-provider, 'anthropic'}
   iam:
     role:
       statements:
