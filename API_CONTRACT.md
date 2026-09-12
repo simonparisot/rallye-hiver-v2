@@ -392,7 +392,6 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
   "totalParcours": number,
   "totalPoints": number,
   "hintsRequestedCount": number,
-  "hintsPenalty": number,
   "passwordAttemptsCount": number,
   "attemptsRanking": number,
   "attemptsRankingMessage": "string"
@@ -400,14 +399,11 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 ```
 
 **Notes**:
-- `totalPoints` : somme des points des énigmes résolues, **indices déduits**. Un
-  indice retire 25 % des points de son énigme, de façon cumulative, sans jamais
-  faire descendre le score d'une énigme sous 0
-- `hintsPenalty` : points retirés par les indices sur les énigmes résolues
-- `hintsRequestedCount` : nombre total d'indices obtenus, énigmes non résolues
-  comprises
-- Les indices pris sur une énigme non résolue ne coûtent rien tant qu'elle ne
-  rapporte rien : la pénalité s'applique au moment où l'énigme entre au score
+- `totalPoints` : somme des points des énigmes résolues. **Les indices n'en
+  retirent rien pendant l'essai** : le commanditaire veut d'abord juger le
+  mécanisme de choix, et facturer des points brouillerait cette question
+- `hintsRequestedCount` : nombre total d'indices obtenus. C'est une mesure
+  d'usage, sans effet sur le score
 
 **Errors**:
 - `403`: L'utilisateur n'appartient à aucune équipe
@@ -1082,7 +1078,7 @@ qui rend le prompt hacking sans objet.
 #### GET /hints/{enigmaId}
 
 **Status**: ✅ Implemented (2026-09-12)
-**Purpose**: Indices déjà obtenus par l'équipe sur cette énigme, et coût du prochain
+**Purpose**: Demandes d'indice de l'équipe sur cette énigme, avec leur statut
 **Authentication**: Required (équipe ayant réglé son inscription)
 
 **Response** (200):
@@ -1097,8 +1093,19 @@ qui rend le prompt hacking sans objet.
       "pointsCharged": number
     }
   ],
+  "requests": [
+    {
+      "requestId": "uuid",
+      "status": "'pending' | 'done' | 'failed'",
+      "requestedAt": "ISO 8601 timestamp",
+      "pointsCharged": number,
+      "hint": { "id": "string", "text": "string" },
+      "failureReason": "string"
+    }
+  ],
   "hintsRequested": number,
   "remainingHints": number,
+  "pendingRequest": boolean,
   "nextHintCost": number,
   "enigmaPoints": number,
   "totalPointsCharged": number
@@ -1106,9 +1113,15 @@ qui rend le prompt hacking sans objet.
 ```
 
 **Notes**:
-- Ne renvoie que les indices déjà payés par cette équipe. Les indices non obtenus
-  ne sortent jamais du backend
-- `nextHintCost` vaut 0 s'il ne reste aucun indice à donner
+- `hints` ne contient que les indices déjà livrés. Les indices non obtenus ne
+  sortent jamais du backend, et une demande en attente ne porte aucun texte
+- `requests` sert au suivi : c'est cet endpoint que le frontend interroge toutes
+  les 3 secondes tant que `pendingRequest` est vrai
+- `hint` n'est présent que sur une demande `done`, `failureReason` que sur une
+  demande `failed`
+- Le statut interne `processing` est replié sur `pending` : la distinction
+  regarde le worker, pas l'équipe
+- `nextHintCost` vaut 0 pendant l'essai (voir la note sur le coût plus bas)
 - Aucun appel au modèle : cet endpoint est rapide et gratuit
 
 **Errors**:
@@ -1129,38 +1142,54 @@ qui rend le prompt hacking sans objet.
 }
 ```
 
-**Response** (200):
+**Response** (200, mode `anthropic`) — l'indice est déjà là :
 ```json
 {
+  "requestId": "uuid",
+  "status": "done",
   "hint": { "id": "string", "text": "string" },
   "pointsCharged": number,
   "hintsRequested": number,
-  "remainingHints": number,
-  "nextHintCost": number
+  "remainingHints": number
+}
+```
+
+**Response** (202, mode `queue`) — accusé de réception, l'indice viendra :
+```json
+{
+  "requestId": "uuid",
+  "status": "pending",
+  "pointsCharged": number,
+  "hintsRequested": number,
+  "remainingHints": number
 }
 ```
 
 **Notes**:
+- **Deux modes, un seul contrat.** `HINT_PROVIDER` vaut `anthropic` (la lambda
+  appelle l'API Anthropic, réponse synchrone) ou `queue` (la lambda enregistre la
+  demande, un worker extérieur l'exécute via `claude -p` et l'abonnement du
+  commanditaire). Le client n'a pas à savoir lequel tourne : il lit `status`, et
+  interroge `GET /hints/{enigmaId}` tant que c'est `pending`
 - `progress` est du contenu écrit par les joueurs. Il est transmis au modèle
   entre balises, déclaré sans autorité, et n'est jamais interprété comme une
   instruction
 - `requestKey` protège du double clic : deux envois portant la même clé pendant
-  qu'une demande est en vol donnent un `409` au second, pas une double
-  facturation. Le client en génère une par saisie
-- Coût par défaut : 25 % des points de l'énigme par indice, cumulatif, le score
-  d'une énigme ne descendant pas sous 0. La règle tient dans
-  `backend/src/utils/hintCost.ts`
-- L'appel au modèle prend quelques secondes (timeout lambda porté à 60 s)
+  qu'une demande est en vol donnent un `409` au second
+- **Coût nul pendant l'essai.** `pointsCharged` vaut 0 et aucun score n'est
+  affecté : le commanditaire veut d'abord juger le mécanisme de choix. Le barème
+  (25 % par indice, cumulatif) dort dans `backend/src/utils/hintCost.ts`, qui
+  documente les deux gestes à faire pour le rebrancher
 
 **Errors**:
 - `400`: `progress` absent, de moins de 20 caractères, ou de plus de 3 000
 - `403`: Pas d'équipe, équipe non payante, ou énigme inactive
 - `404`: Énigme inconnue, ou énigme sans aucun indice pré-écrit
-- `409`: Énigme déjà résolue par l'équipe, tous les indices déjà donnés, ou
-  demande concurrente portant la même clé
-- `502`: L'appel au modèle a échoué (réseau, réponse malformée, identifiant
-  inconnu). **Aucun point n'est facturé et aucune demande n'est archivée** :
-  l'équipe peut réessayer
+- `409`: Énigme déjà résolue, tous les indices déjà donnés, demande déjà en
+  attente pour cette énigme, ou demande concurrente portant la même clé
+- `502`: (mode `anthropic` seulement) l'appel au modèle a échoué. **Aucune
+  demande n'est archivée** : l'équipe peut réessayer. En mode `queue`, un échec
+  du worker se lit dans le statut `failed` de la demande, pas dans un code HTTP
 
 ---
 
@@ -1926,9 +1955,11 @@ data.attempts.forEach(attempt => {
       "requestedAt": "ISO 8601 timestamp",
       "requestedBy": "uuid (userId)",
       "progressText": "string (texte intégral écrit par l'équipe)",
+      "status": "'pending' | 'processing' | 'done' | 'failed'",
       "hintId": "string",
       "hintText": "string (texte intégral de l'indice livré)",
       "justification": "string (note interne du modèle)",
+      "failureReason": "string (renseignée quand status vaut failed)",
       "model": "string",
       "inputTokens": number,
       "outputTokens": number,
@@ -2087,6 +2118,7 @@ data.attempts.forEach(attempt => {
 
 | Date | Endpoint | Change | Type | Impact |
 |------|----------|--------|------|--------|
+| 2026-09-12 | POST /hints/{enigmaId}/request, GET /hints/{enigmaId} | Mode `queue` : la demande part en attente (202) et un worker extérieur la traite via `claude -p`, faute de clé d'API pour l'essai. Ajout de `status` et `failureReason` aux demandes. Le coût en points passe à 0 et n'affecte plus `totalPoints` | Feature + Breaking | **Breaking** : `POST /hints/.../request` peut désormais répondre 202 sans indice ; le client doit lire `status` et interroger `GET /hints/{enigmaId}`. `hintsPenalty` disparaît de GET /teams/stats |
 | 2026-09-12 | POST /hints/{enigmaId}/request, GET /hints/{enigmaId}, GET /admin/hints/requests | Nouvelle récupération d'indices : l'équipe décrit son avancement, un modèle choisit l'indice pré-écrit adapté. Remplace POST /hints/{enigmaId}/use et GET /admin/hints/usage, supprimés | Feature + Breaking | **Breaking** : les deux anciens endpoints n'existent plus ; `hintPdfUrl` et `hasHint` disparaissent de l'énigme au profit de `hintsCount`, `hintUsed`/`hintUsedAt` de la progression au profit de `hintsRequested`/`lastHintAt`. La pénalité de points, jusqu'ici annoncée mais jamais appliquée, est désormais déduite de `totalPoints` dans GET /teams/stats |
 | 2026-01-02 | GET /admin/attempts | Fixed pagination bug (Scan → Query) + added stats object + removed legacy count/total fields | Bug Fix + Breaking | **Critical fix**: Now returns ALL attempts (not just 1MB), shows correct success counts; **Breaking**: Removed `count` and `total` root fields - use `stats.totalAttempts` instead; **Frontend must use stats object for all statistics** |
 | 2024-12-24 | GET /enigmas/by-difficulty, GET /admin/enigmas/by-difficulty | Updated algorithm: removed A (abandonment), E now based on active teams only, T now from first attempt; sorting easiest→hardest; fixed enigma titles bug | Breaking | More accurate difficulty scores, better reflects actual challenge; **frontend must handle 3 metrics instead of 4** |

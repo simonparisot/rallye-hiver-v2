@@ -220,6 +220,7 @@ Journal des demandes d'indices : une ligne par demande aboutie.
   - `teamId` (String) - Équipe demandeuse
   - `enigmaId` (String) - Énigme concernée
   - `teamEnigmaKey` (String) - Composite `"{teamId}#{enigmaId}"`, clé de la GSI
+  - `status` (String) - `pending` | `processing` | `done` | `failed`
   - `requestedAt` (String) - ISO 8601
   - `requestedBy` (String) - userId de la personne qui a fait la demande
   - `progressText` (String) - Texte libre écrit par l'équipe (20 à 3 000 caractères)
@@ -229,11 +230,16 @@ Journal des demandes d'indices : une ligne par demande aboutie.
   - `model` (String) - Identifiant du modèle appelé
   - `inputTokens` (Number, nullable) - Jetons d'entrée, si l'API les a renvoyés
   - `outputTokens` (Number, nullable) - Jetons de sortie
-  - `pointsCharged` (Number) - Points retirés pour cette demande
+  - `failureReason` (String, nullable) - Renseignée quand `status` vaut `failed`
+  - `processingStartedAt` (String, nullable) - Pose du verrou par le worker
+  - `completedAt` (String, nullable) - Conclusion de la demande
+  - `excludedHintIds` (List, nullable) - Indices déjà donnés au moment de la demande
+  - `pointsCharged` (Number) - 0 pendant l'essai (barème en sommeil)
 
-**Écriture** : une ligne n'est écrite qu'après un choix d'indice abouti. Un appel
-au modèle en échec ne laisse rien et ne facture rien : l'absence de ligne est la
-garantie qu'aucun point n'a été prélevé.
+**Cycle de vie.** En mode `anthropic`, la ligne naît `done`. En mode `queue`,
+elle naît `pending`, le worker la prend par écriture conditionnelle
+(`pending` -> `processing`, ce qui interdit un double traitement), puis la conclut
+en `done` ou `failed`. Seules les lignes `done` consomment un indice.
 
 **Example Item**:
 ```json
@@ -247,10 +253,11 @@ garantie qu'aucun point n'a été prélevé.
   "progressText": "On a relevé les sept horloges et tenté plusieurs additions, sans résultat.",
   "hintId": "h2",
   "hintText": "Relisez la lettre du propriétaire jusqu'au bout.",
-  "model": "claude-opus-5",
+  "status": "done",
+  "model": "claude-fable-5-1",
   "inputTokens": 1840,
   "outputTokens": 62,
-  "pointsCharged": 5
+  "pointsCharged": 0
 }
 ```
 
@@ -316,7 +323,13 @@ Query: teamEnigmaKey = "{teamId}#{enigmaId}" (GSI teamEnigmaKey-requestedAt-inde
 Sort: requestedAt ascendant
 ```
 
-### 14. Journal des demandes d'indices (ADMIN)
+### 14. Demandes à traiter (worker, mode queue)
+```
+Scan: FilterExpression status = "pending", plus anciennes d'abord
+Verrou: UpdateItem conditionnel status pending -> processing
+```
+
+### 15. Journal des demandes d'indices (ADMIN)
 ```
 Scan: table complète, puis filtrage (énigme, équipe) et tri en mémoire
 Volume attendu : quelques centaines de lignes par édition
@@ -408,16 +421,18 @@ interface HintRequest {
   teamId: string;
   enigmaId: string;
   teamEnigmaKey: string;    // composite: "teamId#enigmaId"
+  status: 'pending' | 'processing' | 'done' | 'failed';
   requestedAt: string;
   requestedBy: string;
   progressText: string;
   hintId: string;
   hintText: string;
   justification?: string;
-  model: string;
+  model?: string;
   inputTokens?: number;
   outputTokens?: number;
-  pointsCharged: number;
+  failureReason?: string;
+  pointsCharged: number;    // 0 pendant l'essai
 }
 
 // Password Attempt Log (ADMIN)

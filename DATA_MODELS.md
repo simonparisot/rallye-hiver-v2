@@ -222,7 +222,9 @@ interface TeamEnigmaProgress {
   attemptCount: number;        // Total number of attempts (default: 0)
   lastAttemptAt?: string;      // ISO 8601 timestamp of last attempt
   firstAttemptAt?: string;     // ISO 8601 timestamp of first attempt
-  hintsRequested?: number;     // Nombre d'indices obtenus sur cette énigme
+  hintsRequested?: number;     // Nombre d'indices demandés sur cette énigme
+                               // (compteur d'usage : aucun effet sur le score
+                               //  pendant l'essai)
   lastHintAt?: string;         // ISO 8601 timestamp du dernier indice obtenu
   createdAt: string;           // ISO 8601 timestamp
   updatedAt: string;           // ISO 8601 timestamp
@@ -300,33 +302,58 @@ indices déjà donnés est reconstruite depuis cette table, pas depuis la
 progression.
 
 ```typescript
+type HintRequestStatus = 'pending' | 'processing' | 'done' | 'failed';
+
 interface HintRequest {
   requestId: string;           // UUID, clé primaire
   teamId: string;              // Équipe demandeuse
   enigmaId: string;            // Énigme concernée
   teamEnigmaKey: string;       // Composite "teamId#enigmaId", clé de la GSI
+  status: HintRequestStatus;   // Voir ci-dessous
   requestedAt: string;         // ISO 8601
   requestedBy: string;         // userId de la personne qui a cliqué
   progressText: string;        // Texte libre écrit par l'équipe (20 à 3 000 car.)
-  hintId: string;              // Identifiant de l'indice choisi
-  hintText: string;            // Texte de l'indice tel qu'il a été livré
+  excludedHintIds?: string[];  // Indices déjà donnés au moment de la demande
+  hintId?: string;             // Identifiant de l'indice choisi (status done)
+  hintText?: string;           // Texte de l'indice tel qu'il a été livré
   justification?: string;      // Note interne du modèle, jamais montrée à l'équipe
-  model: string;               // Identifiant du modèle appelé
-  inputTokens?: number;        // Jetons consommés, si l'API les a renvoyés
+  model?: string;              // Identifiant du modèle appelé
+  inputTokens?: number;        // Jetons consommés, si connus
   outputTokens?: number;
-  pointsCharged: number;       // Points retirés pour cette demande
+  failureReason?: string;      // Renseignée quand status vaut failed
+  processingStartedAt?: string;// Pose du verrou par le worker
+  completedAt?: string;
+  pointsCharged: number;       // 0 pendant l'essai (barème en sommeil)
 }
 ```
+
+**Cycle de vie du statut.** Il dépend du réglage `HINT_PROVIDER` :
+
+| Mode | Naissance | Suite |
+|---|---|---|
+| `anthropic` | `done` directement | la lambda appelle l'API et conclut dans la même requête |
+| `queue` | `pending` | le worker la prend (`pending` -> `processing`, écriture conditionnelle), puis `done` ou `failed` |
+
+Le passage `pending` -> `processing` est une écriture conditionnelle : c'est ce
+qui garantit qu'une demande n'est jamais traitée deux fois, même si deux workers
+tournent par mégarde.
+
+Seules les demandes `done` consomment un indice. Une demande `failed` n'a rien
+livré : l'indice reste disponible et l'équipe peut redemander.
 
 `hintText` est recopié plutôt que référencé : si l'organisateur réécrit un
 indice en cours de rallye, le journal garde ce que l'équipe a réellement lu.
 
-**Écriture** : une ligne n'est écrite qu'après un choix d'indice abouti. Un appel
-au modèle en échec n'en laisse aucune, et ne facture donc rien.
+**Écriture** : en mode `anthropic`, une ligne n'est écrite qu'après un choix
+d'indice abouti, et un appel en échec n'en laisse aucune. En mode `queue`, la
+ligne est écrite dès la demande, avec le statut `pending` ; c'est le statut, et
+non la présence de la ligne, qui dit si l'indice a été livré.
 
 **Access Patterns** :
 - Indices déjà obtenus par une équipe sur une énigme : Query GSI sur
   `teamEnigmaKey = "{teamId}#{enigmaId}"`, trié par `requestedAt`
+- Demandes à traiter (worker) : Scan filtré sur `status = "pending"`. Pas d'index
+  dédié : une poignée de lignes en attente à un instant donné ne le justifie pas
 - Journal de l'administrateur : Scan complet, filtré et trié en mémoire
   (quelques centaines de lignes par édition)
 
@@ -342,10 +369,11 @@ au modèle en échec n'en laisse aucune, et ne facture donc rien.
   "progressText": "On a relevé les sept horloges et tenté plusieurs additions...",
   "hintId": "h2",
   "hintText": "Relisez la lettre du propriétaire jusqu'au bout.",
-  "model": "claude-opus-5",
+  "status": "done",
+  "model": "claude-fable-5-1",
   "inputTokens": 1840,
   "outputTokens": 62,
-  "pointsCharged": 5
+  "pointsCharged": 0
 }
 ```
 
