@@ -48,15 +48,11 @@ export const ENVIRONMENTS = {
    */
   indices: {
     name: 'indices',
-    // Pile non encore déployée : un premier essai a échoué et ses tables sont
-    // restées derrière lui (DeletionPolicy: Retain), ce qui bloque la création.
-    // Une fois la pile montée, reporter ici l'URL et le pool affichés par
-    // `./scripts/sandbox.sh create indices 3002`.
-    apiUrl: null,
+    apiUrl: 'https://l0n9mn4ig9.execute-api.eu-west-1.amazonaws.com/indices',
     siteUrl: 'http://localhost:3002',
     awsProfile: 'rallye-test',
     awsAccount: '516341735006',
-    cognitoUserPoolId: null,
+    cognitoUserPoolId: 'eu-west-1_2nztr0KPU',
     tablePrefix: 'rallye-hiver-backend-indices-',
     enigmasBucket: 'rallyehiver-enigmas-indices',
     capability: FULL,
