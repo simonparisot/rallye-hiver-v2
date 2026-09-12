@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import GamePanels from './pages/GamePanels';
-import { editionCourante } from './editions/2027';
+import { edition } from './editions';
 import './App.css';
 
 // Lazy load admin code only when needed
@@ -47,9 +47,9 @@ function App() {
           />
 
           {/* Jeu de l'oie (edition 2027) : la garde d'acces est dans la page */}
-          {editionCourante.enigmeOie && (
+          {edition.enigmeOie && (
             <Route
-              path={editionCourante.enigmeOie.route}
+              path={edition.enigmeOie.route}
               element={
                 <AuthProvider>
                   <Suspense fallback={<div>Chargement...</div>}>

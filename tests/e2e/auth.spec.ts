@@ -34,10 +34,12 @@ test.describe('Authentification', () => {
     await page.getByTestId('auth-password-input').fill(config.fixtureUsers.leader.password!);
     await page.getByTestId('auth-submit').click();
 
-    // Le panneau d'authentification cède la place aux panneaux de jeu.
+    // Le panneau d'authentification cède la place au jeu. Depuis la refonte,
+    // une seule section est affichée à la fois : les énigmes à l'arrivée, les
+    // autres accessibles par la barre de navigation.
     await expect(page.getByTestId('enigma-panel')).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByTestId('parcours-panel')).toBeVisible();
-    await expect(page.getByTestId('stats-panel')).toBeVisible();
+    await expect(page.getByTestId('nav-vers-parcours')).toBeVisible();
+    await expect(page.getByTestId('nav-vers-equipe')).toBeVisible();
     await expect(page.getByTestId('auth-panel')).toHaveCount(0);
   });
 

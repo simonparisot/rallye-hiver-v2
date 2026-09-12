@@ -2,7 +2,12 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
+import { applyEditionTheme } from './editions';
 import reportWebVitals from './reportWebVitals';
+
+// Pose l'attribut d'édition et charge ses polices avant le premier rendu,
+// pour qu'aucune image du site n'apparaisse avec l'habillage d'une autre année.
+applyEditionTheme();
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

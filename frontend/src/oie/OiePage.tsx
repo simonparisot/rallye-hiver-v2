@@ -3,14 +3,13 @@ import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { gameAPI, teamAPI } from '../services/api';
-import { editionCourante } from '../editions/2027';
+import { edition } from '../editions';
 import { oieAPI } from './api';
 import { OieRollResponse } from './types';
 import Plateau from './components/Plateau';
 import CarteAction from './components/CarteAction';
 import ResultatLancer from './components/ResultatLancer';
 import FilEvenements from './components/FilEvenements';
-import '../editions/themes/2027.css';
 import './OiePage.css';
 
 /**
@@ -108,7 +107,7 @@ const OiePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="oie-page edition-2027" data-testid="oie-page">
+      <div className="oie-page" data-testid="oie-page">
         <p className="oie-etat" data-testid="oie-chargement">Chargement...</p>
       </div>
     );
@@ -116,7 +115,7 @@ const OiePage: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="oie-page edition-2027" data-testid="oie-page">
+      <div className="oie-page" data-testid="oie-page">
         <div className="oie-etat" data-testid="oie-non-connecte">
           <p>Connectez-vous pour rejoindre le plateau.</p>
           <Link className="oie-bouton-secondaire" to="/">Retour au jeu</Link>
@@ -127,7 +126,7 @@ const OiePage: React.FC = () => {
 
   if (!hasAccess || !gameStarted) {
     return (
-      <div className="oie-page edition-2027" data-testid="oie-page">
+      <div className="oie-page" data-testid="oie-page">
         <div className="oie-etat" data-testid="oie-sans-acces">
           <p>
             {!hasAccess
@@ -141,10 +140,10 @@ const OiePage: React.FC = () => {
   }
 
   return (
-    <div className="oie-page edition-2027" data-testid="oie-page">
+    <div className="oie-page" data-testid="oie-page">
       <header className="oie-entete">
         <div>
-          <h1 data-testid="oie-titre">{editionCourante.enigmeOie?.titre || "Le jeu de l'oie"}</h1>
+          <h1 data-testid="oie-titre">{edition.enigmeOie?.titre || "Le jeu de l'oie"}</h1>
           <p className="oie-sous-titre">
             Toutes les equipes jouent sur le meme plateau. Repondez a la question de votre case
             pour retrouver le droit de lancer les des.

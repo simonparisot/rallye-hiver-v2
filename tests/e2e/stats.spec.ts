@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, ouvrirSection } from './fixtures.js';
 
 /**
  * Scénario 9 — le tableau de bord de l'équipe.
@@ -10,6 +10,7 @@ import { test, expect } from './fixtures.js';
 test.describe('Tableau de bord', () => {
   test('9. les trois compteurs sont affichés', async ({ page }) => {
     await page.goto('/');
+    await ouvrirSection(page, 'equipe');
 
     await expect(page.getByTestId('stats-panel')).toBeVisible();
     await expect(page.getByTestId('stats-enigmas-solved-value')).toBeVisible();
@@ -19,6 +20,7 @@ test.describe('Tableau de bord', () => {
 
   test('9. les compteurs contiennent des valeurs chiffrées cohérentes', async ({ page }) => {
     await page.goto('/');
+    await ouvrirSection(page, 'equipe');
 
     const enigmes = await page.getByTestId('stats-enigmas-solved-value').textContent();
     const parcours = await page.getByTestId('stats-parcours-completed-value').textContent();
@@ -36,6 +38,7 @@ test.describe('Tableau de bord', () => {
 
   test('9. le nom de l\'équipe est affiché', async ({ page }) => {
     await page.goto('/');
+    await ouvrirSection(page, 'equipe');
 
     await expect(page.getByTestId('team-name')).toBeVisible();
     await expect(page.getByTestId('team-name')).not.toBeEmpty();

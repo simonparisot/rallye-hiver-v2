@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
-import { editionCourante } from '../../editions/2027';
+import { edition } from '../../editions';
 import './AdminLayout.css';
 
 interface AdminLayoutProps {
@@ -86,7 +86,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </Link>
 
           {/* Jeu de l'oie : seulement pour une edition qui le declare */}
-          {editionCourante.enigmeOie && (
+          {edition.enigmeOie && (
             <Link data-testid="admin-nav-oie"
               to="/admin/oie"
               className={`admin-nav-item ${isActive('/oie') ? 'active' : ''}`}

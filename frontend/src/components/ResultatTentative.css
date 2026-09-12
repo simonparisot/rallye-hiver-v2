@@ -1,0 +1,110 @@
+/* =============================================================================
+   Résultat d'une tentative
+
+   Une annonce brève, qu'on referme aussitôt. Elle doit se voir sans faire
+   écran : le voile reste discret, la boîte est petite, et trois gestes la
+   referment.
+   ============================================================================= */
+
+.resultat-voile {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(12, 10, 16, .62);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  animation: resultat-apparition .16s ease-out;
+}
+
+.resultat {
+  position: relative;
+  width: min(420px, 100%);
+  padding: 34px 32px 28px;
+  background: var(--theatre-scene, #FBF9F5);
+  color: var(--theatre-salle, #1B1720);
+  border-top: 4px solid var(--theatre-coulisse, #6B6357);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .45);
+  text-align: center;
+  animation: resultat-montee .18s ease-out;
+}
+
+/* L'issue se lit à la couleur du filet, pas seulement au texte. */
+.resultat-reussi { border-top-color: var(--theatre-dorure, #A98F4C); }
+.resultat-manque { border-top-color: var(--theatre-tragedie, #A9503F); }
+
+.resultat-titre {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+.resultat-reussi .resultat-titre { color: #7A6428; }
+.resultat-manque .resultat-titre { color: var(--theatre-tragedie, #A9503F); }
+
+.resultat-message {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--theatre-coulisse, #6B6357);
+  margin-bottom: 24px;
+}
+
+.resultat-action {
+  font-family: var(--font-body);
+  font-size: 15.5px;
+  font-weight: 600;
+  padding: 11px 30px;
+  border: 1px solid var(--theatre-filet, #D6CFC4);
+  background: transparent;
+  color: var(--theatre-salle, #1B1720);
+  cursor: pointer;
+}
+.resultat-action:hover { background: rgba(27, 23, 32, .05); }
+.resultat-action:focus-visible {
+  outline: 2px solid var(--theatre-comedie, #5687A8);
+  outline-offset: 2px;
+}
+
+.resultat-fermer {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 38px;
+  height: 38px;
+  font-size: 26px;
+  line-height: 1;
+  background: none;
+  border: 0;
+  color: var(--theatre-coulisse-pale, #8B8275);
+  cursor: pointer;
+  border-radius: 50%;
+}
+.resultat-fermer:hover {
+  background: rgba(27, 23, 32, .07);
+  color: var(--theatre-salle, #1B1720);
+}
+.resultat-fermer:focus-visible {
+  outline: 2px solid var(--theatre-comedie, #5687A8);
+  outline-offset: 1px;
+}
+
+@keyframes resultat-apparition {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes resultat-montee {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resultat-voile, .resultat { animation: none; }
+}
+
+@media (max-width: 520px) {
+  .resultat { padding: 30px 22px 24px; }
+  .resultat-titre { font-size: 26px; }
+}

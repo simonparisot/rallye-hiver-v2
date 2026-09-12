@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Enigma } from '../../types';
-import { editionCourante } from '../../editions/2027';
+import { edition } from '../../editions';
 import { getEnigmasWithProgress, getEnigmasPreview, submitPasswordAttempt } from '../../services/gameService';
 import { teamAPI, hintsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import PDFViewer from '../PDFViewer';
 import ConfirmationModal from '../ConfirmationModal';
 import './EnigmasPanel.css';
+import ResultatTentative from '../ResultatTentative';
 
 interface EnigmasPanelProps {
   isExpanded: boolean;
@@ -16,15 +17,36 @@ interface EnigmasPanelProps {
   onExpand: () => void;
 }
 
+/**
+ * État d'une énigme du point de vue du participant.
+ *
+ * Rien ne distinguait jusqu'ici une énigme résolue d'une énigme jamais ouverte :
+ * les vingt cartes étaient identiques, et retrouver où l'on en était supposait
+ * de toutes les parcourir.
+ */
+type EtatEnigme = 'resolue' | 'tentee' | 'vierge';
+
+function etatDe(enigma: { isSolved: boolean; attemptCount?: number }): EtatEnigme {
+  if (enigma.isSolved) return 'resolue';
+  return (enigma.attemptCount ?? 0) > 0 ? 'tentee' : 'vierge';
+}
+
+function libelleEtat(enigma: { isSolved: boolean }): string | null {
+  // Seule la résolution est annoncée. Le décompte des essais mettait un score
+  // sous les yeux à chaque coup d'œil, là où le jeu se joue sur trois mois :
+  // la pastille cerclée suffit à dire qu'une énigme est commencée.
+  return enigma.isSolved ? 'Résolue' : null;
+}
+
 const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onExpand }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  // Edition 2027 : une des vingt enigmes se joue sur un plateau de jeu de l'oie
-  // partage. Elle reste une enigme ordinaire dans cette liste, mais son entree
-  // mene a /oie au lieu d'ouvrir un PDF et un champ de mot de passe.
-  const enigmeOie = editionCourante.enigmeOie;
+  // Édition 2027 : une des vingt énigmes se joue sur un plateau de jeu de l'oie
+  // partagé. Elle reste une énigme ordinaire dans cette liste, mais son entrée
+  // mène au plateau au lieu d'ouvrir un PDF et un champ de mot de passe.
+  const enigmeOie = edition.enigmeOie;
   const estEnigmeOie = (enigmaId: string) =>
     !!enigmeOie?.enigmaId && enigmaId === enigmeOie.enigmaId;
 
@@ -70,6 +92,8 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
   });
 
   const handleEnigmaSelect = (enigma: Enigma) => {
+    // L'énigme du jeu de l'oie n'a ni énoncé PDF ni mot de passe : elle se joue
+    // sur son plateau.
     if (estEnigmeOie(enigma.id) && enigmeOie) {
       navigate(enigmeOie.route);
       return;
@@ -143,27 +167,14 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
       setAttemptMessage(result.message);
       setAttemptSuccess(result.success);
 
+        // Le champ est vidé quand la réponse est la bonne : l'énigme est close,
+        // réafficher le mot de passe trouvé n'apporte rien.
       if (result.success) {
         setPassword('');
-        // Show success message for 4 seconds
-        setTimeout(() => {
-          setAttemptMessage('');
-          setAttemptSuccess(null);
-        }, 4000);
-      } else {
-        // Show error message for 2 minutes
-        setTimeout(() => {
-          setAttemptMessage('');
-          setAttemptSuccess(null);
-        }, 120000);
       }
     } catch (error) {
       setAttemptMessage('Une erreur est survenue. Veuillez réessayer.');
       setAttemptSuccess(false);
-      setTimeout(() => {
-        setAttemptMessage('');
-        setAttemptSuccess(null);
-      }, 120000);
     }
   };
 
@@ -220,15 +231,18 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
               <div
                 key={enigma.id}
                 data-testid={`enigma-card-${enigma.order}`}
-                className={`enigma-item-compact ${enigma.isSolved ? 'solved' : ''} ${!hasAccess ? 'locked' : ''}`}
+                className={`enigma-item-compact etat-${etatDe(enigma)} ${enigma.isSolved ? 'solved' : ''} ${!hasAccess ? 'locked' : ''}`}
                 onClick={() => hasAccess && handleEnigmaSelect(enigma)}
               >
-                <span className="enigma-number">{enigma.order}</span>
+                <span className={`enigma-number pastille-${etatDe(enigma)}`}>{enigma.order}</span>
                 <span className="enigma-title-compact">{enigma.title}</span>
                 {estEnigmeOie(enigma.id) && (
                   <span className="enigma-oie-badge" data-testid={`enigma-oie-badge-${enigma.order}`}>Plateau</span>
                 )}
-                {enigma.isSolved && <span className="solved-badge-small" data-testid={`enigma-solved-badge-${enigma.order}`}>Résolu</span>}
+                {libelleEtat(enigma) && (
+                  <span className={`enigma-etat etat-${etatDe(enigma)}`}>{libelleEtat(enigma)}</span>
+                )}
+                {enigma.isSolved && <span className="solved-badge-small visually-hidden" data-testid={`enigma-solved-badge-${enigma.order}`}>Résolu</span>}
               </div>
             ))}
           </div>
@@ -240,19 +254,22 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                 <div
                   key={enigma.id}
                   data-testid={`enigma-card-${enigma.order}`}
-                  className={`enigma-item ${selectedEnigma?.id === enigma.id ? 'active' : ''} ${
+                  className={`enigma-item etat-${etatDe(enigma)} ${selectedEnigma?.id === enigma.id ? 'active' : ''} ${
                     enigma.isSolved ? 'solved' : ''
                   }`}
                   onClick={() => handleEnigmaSelect(enigma)}
                 >
                   <div className="enigma-header-item">
-                    <span className="enigma-number">{enigma.order}</span>
+                    <span className={`enigma-number pastille-${etatDe(enigma)}`}>{enigma.order}</span>
                     <span className="enigma-title">{enigma.title}</span>
                     {estEnigmeOie(enigma.id) && (
                       <span className="enigma-oie-badge" data-testid={`enigma-oie-badge-${enigma.order}`}>
-                        Plateau partage
+                        Plateau partagé
                       </span>
                     )}
+                    {libelleEtat(enigma) && (
+                  <span className={`enigma-etat etat-${etatDe(enigma)}`}>{libelleEtat(enigma)}</span>
+                )}
                     {!estEnigmeOie(enigma.id) && enigma.pdfUrl && selectedEnigma?.id === enigma.id && (
                       <button
                         data-testid={`enigma-download-button-${enigma.order}`}
@@ -269,7 +286,7 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                     )}
                   </div>
                   {enigma.isSolved && (
-                    <div className="enigma-meta">
+                    <div className="enigma-meta visually-hidden">
                       <span className="solved-badge" data-testid={`enigma-solved-badge-${enigma.order}`}>Résolue</span>
                     </div>
                   )}
@@ -284,6 +301,9 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                       ✅ Énigme déjà résolue
                     </div>
                   )}
+                  {/* La barre de réponse et l'indice précèdent l'énoncé :
+                      celui-ci est un PDF long, souvent déjà lu, et ce que
+                      l'on vient faire en rouvrant une énigme, c'est répondre. */}
                   <form className="password-form password-form-compact" data-testid="enigma-password-form" onSubmit={handlePasswordSubmit}>
                     <input
                       type="text"
@@ -297,17 +317,17 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                     <button
                       type="submit"
                       data-testid="enigma-submit"
-                      className="submit-btn btn-small"
+                      className="submit-btn submit-btn-principal"
                       disabled={passwordMutation.isPending || !password.trim()}
                     >
-                      {passwordMutation.isPending ? 'Envoi...' : 'Tester'}
+                      {passwordMutation.isPending ? 'Envoi…' : 'Valider ma réponse'}
                     </button>
                   </form>
-                  {attemptMessage && (
-                    <div className={`attempt-message ${attemptSuccess === true ? 'attempt-success' : 'attempt-error'}`} data-testid={attemptSuccess === true ? 'enigma-attempt-success' : 'enigma-attempt-error'}>
-                      {attemptMessage}
-                    </div>
-                  )}
+                  <ResultatTentative
+                    message={attemptMessage || null}
+                    reussi={attemptSuccess === true}
+                    onFermer={() => setAttemptMessage('')}
+                  />
                   {/* Hint button and toggle */}
                   {selectedEnigma.hasHint && !selectedEnigma.isSolved && (
                     <div className="hint-section" data-testid="hint-section">

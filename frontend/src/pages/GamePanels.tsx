@@ -10,21 +10,35 @@ import EditionInfoPanel from '../components/panels/EditionInfoPanel';
 import AuthPanel from '../components/panels/AuthPanel';
 import WaitingPanel from '../components/panels/WaitingPanel';
 import './GamePanels.css';
+import { edition } from '../editions';
 
-type PanelState = 'none' | 'panel1' | 'panel2';
+/**
+ * Les trois panneaux dépliants sont remplacés par une navigation par sections.
+ *
+ * Ils obligeaient à choisir entre voir la liste et lire une énigme, réduisaient
+ * les panneaux fermés à 4 % de largeur — d'où des titres pivotés à la verticale —
+ * et tenaient mal sur téléphone. Une barre de navigation et une section à la fois
+ * règlent les trois problèmes, sans rien retirer aux fonctions accessibles.
+ */
+type Section = 'enigmes' | 'parcours' | 'equipe';
+
+const SECTIONS: { id: Section; libelle: string }[] = [
+  { id: 'enigmes', libelle: 'Énigmes' },
+  { id: 'parcours', libelle: 'Parcours' },
+  { id: 'equipe', libelle: 'Mon équipe' },
+];
 
 const GamePanels: React.FC = () => {
   const { user, loading } = useAuth();
-  const [expandedPanel, setExpandedPanel] = useState<PanelState>('none');
+  const [section, setSection] = useState<Section>('enigmes');
 
-  // Poll game status every 60 seconds
   const { data: gameStatus } = useQuery({
     queryKey: ['gameStatus'],
     queryFn: () => gameAPI.getStatus(),
-    refetchInterval: 60000, // Poll every 60 seconds
+    refetchInterval: 60000,
     refetchOnWindowFocus: true,
-    staleTime: 5 * 60 * 1000, // 5 minutes - aligns with backend cache
-    gcTime: 10 * 60 * 1000, // 10 minutes - garbage collection time
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const { data: team } = useQuery({
@@ -33,150 +47,128 @@ const GamePanels: React.FC = () => {
     enabled: !!user?.teamId,
   });
 
+  const { data: stats } = useQuery({
+    queryKey: ['team-stats', user?.teamId],
+    queryFn: () => teamAPI.getStats(),
+    enabled: !!user?.teamId,
+  });
+
   const hasAccess = !!user?.teamId && !!team?.hasPaid;
   const gameStarted = gameStatus?.isStarted ?? false;
 
-  const handlePanelClick = (panel: 'panel1' | 'panel2') => {
-    // Prevent expansion if user doesn't have access or game hasn't started
-    if (!hasAccess || !gameStarted) {
-      return;
-    }
-
-    if (expandedPanel === panel) {
-      setExpandedPanel('none');
-    } else {
-      setExpandedPanel(panel);
-    }
-  };
-
-  const handleClose = () => {
-    setExpandedPanel('none');
-  };
-
   if (loading) {
     return (
-      <div data-testid="nav-panels-container" className="game-panels-container">
-        <div data-testid="nav-loading" className="loading-overlay">
-          <div className="loading-spinner">Chargement...</div>
+      <div className="scene-container">
+        <div data-testid="nav-loading" className="chargement">
+          <span>Chargement…</span>
         </div>
       </div>
     );
   }
 
-  return (
-    <div data-testid="nav-panels-container" className="game-panels-container">
-      {/* Logo positioned at top right */}
-      <img data-testid="nav-logo" src="/logo.png" alt="Rallye d'Hiver" className="rallye-logo" />
+  /* --- Visiteur : présentation de l'édition et connexion --- */
+  if (!user) {
+    return (
+      <div data-testid="nav-panels-container" className="scene-container accueil">
+        <header className="barre">
+          <div className="barre-contenu">
+            <img data-testid="nav-logo" src={edition.theme.logo} alt={edition.label} className="rallye-logo" />
+            <span className="marque">
+              Rallye <em>d'Hiver</em> <span className="annee">{edition.year}</span>
+            </span>
+          </div>
+        </header>
 
-      {!user ? (
-        // Unauthenticated State
-        <>
-          {/* Panel 1: Authentication */}
-          <div data-testid="nav-panel-auth" className="panel panel-1">
+        <main className="accueil-grille">
+          <div data-testid="nav-panel-auth" className="feuille feuille-auth">
             <AuthPanel />
           </div>
-
-          {/* Panel 2: General Information */}
-          <div data-testid="nav-panel-general-info" className="panel panel-2">
-            <GeneralInfoPanel
-              isExpanded={true}
-              isCompact={false}
-            />
+          <div className="accueil-textes">
+            <div data-testid="nav-panel-general-info" className="feuille">
+              <GeneralInfoPanel isExpanded={true} isCompact={false} />
+            </div>
+            <div data-testid="nav-panel-edition-info" className="feuille">
+              <EditionInfoPanel isExpanded={true} isCompact={false} />
+            </div>
           </div>
+        </main>
+      </div>
+    );
+  }
 
-          {/* Panel 3: Edition Information */}
-          <div data-testid="nav-panel-edition-info" className="panel panel-3">
-            <EditionInfoPanel
-              isExpanded={true}
-              isCompact={false}
-            />
+  /* --- Le rallye n'a pas encore commencé --- */
+  if (!gameStarted) {
+    return (
+      <div data-testid="nav-panels-container" className="scene-container">
+        <header className="barre">
+          <div className="barre-contenu">
+            <img data-testid="nav-logo" src={edition.theme.logo} alt={edition.label} className="rallye-logo" />
+            <span className="marque">Rallye <em>d'Hiver</em> <span className="annee">{edition.year}</span></span>
           </div>
-        </>
-      ) : (
-        // Authenticated State
-        <>
-          {hasAccess ? (
-            // User with paid team
-            <>
-              {/* Panel 1: Stats & Dashboard */}
-              <div data-testid="nav-panel-stats"
-                className={`panel panel-1 ${expandedPanel !== 'none' ? 'collapsed' : ''}`}
-                onClick={() => expandedPanel !== 'none' && handleClose()}
+        </header>
+        <main className="section-contenu">
+          <div className="feuille"><WaitingPanel /></div>
+          <div data-testid="nav-panel-stats" className="feuille">
+            <StatsPanel isCompact={false} hideStats={true} />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  /* --- Participant : navigation par sections --- */
+  const avancement = stats
+    ? `${stats.enigmasSolved}/${stats.totalEnigmas}`
+    : null;
+
+  return (
+    <div data-testid="nav-panels-container" className="scene-container">
+      <header className="barre">
+        <div className="barre-contenu">
+          <img data-testid="nav-logo" src={edition.theme.logo} alt={edition.label} className="rallye-logo" />
+          <span className="marque">
+            Rallye <em>d'Hiver</em> <span className="annee">{edition.year}</span>
+          </span>
+
+          <nav className="sections" aria-label="Sections du rallye">
+            {SECTIONS.map((s) => (
+              <button
+                key={s.id}
+                data-testid={`nav-vers-${s.id}`}
+                className={`onglet ${section === s.id ? 'actif' : ''}`}
+                aria-current={section === s.id}
+                onClick={() => setSection(s.id)}
               >
-                <StatsPanel isCompact={expandedPanel !== 'none'} hideStats={!gameStarted} />
-              </div>
+                {s.libelle}
+              </button>
+            ))}
+          </nav>
 
-              {/* Panel 2: Enigmas OR Waiting State */}
-              <div data-testid="nav-panel-enigmas"
-                className={`panel panel-2 ${
-                  expandedPanel === 'panel1' ? 'expanded' : expandedPanel !== 'none' ? 'collapsed' : ''
-                } ${!gameStarted ? 'non-expandable' : ''}`}
-                onClick={() => expandedPanel !== 'panel1' && handlePanelClick('panel1')}
-              >
-                {expandedPanel === 'panel1' && gameStarted && (
-                  <button data-testid="nav-panel-close-button" className="panel-close-btn" onClick={(e) => { e.stopPropagation(); handleClose(); }}>
-                    ×
-                  </button>
-                )}
-                {!gameStarted ? (
-                  <WaitingPanel />
-                ) : (
-                  <EnigmasPanel
-                    isExpanded={expandedPanel === 'panel1'}
-                    isCompact={expandedPanel !== 'none' && expandedPanel !== 'panel1'}
-                    onExpand={() => setExpandedPanel('panel1')}
-                  />
-                )}
-              </div>
-
-              {/* Panel 3: Parcours (hidden when game hasn't started) */}
-              {gameStarted && (
-                <div data-testid="nav-panel-parcours"
-                  className={`panel panel-3 ${
-                    expandedPanel === 'panel2' ? 'expanded' : expandedPanel !== 'none' ? 'collapsed' : ''
-                  }`}
-                  onClick={() => expandedPanel !== 'panel2' && handlePanelClick('panel2')}
-                >
-                  {expandedPanel === 'panel2' && (
-                    <button data-testid="nav-panel-close-button" className="panel-close-btn" onClick={(e) => { e.stopPropagation(); handleClose(); }}>
-                      ×
-                    </button>
-                  )}
-                  <ParcoursPanel
-                    isExpanded={expandedPanel === 'panel2'}
-                    isCompact={expandedPanel !== 'none' && expandedPanel !== 'panel2'}
-                    onExpand={() => setExpandedPanel('panel2')}
-                  />
-                </div>
-              )}
-            </>
-          ) : (
-            // User without access (no team, pending request, or unpaid team) - show info panels
-            <>
-              {/* Panel 1: Stats & Dashboard (for team management) */}
-              <div data-testid="nav-panel-stats" className="panel panel-1">
-                <StatsPanel isCompact={false} hideStats={true} />
-              </div>
-
-              {/* Panel 2: General Information */}
-              <div data-testid="nav-panel-general-info" className="panel panel-2">
-                <GeneralInfoPanel
-                  isExpanded={true}
-                  isCompact={false}
-                />
-              </div>
-
-              {/* Panel 3: Edition Information */}
-              <div data-testid="nav-panel-edition-info" className="panel panel-3">
-                <EditionInfoPanel
-                  isExpanded={true}
-                  isCompact={false}
-                />
-              </div>
-            </>
+          {avancement && team?.teamName && (
+            <span className="avancement" title={team.teamName}>
+              <span className="nom-equipe">{team.teamName}</span>
+              <b>{avancement}</b>
+            </span>
           )}
-        </>
-      )}
+        </div>
+      </header>
+
+      <main className="section-contenu">
+        {/* Les trois sections restent montées : passer de l'une à l'autre ne
+            relance pas les requêtes, et l'énigme ouverte est retrouvée telle
+            qu'on l'avait laissée. */}
+        <div data-testid="nav-panel-enigmas" className="section" hidden={section !== 'enigmes'}>
+          <EnigmasPanel isExpanded={true} isCompact={false} onExpand={() => setSection('enigmes')} />
+        </div>
+
+        <div data-testid="nav-panel-parcours" className="section" hidden={section !== 'parcours'}>
+          <ParcoursPanel isExpanded={true} isCompact={false} onExpand={() => setSection('parcours')} />
+        </div>
+
+        <div data-testid="nav-panel-stats" className="section" hidden={section !== 'equipe'}>
+          <StatsPanel isCompact={false} hideStats={!hasAccess} />
+        </div>
+      </main>
     </div>
   );
 };

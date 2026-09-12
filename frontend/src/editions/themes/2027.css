@@ -1,53 +1,102 @@
-/**
- * Theme visuel de l'edition 2027 : le theatre.
- *
- * Velours rouge, or patine, bois de plateau, lumiere chaude de la rampe.
- * Tout est porte par des variables, et la portee est limitee a
- * `.edition-2027` : aucune autre edition n'est touchee par ce fichier.
- *
- * Les composants du jeu de l'oie n'utilisent que ces variables, jamais une
- * couleur en dur, pour que le jour ou la direction artistique change, un seul
- * fichier suffise.
- */
+/* ---------------------------------------------------------------------------
+   Édition 2027 — Le théâtre
 
-.edition-2027 {
-  /* Velours et bois */
-  --th-velours: #7b1521;
-  --th-velours-sombre: #4d0d15;
-  --th-velours-clair: #a82233;
-  --th-bois: #2a1d16;
-  --th-bois-clair: #3d2c22;
+   Palette tirée du logo : le masque bleu de la comédie, le masque rouge de la
+   tragédie. Deux dominantes, et non un accent unique — le bleu porte l'action,
+   le rouge porte l'enjeu. L'or est réservé à la réussite, et à elle seule.
 
-  /* Or et lumiere */
-  --th-or: #d9a441;
-  --th-or-clair: #f0cd82;
-  --th-rampe: #ffe6b0;
+   Ce thème est posé sur :root sans attendre l'attribut data-edition : c'est
+   l'édition servie par défaut, et l'attendre provoquerait un flash au
+   chargement.
+   --------------------------------------------------------------------------- */
+:root,
+:root[data-edition='2027'] {
+  /* --- Les deux masques, en version velours ---
+     Les teintes du logo, désaturées et assombries : sur un fond de salle, des
+     couleurs franches deviennent criardes. On cherche le confort d'une lecture
+     longue plutôt que l'éclat. */
+  --theatre-comedie: #5687A8;        /* bleu d'action, patiné */
+  --theatre-comedie-clair: #6E9DBC;
+  --theatre-comedie-sombre: #3F6A88;
+  --theatre-tragedie: #A9503F;       /* bordeaux plutôt que rouge vif */
+  --theatre-tragedie-sombre: #8C3E30;
+  --theatre-dorure: #A98F4C;         /* or patiné, pas or vif */
+  --theatre-dorure-claire: #C2A868;
 
-  /* Papier et encre */
-  --th-papier: #f6efe2;
-  --th-papier-ombre: #e6dcc9;
-  --th-encre: #221913;
-  --th-encre-douce: #6b5a4a;
+  /* --- La salle et la scène --- */
+  --theatre-salle: #1B1720;          /* velours brun-violet, pas un noir d'encre */
+  --theatre-programme: #EDE8E0;      /* papier de programme, légèrement chaud */
+  --theatre-scene: #FBF9F5;          /* surfaces surélevées */
+  --theatre-filet: #D6CFC4;          /* bordures sur fond clair */
+  --theatre-coulisse: #6B6357;       /* gris chaud, texte secondaire */
+  --theatre-coulisse-pale: #8B8275;
 
-  /* Signaux */
-  --th-succes: #2f6b46;
-  --th-alerte: #b3541e;
-  --th-erreur: #94202c;
+  /* --- Remappage des variables historiques ---------------------------------
+     Le reste du site continue de les employer : les redéfinir suffit à
+     rethémer l'ensemble sans toucher aux composants.                        */
+  --color-primary-blue: var(--theatre-comedie);
+  --color-primary-red: var(--theatre-tragedie);
+  --color-primary-yellow: var(--theatre-dorure);
+  --color-primary-green: #4A7C59;                    /* vert de rideau, remplace le vert vif */
+  --color-secondary-orange: var(--theatre-dorure-claire);
+  --color-secondary-purple: var(--theatre-comedie-sombre);
+  --color-neutral-black: var(--theatre-salle);
+  --color-neutral-gray: var(--theatre-programme);
+  --color-neutral-white: var(--theatre-scene);
 
-  /* Rythme */
-  --th-rayon: 6px;
-  --th-rayon-large: 12px;
-  --th-trait: 2px;
-  --th-ombre: 0 2px 10px rgba(34, 25, 19, 0.28);
-  --th-ombre-forte: 0 6px 24px rgba(34, 25, 19, 0.4);
+  /* Abril Fatface : la police de titre de rallyehiver.fr, ce qui relie
+     l'édition au site du Rallye. La déclarer ici ne suffit pas — elle doit
+     aussi être chargée par editions/2027.ts, faute de quoi les titres
+     retombent silencieusement sur la police de repli. */
+  --font-display: 'Abril Fatface', Georgia, 'Times New Roman', serif;
+  --font-body: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-secondary: 'Source Sans 3', -apple-system, sans-serif;
 
-  /* Typographie : on reste sur les familles deja chargees par l'application */
-  --th-titre: var(--font-display, Georgia, 'Times New Roman', serif);
-  --th-texte: var(--font-body, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  /* Le trait de la gravure est fin : les bordures épaisses de la bande
+     dessinée n'ont plus lieu d'être. */
+  --border-width-thin: 1px;
+  --border-width-medium: 1px;
+  --border-width-thick: 2px;
+  --border-color: var(--theatre-filet);
 
-  color: var(--th-papier);
-  font-family: var(--th-texte);
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(255, 230, 176, 0.16), transparent 62%),
-    linear-gradient(170deg, var(--th-velours-sombre) 0%, var(--th-bois) 68%);
+  --primary-color: var(--theatre-comedie);
+  --primary-hover: var(--theatre-comedie-sombre);
+  --secondary-color: var(--theatre-dorure);
+  --success-color: var(--theatre-dorure);
+  --danger-color: var(--theatre-tragedie);
+
+  /* --- États d'une énigme ou d'un parcours ---
+     Introduits par la refonte : rien ne distinguait jusqu'ici une énigme
+     résolue d'une énigme jamais ouverte. */
+  --etat-resolu-fond: var(--theatre-dorure);
+  --etat-resolu-texte: #2A2205;
+  --etat-resolu-libelle: #7A6210;
+  --etat-tente-fond: var(--theatre-scene);
+  --etat-tente-trait: var(--theatre-tragedie);
+  --etat-vierge-fond: #E8E3DA;
+  --etat-vierge-texte: var(--theatre-coulisse);
+
+  /* Abril Fatface est une grasse à empattements, dessinée pour les affiches :
+     elle s'épaissit et devient illisible en petit corps. Cette borne empêche
+     la police de titre de descendre dans le texte courant. */
+  --display-taille-mini: 22px;
+
+  /* --- Le décor ---
+     Un velours de salle plutôt qu'une illustration : le fond de 2026 occupait
+     un quart de la largeur à pleine saturation et concurrençait le contenu.
+     Trois dégradés superposés suffisent à évoquer le tombé d'un rideau — sans
+     image à charger, et sans jamais monter en saturation. */
+  --fond-couleur: #1A1D24;
+  --fond-image:
+    linear-gradient(180deg, rgba(196, 64, 47, .16) 0%, rgba(196, 64, 47, 0) 42%),
+    repeating-linear-gradient(90deg,
+      rgba(255, 255, 255, .028) 0px,
+      rgba(255, 255, 255, .028) 2px,
+      rgba(0, 0, 0, .05) 2px,
+      rgba(0, 0, 0, .05) 26px,
+      rgba(255, 255, 255, .015) 26px,
+      rgba(255, 255, 255, .015) 30px),
+    radial-gradient(ellipse 140% 90% at 50% 0%, rgba(201, 162, 39, .1) 0%, rgba(201, 162, 39, 0) 60%);
+  --fond-taille: auto;
+  --fond-repetition: repeat;
 }

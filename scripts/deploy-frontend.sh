@@ -8,6 +8,10 @@
 
 set -euo pipefail
 
+# Sans cela, un échec de publication passe inaperçu dès que la sortie est
+# filtrée par un grep : le code de retour est celui du dernier maillon du tube.
+# C'est arrivé — une session AWS expirée a laissé croire à un déploiement réussi.
+
 ENVIRONNEMENT="${1:-}"
 
 case "$ENVIRONNEMENT" in

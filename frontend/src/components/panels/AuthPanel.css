@@ -125,3 +125,33 @@
     font-size: 14px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Message d'erreur — refonte 2027
+
+   Se tromper de mot de passe vide aujourd'hui le formulaire sans rien
+   afficher : indiscernable d'une panne. La cause tient à un remontage du
+   composant et reste ouverte, consignée dans la suite de tests. La place et
+   le style du message sont posés ici pour que la correction n'ait plus qu'à
+   remplir cet emplacement.
+   --------------------------------------------------------------------------- */
+.error-message {
+  border-left: 3px solid var(--theatre-tragedie, var(--color-primary-red));
+  background: rgba(196, 64, 47, 0.07);
+  color: #8E2C1E;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.success-message {
+  border-left: 3px solid var(--theatre-dorure, var(--color-primary-yellow));
+  background: rgba(201, 162, 39, 0.09);
+  color: #6E5709;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 14.5px;
+  text-align: left;
+}
