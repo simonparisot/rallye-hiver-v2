@@ -18,7 +18,10 @@ import {
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 // Create axios instance
-const api = axios.create({
+// Exporte pour que les fonctionnalites hebergees hors de ce fichier (le jeu de
+// l'oie de l'edition 2027, dans src/oie/) reutilisent les memes intercepteurs
+// d'authentification et de rafraichissement de jeton.
+export const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',

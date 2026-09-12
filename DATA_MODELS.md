@@ -411,6 +411,134 @@ Parcours ─── (1:N) TeamParcoursAccess
 
 ---
 
+## Jeu de l'oie (édition 2027)
+
+Trois tables dédiées, préfixées `oie-`, isolées du modèle commun : l'énigme est
+un essai, et elle doit pouvoir disparaître sans laisser de trace ailleurs.
+Aucun champ n'est ajouté à `Enigma`, `Team` ou `TeamEnigmaProgress`.
+
+Le lien avec le reste du jeu tient en une ligne : arriver en case 63 écrit un
+`TeamEnigmaProgress` `solved: true` sur l'énigme désignée par `enigmaId`, et
+incrémente `solvedEnigmasCount` de l'équipe. Classement et statistiques la
+comptent alors comme n'importe quelle autre énigme, sans modification.
+
+### OieBoardConfig — table `${service}-oie-board`
+
+Un seul enregistrement, `boardId = "default"` : le plateau est commun à toutes
+les équipes.
+
+```typescript
+{
+  boardId: "default",        // PK
+  squares: OieSquare[],      // les 64 cases, 0 à 63
+  rollsPerDay: number,       // quota par jour et par équipe (1 par défaut)
+  enigmaId?: string,         // l'Enigma ordinaire que ce plateau résout
+  updatedAt: string,         // ISO 8601
+  updatedBy?: string         // userId de l'admin
+}
+```
+
+```typescript
+interface OieSquare {
+  squareNumber: number,      // 0 à 63
+  type: 'depart' | 'normale' | 'oie' | 'souffleur'
+      | 'loge' | 'puits' | 'prison' | 'mort' | 'arrivee',
+  question?: string,         // absente sur 0, 63, 58 et les cases oie
+  acceptedAnswers: string[], // comparées après normalisation
+  hint?: string,             // seulement sur une case souffleur
+  flavor?: string            // texte d'ambiance, facultatif
+}
+```
+
+`type` n'est jamais lu dans une charge utile : il découle du numéro de la case,
+et le serveur le recalcule à chaque écriture. Les 64 cases tiennent dans un seul
+enregistrement, très loin de la limite de 400 Ko.
+
+**Cases spéciales**, fixées par les règles et non par la configuration :
+`oie` = 9, 18, 27, 36, 45, 54 · `souffleur` = 14, 39, 50, 60 · `loge` = 19 ·
+`puits` = 31 · `prison` = 52 · `mort` = 58.
+
+### OieTeamState — table `${service}-oie-team-state`
+
+Un enregistrement par équipe, créé à la volée à la première ouverture du plateau.
+
+```typescript
+{
+  teamId: string,               // PK
+  position: number,             // 0 à 63
+  questionPending: boolean,     // une question attend une réponse
+  inPuits: boolean,             // bloqué en 31 jusqu'à ce qu'une autre équipe y tombe
+  inPrison: boolean,            // purge la peine de la 52, libérable par une autre équipe
+  nextRollAllowedDay: string,   // "YYYY-MM-DD", Europe/Paris
+  rollsUsedToday: number,
+  rollsDay: string,             // jour auquel se rapporte le compteur ci-dessus
+  totalRolls: number,
+  wrongAnswers: number,
+  hintedSquares: number[],      // cases dont l'indice du souffleur a été demandé
+  overshootCount: number,       // fois où l'équipe a raté la 63 pile
+  finishedAt?: string,          // ISO 8601, posé à l'arrivée
+  finishRank?: number,          // 1 pour la première équipe arrivée
+  createdAt: string,
+  updatedAt: string,
+  version: number               // incrémenté à chaque écriture
+}
+```
+
+`version` porte la concurrence. Deux membres d'une même équipe peuvent cliquer
+« Lancer les dés » au même instant ; chaque écriture est conditionnée à la
+version lue, si bien qu'un seul lancer est compté et que le second reçoit un
+409. Sans cette condition, l'équipe avancerait deux fois pour un seul quota.
+
+**Passer un tour** est modélisé par `nextRollAllowedDay` plutôt que par un
+compteur de tours : tomber sur la loge le jour D le porte à D+2, la prison à
+D+3. Libérer une équipe le ramène au jour courant.
+
+**Le quota du jour** n'est pas remis à zéro par une tâche planifiée : quand
+`rollsDay` n'est plus le jour courant, `rollsUsedToday` est considéré comme nul.
+Rien ne tourne la nuit, et changer `rollsPerDay` prend effet immédiatement.
+
+### OieEvent — table `${service}-oie-events`
+
+Le journal du plateau : tout ce qui s'y passe, pour le fil d'événements et pour
+l'analyse d'après course.
+
+```typescript
+{
+  boardId: "default",        // PK, une seule partition
+  eventKey: string,          // SK, `${occurredAt}#${eventId}`
+  eventId: string,           // UUID v4
+  type: 'lancer' | 'deplacement' | 'reponse_juste' | 'reponse_fausse'
+      | 'case_speciale' | 'liberation' | 'souffleur' | 'arrivee'
+      | 'reinitialisation',
+  teamId: string,
+  teamName: string,
+  userId?: string,           // qui a cliqué
+  occurredAt: string,        // ISO 8601
+  message: string,           // phrase française prête à afficher
+  detail?: object            // dés, positions, effet : jamais affiché tel quel
+}
+```
+
+**GSI** `teamId-occurredAt-index` : PK=`teamId`, SK=`occurredAt`, pour relire
+l'histoire d'une équipe.
+
+Les lignes d'un même lancer sont décalées d'une milliseconde chacune : sans
+cela elles partageraient l'horodatage, la clé de tri les départagerait par
+identifiant, et le fil raconterait l'histoire dans le désordre.
+
+`detail` ne quitte jamais le serveur : le fil envoyé aux joueurs ne porte que
+`message`.
+
+### Ce que le serveur ne dit jamais
+
+- les réponses acceptées, sur aucune case ;
+- la question d'une autre case que celle où se tient l'équipe (sinon une équipe
+  préparerait tout le plateau en regardant où sont les autres) ;
+- l'indice d'une case du souffleur tant qu'il n'a pas été demandé ;
+- les questions, réponses et tentatives des autres équipes.
+
+---
+
 ## DynamoDB Table Specifications
 
 ### Table Configuration
@@ -443,6 +571,11 @@ Parcours ─── (1:N) TeamParcoursAccess
 
 **GameStatus Table**:
 - No GSIs (single record access by gameId)
+
+**Oie tables** (édition 2027) :
+- `oie-board` : PK=`boardId`, pas de GSI (un seul enregistrement)
+- `oie-team-state` : PK=`teamId`, pas de GSI
+- `oie-events` : PK=`boardId`, SK=`eventKey` ; GSI `teamId-occurredAt-index`
 
 ---
 

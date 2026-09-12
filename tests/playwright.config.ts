@@ -58,7 +58,7 @@ export default defineConfig({
       dependencies: ['session'],
       // La refonte 2027 étant mobile-first, ces parcours comptent autant que
       // ceux du bureau.
-      testMatch: /(auth|enigmes|parcours)\.spec\.ts/,
+      testMatch: /(auth|enigmes|parcours|oie)\.spec\.ts/,
     },
   ],
 });

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import GamePanels from './pages/GamePanels';
+import { edition } from './editions';
 import './App.css';
 
 // Lazy load admin code only when needed
@@ -12,6 +13,10 @@ const AdminAuthProvider = lazy(() =>
   }))
 );
 const AdminApp = lazy(() => import('./admin/AdminApp'));
+
+// Jeu de l'oie : charge seulement quand un joueur ouvre /oie. Une edition qui
+// ne declare pas `enigmeOie` n'enregistre meme pas la route.
+const OiePage = lazy(() => import('./oie/OiePage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +45,20 @@ function App() {
               </Suspense>
             }
           />
+
+          {/* Jeu de l'oie (edition 2027) : la garde d'acces est dans la page */}
+          {edition.enigmeOie && (
+            <Route
+              path={edition.enigmeOie.route}
+              element={
+                <AuthProvider>
+                  <Suspense fallback={<div>Chargement...</div>}>
+                    <OiePage />
+                  </Suspense>
+                </AuthProvider>
+              }
+            />
+          )}
 
           {/* Main game routes */}
           <Route

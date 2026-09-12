@@ -13,7 +13,9 @@ import {
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 // Create axios instance for admin
-const adminApi = axios.create({
+// Exporte pour la meme raison que `api` cote joueur : src/oie/ s'appuie dessus
+// sans dupliquer la gestion du jeton d'administration.
+export const adminApi = axios.create({
   baseURL: `${API_URL}/admin`,
   headers: {
     'Content-Type': 'application/json',

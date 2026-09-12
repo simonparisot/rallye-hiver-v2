@@ -37,6 +37,10 @@ provider:
     STRIPE_WEBHOOK_SECRET: ${ssm:/rallye-hiver/${self:provider.stage}/stripe-webhook-secret}
     STRIPE_PRICE_ID: ${ssm:/rallye-hiver/${self:provider.stage}/stripe-price-id}
     CORS_ORIGIN: ${ssm:/rallye-hiver/${self:provider.stage}/cors-origin}
+    # Jeu de l'oie (edition 2027) : essai isole, tables dediees.
+    OIE_BOARD_TABLE: ${self:service}-oie-board
+    OIE_TEAM_STATE_TABLE: ${self:service}-oie-team-state
+    OIE_EVENTS_TABLE: ${self:service}-oie-events
   iam:
     role:
       statements:
@@ -78,6 +82,28 @@ provider:
             - s3:GetObject
           Resource:
             - arn:aws:s3:::rallyehiver-enigmas/*
+        # Jeu de l'oie (edition 2027) : droits sur ses trois tables dediees.
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.OIE_BOARD_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.OIE_TEAM_STATE_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.OIE_EVENTS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.OIE_EVENTS_TABLE}/index/*
+
+  # 76 lambdas x 1 AWS::Lambda::Version faisaient passer la pile de 466 a 542
+  # ressources, au-dela des 500 que CloudFormation accepte : plus aucune
+  # fonction ne pouvait etre ajoutee. Ces versions ne servaient a rien ici,
+  # aucun alias ni concurrence provisionnee ne s'y rattache, et API Gateway
+  # appelle l'ARN non qualifie de la fonction. Les supprimer ne change donc
+  # rien au comportement, seulement le nombre de ressources.
+  versionFunctions: false
 
 build:
   esbuild:
@@ -835,6 +861,95 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
+  # Jeu de l'oie (edition 2027) : plateau partage, une des vingt enigmes.
+  getOieBoard:
+    handler: src/functions/oie/get.handler
+    events:
+      - http:
+          path: /oie
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  oieAnswer:
+    handler: src/functions/oie/answer.handler
+    events:
+      - http:
+          path: /oie/answer
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  oieRoll:
+    handler: src/functions/oie/roll.handler
+    events:
+      - http:
+          path: /oie/roll
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  oiePrompter:
+    handler: src/functions/oie/prompter.handler
+    events:
+      - http:
+          path: /oie/prompter
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminOieBoardGet:
+    handler: src/functions/oie/admin/board.getHandler
+    events:
+      - http:
+          path: /admin/oie/board
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminOieBoardPut:
+    handler: src/functions/oie/admin/board.putHandler
+    events:
+      - http:
+          path: /admin/oie/board
+          method: put
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminOieTeams:
+    handler: src/functions/oie/admin/teams.listHandler
+    events:
+      - http:
+          path: /admin/oie/teams
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminOieTeamReset:
+    handler: src/functions/oie/admin/teams.resetHandler
+    events:
+      - http:
+          path: /admin/oie/teams/{teamId}/reset
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
 resources:
   Resources:
     # DynamoDB Tables
@@ -1066,6 +1181,66 @@ resources:
         KeySchema:
           - AttributeName: cacheKey
             KeyType: HASH
+
+    # Jeu de l'oie (edition 2027)
+    OieBoardTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
+      Properties:
+        TableName: ${self:provider.environment.OIE_BOARD_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: boardId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: boardId
+            KeyType: HASH
+
+    OieTeamStateTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
+      Properties:
+        TableName: ${self:provider.environment.OIE_TEAM_STATE_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: teamId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: teamId
+            KeyType: HASH
+
+    OieEventsTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
+      Properties:
+        TableName: ${self:provider.environment.OIE_EVENTS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: boardId
+            AttributeType: S
+          - AttributeName: eventKey
+            AttributeType: S
+          - AttributeName: teamId
+            AttributeType: S
+          - AttributeName: occurredAt
+            AttributeType: S
+        KeySchema:
+          - AttributeName: boardId
+            KeyType: HASH
+          - AttributeName: eventKey
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: teamId-occurredAt-index
+            KeySchema:
+              - AttributeName: teamId
+                KeyType: HASH
+              - AttributeName: occurredAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
 
     # Cognito User Pool
     CognitoUserPool:

@@ -92,6 +92,27 @@ ordinaire, aucun endpoint `/admin/*` ne répond.
 
 Hors périmètre, comme convenu : la création d'équipe et le paiement Stripe.
 
+## Le jeu de l'oie (édition 2027)
+
+`api/oie.test.js` et `e2e/oie.spec.ts` couvrent l'énigme jouée sur un plateau
+partagé. Le quota est d'un lancer par jour et par équipe : un test qui lancerait
+les dés à chaque exécution rendrait la suite non rejouable. Les deux fichiers
+sont donc construits en deux temps.
+
+Ce qui ne coûte rien tourne toujours : forme de `GET /oie`, absence des questions
+et des réponses dans la charge utile, place des cases spéciales, refus opposés à
+un visiteur anonyme et à une action impossible, cloisonnement de `/admin/oie/*`.
+
+Ce qui consomme un lancer n'est exécuté qu'avec un compte d'administration
+configuré (`TEST_ADMIN_EMAIL`, `TEST_ADMIN_PASSWORD`), parce qu'il faut pouvoir
+remettre l'équipe en case 0 avant et après par `POST /admin/oie/teams/{id}/reset`.
+Sans ce compte, ces cas sont ignorés avec un avertissement plutôt que d'échouer.
+
+La machine à états elle-même — enchaînement des cases oie, rebond sur la 63,
+troisième échec, puits, prison, mort, changement de journée à minuit heure de
+Paris — est couverte par des tests unitaires côté serveur, sans réseau :
+`cd backend && npm test`.
+
 ## Le décor, et ce qu'il devient
 
 `scripts/provision.js` installe un décor **permanent** : deux comptes stables et

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Enigma } from '../../types';
+import { edition } from '../../editions';
 import { getEnigmasWithProgress, getEnigmasPreview, submitPasswordAttempt } from '../../services/gameService';
 import { teamAPI, hintsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -39,6 +41,14 @@ function libelleEtat(enigma: { isSolved: boolean }): string | null {
 const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onExpand }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  // Édition 2027 : une des vingt énigmes se joue sur un plateau de jeu de l'oie
+  // partagé. Elle reste une énigme ordinaire dans cette liste, mais son entrée
+  // mène au plateau au lieu d'ouvrir un PDF et un champ de mot de passe.
+  const enigmeOie = edition.enigmeOie;
+  const estEnigmeOie = (enigmaId: string) =>
+    !!enigmeOie?.enigmaId && enigmaId === enigmeOie.enigmaId;
 
   const { data: team } = useQuery({
     queryKey: ['team', user?.teamId],
@@ -82,6 +92,13 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
   });
 
   const handleEnigmaSelect = (enigma: Enigma) => {
+    // L'énigme du jeu de l'oie n'a ni énoncé PDF ni mot de passe : elle se joue
+    // sur son plateau.
+    if (estEnigmeOie(enigma.id) && enigmeOie) {
+      navigate(enigmeOie.route);
+      return;
+    }
+
     setSelectedEnigma(enigma);
     setPassword('');
     setAttemptMessage('');
@@ -219,6 +236,9 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
               >
                 <span className={`enigma-number pastille-${etatDe(enigma)}`}>{enigma.order}</span>
                 <span className="enigma-title-compact">{enigma.title}</span>
+                {estEnigmeOie(enigma.id) && (
+                  <span className="enigma-oie-badge" data-testid={`enigma-oie-badge-${enigma.order}`}>Plateau</span>
+                )}
                 {libelleEtat(enigma) && (
                   <span className={`enigma-etat etat-${etatDe(enigma)}`}>{libelleEtat(enigma)}</span>
                 )}
@@ -242,10 +262,15 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                   <div className="enigma-header-item">
                     <span className={`enigma-number pastille-${etatDe(enigma)}`}>{enigma.order}</span>
                     <span className="enigma-title">{enigma.title}</span>
+                    {estEnigmeOie(enigma.id) && (
+                      <span className="enigma-oie-badge" data-testid={`enigma-oie-badge-${enigma.order}`}>
+                        Plateau partagé
+                      </span>
+                    )}
                     {libelleEtat(enigma) && (
                   <span className={`enigma-etat etat-${etatDe(enigma)}`}>{libelleEtat(enigma)}</span>
                 )}
-                    {enigma.pdfUrl && selectedEnigma?.id === enigma.id && (
+                    {!estEnigmeOie(enigma.id) && enigma.pdfUrl && selectedEnigma?.id === enigma.id && (
                       <button
                         data-testid={`enigma-download-button-${enigma.order}`}
                         className="enigma-download-btn"

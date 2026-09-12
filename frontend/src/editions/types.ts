@@ -37,4 +37,34 @@ export interface Edition {
     intro: string;
     duration: string;
   };
+
+  /**
+   * Énigme jouée sur un plateau de jeu de l'oie partagé — essai de 2027.
+   *
+   * C'est le seul point d'entrée de cette énigme dans l'application : sans ce
+   * champ, ni la route du plateau, ni l'entrée d'administration, ni le lien
+   * depuis la liste des énigmes n'existent. Une édition qui ne le déclare pas
+   * ignore tout de `src/oie/`.
+   */
+  enigmeOie?: EnigmeOie;
+}
+
+/** Configuration de l'énigme jouée sur un plateau de jeu de l'oie partagé. */
+export interface EnigmeOie {
+  /**
+   * Identifiant de l'énigme ordinaire créée par l'admin pour le jeu de l'oie.
+   * Quand il est renseigné, l'entrée correspondante de la liste mène au plateau
+   * au lieu d'ouvrir un PDF et un champ de mot de passe.
+   *
+   * Il est lu dans l'environnement de build pour ne pas avoir à recompiler
+   * quand l'énigme est recréée ; le plateau reste jouable sans lui, seul le
+   * lien depuis la liste disparaît.
+   */
+  enigmaId: string;
+
+  /** Route de la page du plateau. */
+  route: string;
+
+  /** Titre affiché en tête de la page du plateau. */
+  titre: string;
 }
