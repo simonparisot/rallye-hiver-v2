@@ -36,6 +36,7 @@ provider:
     TEAM_PARCOURS_ACCESS_TABLE: ${self:service}-team-parcours-access
     GAME_STATUS_TABLE: ${self:service}-game-status
     ENIGMA_DIFFICULTY_CACHE_TABLE: ${self:service}-enigma-difficulty-cache
+    HINT_REQUESTS_TABLE: ${self:service}-hint-requests
     # Secrets et identifiants lus dans SSM Parameter Store au moment du
     # déploiement, sous /rallye-hiver/<stage>/. Plus rien n'a donc à être fourni
     # en variables d'environnement pour déployer.
@@ -46,6 +47,9 @@ provider:
     STRIPE_WEBHOOK_SECRET: ${ssm:/rallye-hiver/${self:provider.stage}/stripe-webhook-secret}
     STRIPE_PRICE_ID: ${ssm:/rallye-hiver/${self:provider.stage}/stripe-price-id}
     CORS_ORIGIN: ${ssm:/rallye-hiver/${self:provider.stage}/cors-origin}
+    ANTHROPIC_API_KEY: ${ssm:/rallye-hiver/${self:provider.stage}/anthropic-api-key}
+    # Modele charge de choisir l'indice. Parametrable sans redeploiement de code.
+    HINT_MODEL: ${env:HINT_MODEL, 'claude-opus-5'}
     S3_ENIGMAS_BUCKET: ${env:S3_ENIGMAS_BUCKET, 'rallyehiver-enigmas-test'}
   iam:
     role:
@@ -72,6 +76,8 @@ provider:
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PASSWORD_ATTEMPTS_TABLE}/index/*
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TEAM_PARCOURS_ACCESS_TABLE}
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.GAME_STATUS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.HINT_REQUESTS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.HINT_REQUESTS_TABLE}/index/*
         - Effect: Allow
           Action:
             - cognito-idp:AdminCreateUser
@@ -517,12 +523,26 @@ functions:
             resultTtlInSeconds: 0
 
   # Hint endpoints
-  useHint:
-    handler: src/functions/hints/useHint.handler
+  requestHint:
+    handler: src/functions/hints/requestHint.handler
+    # Le choix de l'indice passe par un appel au modele : quelques secondes,
+    # parfois davantage. Le defaut de 30 s ne laisse pas de marge.
+    timeout: 60
     events:
       - http:
-          path: /hints/{enigmaId}/use
+          path: /hints/{enigmaId}/request
           method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  listHints:
+    handler: src/functions/hints/listHints.handler
+    events:
+      - http:
+          path: /hints/{enigmaId}
+          method: get
           cors: true
           authorizer:
             name: authorizer
@@ -834,11 +854,11 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
-  adminHintsUsage:
-    handler: src/functions/admin/hints/usage.handler
+  adminHintRequests:
+    handler: src/functions/admin/hints/requests.handler
     events:
       - http:
-          path: /admin/hints/usage
+          path: /admin/hints/requests
           method: get
           cors: true
           authorizer:
@@ -1076,6 +1096,33 @@ resources:
         KeySchema:
           - AttributeName: cacheKey
             KeyType: HASH
+
+    HintRequestsTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
+      Properties:
+        TableName: ${self:provider.environment.HINT_REQUESTS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: requestId
+            AttributeType: S
+          - AttributeName: teamEnigmaKey
+            AttributeType: S
+          - AttributeName: requestedAt
+            AttributeType: S
+        KeySchema:
+          - AttributeName: requestId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: teamEnigmaKey-requestedAt-index
+            KeySchema:
+              - AttributeName: teamEnigmaKey
+                KeyType: HASH
+              - AttributeName: requestedAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
 
     # Cognito User Pool
     CognitoUserPool:
