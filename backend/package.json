@@ -7,7 +7,8 @@
     "remove": "serverless remove",
     "offline": "serverless offline",
     "logs": "serverless logs -f",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "keywords": [],
   "author": "",
@@ -15,14 +16,18 @@
   "description": "",
   "devDependencies": {
     "@types/aws-lambda": "^8.10.157",
+    "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.9.2",
     "esbuild": "^0.25.12",
+    "jest": "^30.5.1",
     "serverless": "^4.22.0",
     "serverless-offline": "^14.4.0",
+    "ts-jest": "^29.4.12",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.125.0",
     "@aws-sdk/client-cognito-identity-provider": "^3.922.0",
     "@aws-sdk/client-dynamodb": "^3.922.0",
     "@aws-sdk/client-s3": "^3.946.0",

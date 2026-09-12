@@ -43,7 +43,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       title: body.title,
       description: body.description || '',
       pdfUrl: body.pdfUrl,
-      hintPdfUrl: body.hintPdfUrl, // Optional hint PDF
+      solution: body.solution || '',
+      hints: Array.isArray(body.hints) ? body.hints : [],
       correctPassword: body.correctPassword,
       points: body.points || 10, // Default to 10 points if not provided
       difficulty: body.difficulty || 'medium',

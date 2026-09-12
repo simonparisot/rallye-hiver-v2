@@ -13,6 +13,7 @@ export const PASSWORD_ATTEMPTS_TABLE = process.env.PASSWORD_ATTEMPTS_TABLE || ''
 export const TEAM_PARCOURS_ACCESS_TABLE = process.env.TEAM_PARCOURS_ACCESS_TABLE || '';
 export const GAME_STATUS_TABLE = process.env.GAME_STATUS_TABLE || '';
 export const ENIGMA_DIFFICULTY_CACHE_TABLE = process.env.ENIGMA_DIFFICULTY_CACHE_TABLE || '';
+export const HINT_REQUESTS_TABLE = process.env.HINT_REQUESTS_TABLE || '';
 
 export async function getUserByCognitoSub(cognitoSub: string) {
   const result = await dynamoDb.send(
@@ -637,4 +638,55 @@ export async function startGame(adminUserId: string) {
   );
 
   return result.Attributes;
+}
+
+// ==================== HINT REQUEST FUNCTIONS ====================
+
+/**
+ * Archive une demande d'indice. Ecrite seulement quand tout a reussi : une
+ * demande absente de la table est une demande qui n'a rien coute a l'equipe.
+ */
+export async function createHintRequest(request: any) {
+  await dynamoDb.send(
+    new PutCommand({
+      TableName: HINT_REQUESTS_TABLE,
+      Item: request,
+    })
+  );
+  return request;
+}
+
+/**
+ * Les demandes d'une equipe sur une enigme, de la plus ancienne a la plus
+ * recente. Sert a la fois a lister les indices deja obtenus et a rappeler au
+ * modele ce qu'il ne doit pas redonner.
+ */
+export async function getHintRequestsByTeamAndEnigma(teamId: string, enigmaId: string) {
+  const result = await dynamoDb.send(
+    new QueryCommand({
+      TableName: HINT_REQUESTS_TABLE,
+      IndexName: 'teamEnigmaKey-requestedAt-index',
+      KeyConditionExpression: 'teamEnigmaKey = :key',
+      ExpressionAttributeValues: {
+        ':key': `${teamId}#${enigmaId}`,
+      },
+      ScanIndexForward: true,
+    })
+  );
+  return result.Items || [];
+}
+
+/** Parcours complet de la table, pour le journal de l'administrateur. */
+export async function scanHintRequests(limit: number = 200, lastKey?: any) {
+  const result = await dynamoDb.send(
+    new ScanCommand({
+      TableName: HINT_REQUESTS_TABLE,
+      Limit: limit,
+      ExclusiveStartKey: lastKey,
+    })
+  );
+  return {
+    items: result.Items || [],
+    lastKey: result.LastEvaluatedKey,
+  };
 }

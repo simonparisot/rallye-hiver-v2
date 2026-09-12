@@ -39,7 +39,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     if (body.title !== undefined) updates.title = body.title;
     if (body.description !== undefined) updates.description = body.description;
     if (body.pdfUrl !== undefined) updates.pdfUrl = body.pdfUrl;
-    if (body.hintPdfUrl !== undefined) updates.hintPdfUrl = body.hintPdfUrl;
+    if (body.solution !== undefined) updates.solution = body.solution;
+    if (body.hints !== undefined) updates.hints = Array.isArray(body.hints) ? body.hints : [];
     if (body.correctPassword !== undefined) updates.correctPassword = body.correctPassword;
     if (body.points !== undefined) updates.points = body.points;
     if (body.difficulty !== undefined) updates.difficulty = body.difficulty;

@@ -13,6 +13,7 @@ import {
 import { getTestTeamIds, excludeTestTeamRows } from '../../utils/testTeams';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { success, error } from '../../utils/response';
+import { enigmaScoreAfterHints, totalHintPenalty } from '../../utils/hintCost';
 
 /**
  * Get team statistics including password attempts and comparative ranking
@@ -53,11 +54,24 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const parcoursAccess = await getAllTeamParcoursAccess(teamId);
     const completedParcours = parcoursAccess.filter((p: any) => p.completed);
 
-    // Calculate points
+    // Points acquis, indices deduits. Jusqu'ici la penalite annoncee aux equipes
+    // n'etait appliquee nulle part : elle l'est desormais ici, seul endroit ou
+    // un score d'equipe est reellement calcule.
     const totalPoints = solvedEnigmas.reduce((sum: number, p: any) => {
       const enigma = allEnigmas.find((e: any) => e.enigmaId === p.enigmaId);
-      return sum + (enigma?.points || 0);
+      return sum + enigmaScoreAfterHints(enigma?.points || 0, p.hintsRequested || 0);
     }, 0);
+
+    // Les indices pris sur une enigme non resolue ne coutent rien tant qu'elle
+    // ne rapporte rien ; seule la penalite deja subie est affichee.
+    const hintsPenalty = solvedEnigmas.reduce((sum: number, p: any) => {
+      const enigma = allEnigmas.find((e: any) => e.enigmaId === p.enigmaId);
+      return sum + totalHintPenalty(enigma?.points || 0, p.hintsRequested || 0);
+    }, 0);
+    const hintsRequestedCount = progress.reduce(
+      (sum: number, p: any) => sum + (p.hintsRequested || 0),
+      0
+    );
 
     // Get password attempts for this team
     const teamAttempts = await getPasswordAttemptsByTeam(teamId, 10000);
@@ -114,6 +128,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       parcoursCompleted: completedParcours.length,
       totalParcours: allParcours.length,
       totalPoints,
+      hintsRequestedCount,
+      hintsPenalty,
       passwordAttemptsCount,
       attemptsRanking: percentile,
       attemptsRankingMessage: rankingMessage,

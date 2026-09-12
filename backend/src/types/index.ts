@@ -60,8 +60,15 @@ export interface Enigma {
   title: string;
   description?: string;
   pdfUrl: string;
-  hintPdfUrl?: string; // Optional hint PDF URL
   correctPassword: string;
+  /**
+   * Demarche de resolution complete, redigee par l'organisateur : le chemin
+   * attendu, les etapes intermediaires et les fausses pistes. Jamais exposee
+   * aux joueurs ; elle ne sert qu'au choix d'indice cote serveur.
+   */
+  solution?: string;
+  /** Indices pre-ecrits, du plus precoce au plus tardif (ordre croissant). */
+  hints?: EnigmaHint[];
   points: number;
   difficulty?: 'easy' | 'medium' | 'hard';
   isActive: boolean;
@@ -94,8 +101,8 @@ export interface TeamEnigmaProgress {
   attemptCount: number;
   lastAttemptAt?: string;
   firstAttemptAt?: string;
-  hintUsed?: boolean; // Whether the team used the hint for this enigma
-  hintUsedAt?: string; // ISO 8601 timestamp when hint was used
+  hintsRequested?: number; // How many hints the team has obtained for this enigma
+  lastHintAt?: string; // ISO 8601 timestamp of the latest hint obtained
   createdAt: string;
   updatedAt: string;
 }
@@ -132,4 +139,31 @@ export interface GameStatus {
   startedBy?: string; // Admin userId who started the game
   createdAt: string;
   updatedAt: string;
+}
+
+// Hint Interfaces
+
+export interface EnigmaHint {
+  id: string;
+  order: number;
+  text: string;
+}
+
+/**
+ * Une demande d'indice, telle qu'elle est archivee. Une ligne par demande :
+ * c'est le journal que l'organisateur relit pour juger de l'essai.
+ */
+export interface HintRequest {
+  requestId: string;
+  teamId: string;
+  enigmaId: string;
+  requestedAt: string; // ISO 8601
+  requestedBy: string; // userId
+  progressText: string; // Le texte libre ecrit par l'equipe
+  hintId: string;
+  hintText: string; // Le texte de l'indice tel qu'il a ete livre
+  model: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  pointsCharged: number;
 }
