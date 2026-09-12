@@ -96,7 +96,7 @@ describe('prompt transmis au modele', () => {
       entree({ availableHints: [INDICES[1]], alreadyGivenHints: [INDICES[0]] })
     );
     expect(prompt).toContain('identifiant "h2"');
-    expect(prompt).toContain('Indices deja donnes a cette equipe');
+    expect(prompt).toContain('Indices déjà donnés à cette équipe');
     expect(prompt).not.toContain('identifiant "h1"');
   });
 

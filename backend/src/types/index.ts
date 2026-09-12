@@ -150,6 +150,15 @@ export interface EnigmaHint {
 }
 
 /**
+ * Etat d'une demande d'indice.
+ *
+ * En mode `anthropic`, une demande nait `done` : l'appel au modele a lieu dans
+ * la lambda et la reponse est synchrone. En mode `queue`, elle nait `pending`,
+ * un worker exterieur la prend (`processing`) puis la conclut.
+ */
+export type HintRequestStatus = 'pending' | 'processing' | 'done' | 'failed';
+
+/**
  * Une demande d'indice, telle qu'elle est archivee. Une ligne par demande :
  * c'est le journal que l'organisateur relit pour juger de l'essai.
  */
@@ -157,13 +166,23 @@ export interface HintRequest {
   requestId: string;
   teamId: string;
   enigmaId: string;
+  status: HintRequestStatus;
   requestedAt: string; // ISO 8601
   requestedBy: string; // userId
   progressText: string; // Le texte libre ecrit par l'equipe
-  hintId: string;
-  hintText: string; // Le texte de l'indice tel qu'il a ete livre
-  model: string;
+  /** Identifiants des indices deja donnes a l'equipe au moment de la demande. */
+  excludedHintIds?: string[];
+  /** Renseignes une fois la demande conclue avec succes. */
+  hintId?: string;
+  hintText?: string; // Le texte de l'indice tel qu'il a ete livre
+  justification?: string;
+  model?: string;
   inputTokens?: number;
   outputTokens?: number;
+  /** Renseigne quand la demande echoue, pour le journal de l'organisateur. */
+  failureReason?: string;
+  /** Pose au moment ou un worker prend la demande, pour deverrouiller un worker mort. */
+  processingStartedAt?: string;
+  completedAt?: string;
   pointsCharged: number;
 }

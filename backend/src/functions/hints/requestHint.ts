@@ -12,23 +12,35 @@ import {
   getHintRequestsByTeamAndEnigma,
 } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
-import { nextHintCost } from '../../utils/hintCost';
 import { selectHint, HintSelectionError, ModelCaller } from '../../services/hintSelector';
 import { EnigmaHint } from '../../types';
 
 /**
- * Demande d'indice par une equipe.
+ * Demande d'indice par une équipe.
  *
  * POST /hints/{enigmaId}/request
  * Corps : { progress: string, requestKey?: string }
  *
- * L'equipe decrit librement son avancement ; un modele choisit, parmi les
- * indices pre-ecrits de l'enigme, celui qui correspond le mieux. Rien de ce que
- * le modele redige n'atteint le joueur : seul le texte pre-ecrit est renvoye.
+ * Deux modes, choisis par HINT_PROVIDER :
+ *
+ * - `anthropic` : la lambda appelle l'API et répond 200 avec l'indice. C'est le
+ *   mode de production, celui qui suppose une clé d'API.
+ * - `queue` : la lambda n'appelle aucun modèle. Elle enregistre la demande en
+ *   attente et répond 202 ; un worker extérieur, lancé sur la machine du
+ *   commanditaire, la traite en passant par son abonnement Claude. C'est le mode
+ *   de l'essai, où il n'existe pas de clé d'API.
+ *
+ * Dans les deux cas, le joueur ne voit qu'un statut : le frontend ignore quel
+ * mode tourne, il interroge jusqu'à ce que la demande soit conclue.
  */
 
 export const PROGRESS_MIN = 20;
 export const PROGRESS_MAX = 3000;
+
+/** Fournisseur actif. Tout ce qui n'est pas `queue` est l'appel direct. */
+export function hintProvider(): 'anthropic' | 'queue' {
+  return process.env.HINT_PROVIDER === 'queue' ? 'queue' : 'anthropic';
+}
 
 /** Verrous en cours, pour absorber un double clic (voir plus bas). */
 const verrous = new Map<string, number>();
@@ -89,17 +101,17 @@ export const handler = async (
     const progress = typeof body.progress === 'string' ? body.progress.trim() : '';
     if (progress.length < PROGRESS_MIN) {
       return error(
-        `Decrivez votre avancement en au moins ${PROGRESS_MIN} caracteres : plus le texte est precis, plus l'indice sera adapte.`,
+        `Décrivez votre avancement en au moins ${PROGRESS_MIN} caractères : plus le texte est précis, plus l'indice sera adapté.`,
         400
       );
     }
     if (progress.length > PROGRESS_MAX) {
-      return error(`Votre description depasse ${PROGRESS_MAX} caracteres. Resumez-la.`, 400);
+      return error(`Votre description dépasse ${PROGRESS_MAX} caractères. Résumez-la.`, 400);
     }
 
     const user = await getUserById(userId);
     if (!user || !user.teamId) {
-      return error('Vous devez appartenir a une equipe pour demander un indice', 403);
+      return error('Vous devez appartenir à une équipe pour demander un indice', 403);
     }
 
     const team = await getTeamById(user.teamId);
@@ -107,7 +119,7 @@ export const handler = async (
       return error('Team not found', 404);
     }
     if (!team.hasPaid) {
-      return error("Votre equipe doit avoir regle son inscription pour demander un indice", 403);
+      return error("Votre équipe doit avoir réglé son inscription pour demander un indice", 403);
     }
 
     const enigma = await getEnigmaById(enigmaId);
@@ -115,27 +127,44 @@ export const handler = async (
       return error('Enigma not found', 404);
     }
     if (!enigma.isActive) {
-      return error("Cette enigme n'est pas active", 403);
+      return error("Cette énigme n'est pas active", 403);
     }
 
     const progression = await getTeamProgress(user.teamId, enigmaId);
     if (progression?.solved) {
-      return error('Votre equipe a deja resolu cette enigme', 409);
+      return error('Votre équipe a déjà résolu cette énigme', 409);
     }
 
     const tousLesIndices = ordonnerIndices(enigma.hints);
     if (tousLesIndices.length === 0) {
-      return error("Aucun indice n'est disponible pour cette enigme", 404);
+      return error("Aucun indice n'est disponible pour cette énigme", 404);
     }
 
     const demandesPassees = await getHintRequestsByTeamAndEnigma(user.teamId, enigmaId);
-    const idsDejaDonnes = new Set(demandesPassees.map((d: any) => d.hintId));
+
+    // Une demande encore en vol interdit d'en lancer une seconde : sans cela une
+    // équipe impatiente empilerait les demandes pendant que le worker travaille.
+    const enCours = demandesPassees.find(
+      (d: any) => d.status === 'pending' || d.status === 'processing'
+    );
+    if (enCours) {
+      return error(
+        "Une demande est déjà en cours pour cette énigme. Laissez-lui le temps d'aboutir.",
+        409
+      );
+    }
+
+    // Seules les demandes abouties consomment un indice : une demande échouée
+    // n'a rien livré, l'indice reste disponible.
+    const idsDejaDonnes = new Set(
+      demandesPassees.filter((d: any) => d.status === 'done' && d.hintId).map((d: any) => d.hintId)
+    );
     const dejaDonnes = tousLesIndices.filter((h) => idsDejaDonnes.has(h.id));
     const disponibles = tousLesIndices.filter((h) => !idsDejaDonnes.has(h.id));
 
     if (disponibles.length === 0) {
       return error(
-        "Votre equipe a deja obtenu tous les indices disponibles pour cette enigme.",
+        "Votre équipe a déjà obtenu tous les indices disponibles pour cette énigme.",
         409
       );
     }
@@ -148,10 +177,47 @@ export const handler = async (
     cleVerrou = `${user.teamId}#${enigmaId}#${cleClient}`;
     if (!poserVerrou(cleVerrou)) {
       cleVerrou = null; // le verrou appartient a l'appel precedent, ne pas le lever
-      return error('Une demande est deja en cours pour cette enigme. Patientez quelques secondes.', 409);
+      return error('Une demande est déjà en cours pour cette énigme. Patientez quelques secondes.', 409);
     }
 
-    const cout = nextHintCost(enigma.points || 0, dejaDonnes.length);
+    const requestId = randomUUID();
+    const maintenant = new Date().toISOString();
+
+    // Le coût est nul pendant l'essai : le commanditaire veut d'abord juger le
+    // mécanisme de choix. Le barème dort dans utils/hintCost.ts.
+    const cout = 0;
+
+    const demandeCommune = {
+      requestId,
+      teamId: user.teamId,
+      enigmaId,
+      // Cle composite de l'index secondaire, sur le modele des tentatives de mot de passe
+      teamEnigmaKey: `${user.teamId}#${enigmaId}`,
+      requestedAt: maintenant,
+      requestedBy: userId,
+      progressText: progress,
+      excludedHintIds: dejaDonnes.map((h) => h.id),
+      pointsCharged: cout,
+    };
+
+    if (hintProvider() === 'queue') {
+      // Aucun appel au modèle ici : la demande part en attente et le worker la
+      // prendra. La réponse est un accusé de réception, pas un indice.
+      await createHintRequest({ ...demandeCommune, status: 'pending' });
+
+      await majProgression(user.teamId, enigmaId, progression, dejaDonnes.length + 1, maintenant);
+
+      return success(
+        {
+          requestId,
+          status: 'pending',
+          pointsCharged: cout,
+          hintsRequested: dejaDonnes.length + 1,
+          remainingHints: disponibles.length,
+        },
+        202
+      );
+    }
 
     const choix = await selectHint(
       {
@@ -166,52 +232,36 @@ export const handler = async (
       caller
     );
 
-    const maintenant = new Date().toISOString();
-    const hintsRequested = dejaDonnes.length + 1;
+    const conclu = new Date().toISOString();
 
     await createHintRequest({
-      requestId: randomUUID(),
-      teamId: user.teamId,
-      enigmaId,
-      // Cle composite de l'index secondaire, sur le modele des tentatives de mot de passe
-      teamEnigmaKey: `${user.teamId}#${enigmaId}`,
-      requestedAt: maintenant,
-      requestedBy: userId,
-      progressText: progress,
+      ...demandeCommune,
+      status: 'done',
       hintId: choix.hint.id,
       hintText: choix.hint.text,
       justification: choix.justification,
       model: choix.model,
       inputTokens: choix.inputTokens,
       outputTokens: choix.outputTokens,
-      pointsCharged: cout,
+      completedAt: conclu,
     });
 
-    const majProgression: any = {
-      hintsRequested,
-      lastHintAt: maintenant,
-      updatedAt: maintenant,
-    };
-    if (!progression) {
-      majProgression.solved = false;
-      majProgression.attemptCount = 0;
-      majProgression.createdAt = maintenant;
-    }
-    await createOrUpdateTeamProgress(user.teamId, enigmaId, majProgression);
+    await majProgression(user.teamId, enigmaId, progression, dejaDonnes.length + 1, conclu);
 
     return success({
+      requestId,
+      status: 'done',
       hint: { id: choix.hint.id, text: choix.hint.text },
       pointsCharged: cout,
-      hintsRequested,
+      hintsRequested: dejaDonnes.length + 1,
       remainingHints: disponibles.length - 1,
-      nextHintCost: nextHintCost(enigma.points || 0, hintsRequested),
     });
   } catch (err: any) {
     if (err instanceof HintSelectionError) {
-      // Aucun point facture, aucune demande archivee : l'equipe peut reessayer.
-      console.error('Choix d\'indice en echec:', err.message);
+      // Aucune demande archivee comme reussie : l'equipe peut reessayer.
+      console.error("Choix d'indice en échec:", err.message);
       return error(
-        "Le choix de l'indice n'a pas abouti. Aucun point ne vous a ete retire : reessayez dans un instant.",
+        "Le choix de l'indice n'a pas abouti. Réessayez dans un instant.",
         502
       );
     }
@@ -221,3 +271,24 @@ export const handler = async (
     if (cleVerrou) leverVerrou(cleVerrou);
   }
 };
+
+/** Compteur d'indices de l'équipe sur cette énigme. */
+async function majProgression(
+  teamId: string,
+  enigmaId: string,
+  progression: any,
+  hintsRequested: number,
+  quand: string
+) {
+  const updates: any = {
+    hintsRequested,
+    lastHintAt: quand,
+    updatedAt: quand,
+  };
+  if (!progression) {
+    updates.solved = false;
+    updates.attemptCount = 0;
+    updates.createdAt = quand;
+  }
+  await createOrUpdateTeamProgress(teamId, enigmaId, updates);
+}

@@ -6,17 +6,17 @@ import {
   getHintRequestsByTeamAndEnigma,
 } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
-import { nextHintCost } from '../../utils/hintCost';
 import { ordonnerIndices } from './requestHint';
 
 /**
- * Indices deja obtenus par l'equipe sur une enigme, pour qu'elle puisse les
- * relire, et cout du prochain.
+ * Demandes d'indice de l'équipe sur une énigme, avec leur statut.
  *
  * GET /hints/{enigmaId}
  *
- * N'expose que les indices deja payes : les indices non encore obtenus ne
- * sortent jamais du backend.
+ * C'est aussi l'endpoint que le frontend interroge en boucle après une demande,
+ * jusqu'à ce qu'elle soit conclue. Il n'expose que les indices déjà livrés : les
+ * indices non obtenus ne sortent jamais du backend, et une demande encore en
+ * attente ne porte évidemment aucun texte.
  */
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -32,7 +32,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     const user = await getUserById(userId);
     if (!user || !user.teamId) {
-      return error('Vous devez appartenir a une equipe pour consulter vos indices', 403);
+      return error('Vous devez appartenir à une équipe pour consulter vos indices', 403);
     }
 
     const team = await getTeamById(user.teamId);
@@ -40,7 +40,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error('Team not found', 404);
     }
     if (!team.hasPaid) {
-      return error("Votre equipe doit avoir regle son inscription pour acceder aux indices", 403);
+      return error("Votre équipe doit avoir réglé son inscription pour accéder aux indices", 403);
     }
 
     const enigma = await getEnigmaById(enigmaId);
@@ -51,25 +51,47 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const tousLesIndices = ordonnerIndices(enigma.hints);
     const demandes = await getHintRequestsByTeamAndEnigma(user.teamId, enigmaId);
 
-    const obtenus = demandes.map((d: any) => ({
-      id: d.hintId,
-      text: d.hintText,
+    // Les demandes, dans l'ordre, avec juste ce qu'il faut au joueur. `processing`
+    // est replié sur `pending` : la distinction regarde le worker, pas l'équipe,
+    // qui n'a qu'une question, « est-ce prêt ».
+    const suivi = demandes.map((d: any) => ({
+      requestId: d.requestId,
+      status: d.status === 'processing' ? 'pending' : d.status || 'done',
       requestedAt: d.requestedAt,
       pointsCharged: d.pointsCharged || 0,
+      ...(d.status === 'done' && d.hintId
+        ? { hint: { id: d.hintId, text: d.hintText } }
+        : {}),
+      ...(d.status === 'failed' ? { failureReason: d.failureReason } : {}),
     }));
 
-    const idsObtenus = new Set(obtenus.map((h) => h.id));
+    const livres = suivi.filter((d: any) => d.status === 'done');
+    const enAttente = suivi.some((d: any) => d.status === 'pending');
+
+    // Les indices déjà obtenus, pour relecture.
+    const obtenus = demandes
+      .filter((d: any) => d.status === 'done' && d.hintId)
+      .map((d: any) => ({
+        id: d.hintId,
+        text: d.hintText,
+        requestedAt: d.requestedAt,
+        pointsCharged: d.pointsCharged || 0,
+      }));
+
+    const idsObtenus = new Set(obtenus.map((h: any) => h.id));
     const restants = tousLesIndices.filter((h) => !idsObtenus.has(h.id)).length;
 
     return success({
       enigmaId,
       hints: obtenus,
-      hintsRequested: obtenus.length,
+      requests: suivi,
+      hintsRequested: livres.length,
       remainingHints: restants,
-      // Cout annonce a l'equipe avant qu'elle confirme sa prochaine demande.
-      nextHintCost: restants > 0 ? nextHintCost(enigma.points || 0, obtenus.length) : 0,
+      pendingRequest: enAttente,
       enigmaPoints: enigma.points || 0,
-      totalPointsCharged: obtenus.reduce((somme, h) => somme + (h.pointsCharged || 0), 0),
+      // Coût nul pendant l'essai : le barème dort dans utils/hintCost.ts.
+      nextHintCost: 0,
+      totalPointsCharged: obtenus.reduce((somme: number, h: any) => somme + (h.pointsCharged || 0), 0),
     });
   } catch (err: any) {
     console.error('Error listing hints:', err);

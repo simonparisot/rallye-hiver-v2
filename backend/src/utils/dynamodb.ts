@@ -676,6 +676,92 @@ export async function getHintRequestsByTeamAndEnigma(teamId: string, enigmaId: s
   return result.Items || [];
 }
 
+/**
+ * Prend une demande en attente, par écriture conditionnelle.
+ *
+ * Le passage `pending` -> `processing` n'aboutit que pour un seul appelant :
+ * c'est ce qui garantit qu'une demande n'est jamais traitée deux fois, même si
+ * deux workers tournent par mégarde. Renvoie `null` quand la demande a déjà été
+ * prise entre le parcours et cet appel.
+ */
+export async function claimHintRequest(requestId: string) {
+  try {
+    const result = await dynamoDb.send(
+      new UpdateCommand({
+        TableName: HINT_REQUESTS_TABLE,
+        Key: { requestId },
+        UpdateExpression: 'SET #s = :processing, processingStartedAt = :now',
+        ConditionExpression: '#s = :pending',
+        ExpressionAttributeNames: { '#s': 'status' },
+        ExpressionAttributeValues: {
+          ':processing': 'processing',
+          ':pending': 'pending',
+          ':now': new Date().toISOString(),
+        },
+        ReturnValues: 'ALL_NEW',
+      })
+    );
+    return result.Attributes;
+  } catch (err: any) {
+    if (err?.name === 'ConditionalCheckFailedException') {
+      return null;
+    }
+    throw err;
+  }
+}
+
+/** Conclut une demande : `done` avec son indice, ou `failed` avec sa raison. */
+export async function completeHintRequest(requestId: string, updates: any) {
+  const updateExpressions: string[] = [];
+  const expressionAttributeNames: Record<string, string> = {};
+  const expressionAttributeValues: Record<string, any> = {};
+
+  Object.keys(updates).forEach((key, index) => {
+    const attrName = `#attr${index}`;
+    const attrValue = `:val${index}`;
+    updateExpressions.push(`${attrName} = ${attrValue}`);
+    expressionAttributeNames[attrName] = key;
+    expressionAttributeValues[attrValue] = updates[key];
+  });
+
+  const result = await dynamoDb.send(
+    new UpdateCommand({
+      TableName: HINT_REQUESTS_TABLE,
+      Key: { requestId },
+      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ReturnValues: 'ALL_NEW',
+    })
+  );
+
+  return result.Attributes;
+}
+
+/**
+ * Demandes en attente, pour le worker.
+ *
+ * Un parcours filtré plutôt qu'un index : quelques centaines de demandes par
+ * édition, dont une poignée en attente à un instant donné, ne justifient pas une
+ * GSI de plus.
+ */
+export async function scanPendingHintRequests(limit: number = 25) {
+  const result = await dynamoDb.send(
+    new ScanCommand({
+      TableName: HINT_REQUESTS_TABLE,
+      FilterExpression: '#s = :pending',
+      ExpressionAttributeNames: { '#s': 'status' },
+      ExpressionAttributeValues: { ':pending': 'pending' },
+      Limit: 200,
+    })
+  );
+  const items = result.Items || [];
+  // Les plus anciennes d'abord : une équipe qui attend depuis deux minutes
+  // passe avant celle qui vient de demander.
+  items.sort((a: any, b: any) => String(a.requestedAt).localeCompare(String(b.requestedAt)));
+  return items.slice(0, limit);
+}
+
 /** Parcours complet de la table, pour le journal de l'administrateur. */
 export async function scanHintRequests(limit: number = 200, lastKey?: any) {
   const result = await dynamoDb.send(

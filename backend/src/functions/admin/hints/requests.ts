@@ -97,11 +97,14 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           enigmaId: d.enigmaId,
           enigmaNumber: enigme?.enigmaNumber || 0,
           enigmaTitle: enigme?.title || 'Enigme inconnue',
+          status: d.status || 'done',
           requestedAt: d.requestedAt,
           requestedBy: d.requestedBy,
           progressText: d.progressText,
           hintId: d.hintId,
           hintText: d.hintText,
+          failureReason: d.failureReason,
+          completedAt: d.completedAt,
           justification: d.justification,
           model: d.model,
           inputTokens: d.inputTokens,
@@ -128,6 +131,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         uniqueTeams: new Set(facettes.map((d: any) => d.teamId)).size,
         uniqueEnigmas: new Set(facettes.map((d: any) => d.enigmaId)).size,
         totalPointsCharged: facettes.reduce((s: number, d: any) => s + (d.pointsCharged || 0), 0),
+        // Le taux d'echec est ce qui dira si l'essai tient la route.
+        pending: facettes.filter((d: any) => d.status === 'pending' || d.status === 'processing').length,
+        failed: facettes.filter((d: any) => d.status === 'failed').length,
       },
     });
   } catch (err: any) {
