@@ -37,7 +37,7 @@ describe('Cloisonnement du back-office', () => {
     '/admin/leaderboard',
     '/admin/stats/overview',
     '/admin/stats/password-attempts-timeline',
-    '/admin/hints/usage',
+    '/admin/hints/requests',
     '/admin/auth/verify',
   ];
 
