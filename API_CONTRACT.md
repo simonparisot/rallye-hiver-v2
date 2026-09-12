@@ -1881,10 +1881,267 @@ data.attempts.forEach(attempt => {
 
 ---
 
+## Jeu de l'oie (édition 2027)
+
+Énigme jouée sur un **plateau partagé** : toutes les équipes se déplacent sur le
+même plateau de 63 cases. Toute la logique de règles est côté serveur ; le
+navigateur n'évalue rien, il affiche ce que ces endpoints répondent.
+
+Le plateau n'existe que pour une édition qui déclare `enigmeOie`
+(`frontend/src/editions/2027.ts`). Les endpoints restent inoffensifs sans lui :
+le plateau se charge, mais rien dans l'application n'y mène.
+
+**Garde d'accès** (identique au reste du jeu) : authentifié, membre d'une
+équipe, équipe à jour de son inscription (`hasPaid`).
+
+### GET /oie
+
+**Purpose**: Charger le plateau partagé pour l'équipe appelante.
+
+**Auth**: Bearer token requis.
+
+**Response** (200):
+```json
+{
+  "board": {
+    "rollsPerDay": 1,
+    "squares": [
+      { "squareNumber": 0, "type": "depart", "hasQuestion": false, "hasHint": false },
+      { "squareNumber": 14, "type": "souffleur", "hasQuestion": true, "hasHint": true }
+    ]
+  },
+  "today": "2027-01-15",
+  "teams": [
+    {
+      "teamId": "uuid",
+      "teamName": "Les Orcades",
+      "position": 31,
+      "status": "dans_le_puits",
+      "inPuits": true,
+      "inPrison": false,
+      "finishedAt": null,
+      "finishRank": null,
+      "isMine": false
+    }
+  ],
+  "me": {
+    "teamId": "uuid",
+    "teamName": "Les Bachibouzouks",
+    "position": 14,
+    "squareType": "souffleur",
+    "flavor": "Le souffleur tousse discrètement.",
+    "status": "question_en_attente",
+    "questionPending": true,
+    "question": "Quelle pièce de Rostand met en scène un nez célèbre ?",
+    "hintAvailable": true,
+    "hintRequested": false,
+    "hint": null,
+    "canRoll": false,
+    "rollRefusal": "Repondez d'abord a la question de votre case.",
+    "rollsRemainingToday": 1,
+    "rollsPerDay": 1,
+    "inPuits": false,
+    "inPrison": false,
+    "blockedDaysLeft": 0,
+    "nextRollAllowedDay": "2027-01-15",
+    "totalRolls": 3,
+    "wrongAnswers": 2,
+    "overshootCount": 0,
+    "finishedAt": null,
+    "finishRank": null
+  },
+  "events": [
+    {
+      "eventId": "uuid",
+      "type": "case_speciale",
+      "teamId": "uuid",
+      "teamName": "Les Orcades",
+      "occurredAt": "2027-01-15T09:12:03.000Z",
+      "message": "Les Orcades tombent dans le puits en case 31"
+    }
+  ]
+}
+```
+
+**Ce que la réponse ne contient jamais** :
+- la question d'une autre case que celle où se tient l'équipe (`board.squares`
+  ne porte qu'un booléen `hasQuestion`) ;
+- les réponses acceptées, sur aucune case ;
+- l'indice d'une case du souffleur tant qu'il n'a pas été demandé ;
+- les questions et les réponses des autres équipes.
+
+`status` vaut `question_en_attente`, `peut_lancer`, `quota_epuise`,
+`tour_passe`, `dans_le_puits` ou `arrivee`.
+
+Les équipes de test sont exclues de `teams`, comme partout ailleurs, sauf
+lorsqu'il s'agit de l'équipe appelante.
+
+**Errors**: `401` non authentifié, `403` sans équipe ou équipe non payée.
+
+### POST /oie/answer
+
+**Purpose**: Répondre à la question de la case où se tient l'équipe. Tant que la
+réponse n'est pas bonne, l'équipe ne peut pas relancer.
+
+**Request**:
+```json
+{ "answer": "Cyrano de Bergerac" }
+```
+
+**Response** (200): `{ "correct": boolean, "message": string, ...GET /oie }`
+
+La réponse embarque le plateau complet, dans la forme de `GET /oie` : l'interface
+n'a pas à recharger.
+
+Les tentatives sont **illimitées** et toutes journalisées. La comparaison ignore
+la casse, les accents, les ligatures, les espaces et la ponctuation, exactement
+comme les mots de passe d'énigme.
+
+**Errors**:
+- `400` réponse vide, aucune question en attente, ou équipe déjà arrivée
+- `409` la case n'a pas encore de question configurée
+- `409` une autre écriture a eu lieu entre-temps (deux membres simultanés)
+
+### POST /oie/roll
+
+**Purpose**: Lancer deux dés à six faces. **Les dés sont tirés par le serveur.**
+
+**Request**: aucun corps.
+
+**Response** (200):
+```json
+{
+  "dice": [4, 5],
+  "total": 9,
+  "from": 5,
+  "to": 14,
+  "finished": false,
+  "effects": [
+    { "kind": "avance", "from": 5, "to": 9 },
+    { "kind": "oie", "at": 9, "total": 9 },
+    { "kind": "avance", "from": 9, "to": 14 }
+  ],
+  "journal": ["Les Bachibouzouks tombent sur l'acteur et son oie en case 9 et rejouent"],
+  "releases": ["Les Bachibouzouks repêchent Les Orcades du puits"],
+  "...": "puis tout le contenu de GET /oie"
+}
+```
+
+`kind` vaut `avance`, `oie`, `rebond`, `metteur_en_scene`, `mort`, `puits`,
+`prison`, `loge`, `souffleur` ou `arrivee`.
+
+Arriver en case 63 marque l'énigme associée (`enigmaId` du plateau) comme
+résolue dans `TeamEnigmaProgress`, avec `solvedAt`, et incrémente
+`solvedEnigmasCount` de l'équipe : le classement et les statistiques existants
+la comptent sans modification.
+
+**Errors** (`400`, le message dit lequel) : question en attente, quota du jour
+épuisé, tour passé (loge ou prison), équipe dans le puits, équipe déjà arrivée.
+`409` si un autre membre de l'équipe a lancé au même instant.
+
+### POST /oie/prompter
+
+**Purpose**: Demander l'indice du souffleur sur la case courante. Gratuit, mais
+enregistré.
+
+**Request**: aucun corps.
+
+**Response** (200):
+```json
+{ "squareNumber": 14, "hint": "Le héros écrit des lettres d'amour pour un autre.", "firstTime": true }
+```
+
+**Errors**: `404` si la case n'est pas une case du souffleur ou n'a pas d'indice.
+
+### GET /admin/oie/board
+
+**Purpose**: Configuration complète du plateau, questions, réponses acceptées et
+indices compris.
+
+**Auth**: administrateur (`requireAdmin`).
+
+**Response** (200): `{ "board": OieBoardConfig }` (voir DATA_MODELS.md).
+
+### PUT /admin/oie/board
+
+**Purpose**: Remplacer la configuration du plateau.
+
+**Request**:
+```json
+{
+  "rollsPerDay": 1,
+  "enigmaId": "uuid de l'énigme du jeu de l'oie",
+  "squares": [
+    {
+      "squareNumber": 2,
+      "question": "Quel auteur a écrit Le Malade imaginaire ?",
+      "acceptedAnswers": ["Molière", "Jean-Baptiste Poquelin"],
+      "hint": "seulement sur une case du souffleur",
+      "flavor": "texte d'ambiance, facultatif"
+    }
+  ]
+}
+```
+
+Le `type` d'une case n'est jamais lu dans la charge utile : il découle de son
+numéro. Une case absente du tableau est conservée vide. C'est aussi le format du
+fichier d'import et d'export de la page `/admin/oie`, et celui que lit
+`backend/scripts/seed-oie-board.js`.
+
+**Response** (200): `{ "board": OieBoardConfig }`
+
+**Errors**: `400` `squares` absent, numéro de case hors de 0..63, `rollsPerDay`
+hors de 1..20. `403` sans droits d'administration.
+
+### GET /admin/oie/teams
+
+**Purpose**: État de toutes les équipes sur le plateau.
+
+**Response** (200):
+```json
+{
+  "teams": [
+    {
+      "teamId": "uuid",
+      "teamName": "Les Orcades",
+      "isTestTeam": false,
+      "position": 31,
+      "status": "dans_le_puits",
+      "questionPending": true,
+      "inPuits": true,
+      "inPrison": false,
+      "nextRollAllowedDay": "2027-01-15",
+      "rollsRemainingToday": 1,
+      "totalRolls": 7,
+      "wrongAnswers": 4,
+      "hintsUsed": 1,
+      "overshootCount": 0,
+      "finishedAt": null,
+      "finishRank": null,
+      "updatedAt": "ISO 8601"
+    }
+  ],
+  "count": 1,
+  "rollsPerDay": 1,
+  "today": "2027-01-15"
+}
+```
+
+### POST /admin/oie/teams/{teamId}/reset
+
+**Purpose**: Remettre une équipe en case 0, pour un test ou après un incident.
+L'opération est tracée dans le journal du plateau.
+
+**Response** (200): `{ "teamId": string, "teamName": string, "message": string }`
+
+---
+
 ## Change Log
 
 | Date | Endpoint | Change | Type | Impact |
 |------|----------|--------|------|--------|
+| 2026-09-12 | GET /oie, POST /oie/answer, POST /oie/roll, POST /oie/prompter | Énigme du jeu de l'oie : plateau partagé par toutes les équipes (édition 2027) | Feature | Une des vingt énigmes se joue sur un plateau commun ; arriver en case 63 marque l'énigme résolue dans `TeamEnigmaProgress`, donc le classement existant la compte |
+| 2026-09-12 | GET/PUT /admin/oie/board, GET /admin/oie/teams, POST /admin/oie/teams/{teamId}/reset | Administration du plateau : 63 questions, quota de lancers, état des équipes | Feature | Le quota `rollsPerDay` est modifiable à tout moment, sans déploiement |
 | 2026-01-02 | GET /admin/attempts | Fixed pagination bug (Scan → Query) + added stats object + removed legacy count/total fields | Bug Fix + Breaking | **Critical fix**: Now returns ALL attempts (not just 1MB), shows correct success counts; **Breaking**: Removed `count` and `total` root fields - use `stats.totalAttempts` instead; **Frontend must use stats object for all statistics** |
 | 2024-12-24 | GET /enigmas/by-difficulty, GET /admin/enigmas/by-difficulty | Updated algorithm: removed A (abandonment), E now based on active teams only, T now from first attempt; sorting easiest→hardest; fixed enigma titles bug | Breaking | More accurate difficulty scores, better reflects actual challenge; **frontend must handle 3 metrics instead of 4** |
 | 2024-12-24 | GET /enigmas/by-difficulty | Added difficulty-sorted enigmas list with 24h cache | Feature | Users can see enigmas ranked by actual difficulty (0-10 scale based on team behavior) |
