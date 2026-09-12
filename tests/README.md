@@ -31,6 +31,32 @@ npm test                         # suite complète sur l'environnement de test
 
 Les variantes `provision:prod` et `sweep:prod` existent pour la production.
 
+Toutes les commandes du tableau visent `test` par défaut, mais respectent
+`TEST_ENV` s'il est posé : c'est ainsi qu'on les pointe sur un bac à sable.
+
+## Bacs à sable
+
+`config/environments.js` déclare aussi les piles isolées montées par
+`scripts/sandbox.sh` pour les chantiers parallèles (voir `backend/README.md`) :
+`indices` (frontend sur le port 3002) et `oie` (port 3003). Même compte AWS que
+`test`, mais tables, pool Cognito et API distincts, et capacité `full` puisque
+rien de réel n'y vit.
+
+```bash
+TEST_ENV=oie npm run provision                        # décor permanent
+TEST_ENV=oie node scripts/make-admin.js <email> <mdp> # compte du back-office
+TEST_ENV=oie TEST_TEAM_ID=<id> npm run test:scenarios
+```
+
+Deux choses ne se transportent pas d'un environnement à l'autre. L'identifiant
+de l'équipe de test d'abord : `provision` l'affiche, `.env.test` n'en porte
+qu'un seul, il faut donc passer `TEST_TEAM_ID` en variable d'environnement quand
+on change de cible. Le compte d'administration ensuite : il n'existe que là où
+on l'a créé. Le back-office ne s'appuie sur aucun groupe Cognito : `requireAdmin()`
+lit l'attribut `isAdmin` de l'enregistrement DynamoDB du compte, qu'aucun
+endpoint n'expose, et `scripts/make-admin.js` le pose, en créant le compte au
+passage si besoin.
+
 ## Les trois niveaux d'écriture
 
 Le fichier `config/environments.js` attribue à chaque environnement une capacité,
