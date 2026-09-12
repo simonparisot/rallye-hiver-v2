@@ -402,7 +402,7 @@ functions:
           path: /enigmas/{enigmaId}
           method: put
           cors:
-            origin: 'https://rallyehiver.fr'
+            origin: ${ssm:/rallye-hiver/${self:provider.stage}/cors-origin}
             headers:
               - Content-Type
               - Authorization
@@ -761,7 +761,7 @@ functions:
           path: /admin/enigmas/{enigmaId}
           method: put
           cors:
-            origin: 'https://rallyehiver.fr'
+            origin: ${ssm:/rallye-hiver/${self:provider.stage}/cors-origin}
             headers:
               - Content-Type
               - Authorization
