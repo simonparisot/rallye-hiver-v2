@@ -12,7 +12,12 @@ import {
   getHintRequestsByTeamAndEnigma,
 } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
-import { selectHint, HintSelectionError, ModelCaller } from '../../services/hintSelector';
+import {
+  selectHint,
+  hintProvider,
+  HintSelectionError,
+  ModelCaller,
+} from '../../services/hintSelector';
 import { EnigmaHint } from '../../types';
 
 /**
@@ -21,10 +26,13 @@ import { EnigmaHint } from '../../types';
  * POST /hints/{enigmaId}/request
  * Corps : { progress: string, requestKey?: string }
  *
- * Deux modes, choisis par HINT_PROVIDER :
+ * Trois modes, choisis par HINT_PROVIDER :
  *
- * - `anthropic` : la lambda appelle l'API et répond 200 avec l'indice. C'est le
- *   mode de production, celui qui suppose une clé d'API.
+ * - `anthropic` : la lambda appelle l'API Anthropic et répond 200 avec
+ *   l'indice. Suppose une clé d'API dans ANTHROPIC_API_KEY.
+ * - `bedrock` : même appel synchrone, mais par Amazon Bedrock avec le rôle IAM
+ *   de la lambda. Aucune clé à gérer, les textes restent dans AWS. C'est le
+ *   mode de production retenu.
  * - `queue` : la lambda n'appelle aucun modèle. Elle enregistre la demande en
  *   attente et répond 202 ; un worker extérieur, lancé sur la machine du
  *   commanditaire, la traite en passant par son abonnement Claude. C'est le mode
@@ -37,10 +45,9 @@ import { EnigmaHint } from '../../types';
 export const PROGRESS_MIN = 20;
 export const PROGRESS_MAX = 3000;
 
-/** Fournisseur actif. Tout ce qui n'est pas `queue` est l'appel direct. */
-export function hintProvider(): 'anthropic' | 'queue' {
-  return process.env.HINT_PROVIDER === 'queue' ? 'queue' : 'anthropic';
-}
+// `hintProvider` vit dans le sélecteur, partagé avec le worker ; réexporté ici
+// pour les appelants qui le lisaient depuis ce module.
+export { hintProvider };
 
 /** Verrous en cours, pour absorber un double clic (voir plus bas). */
 const verrous = new Map<string, number>();

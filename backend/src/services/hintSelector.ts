@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { AnthropicBedrock, AnthropicBedrockMantle } from '@anthropic-ai/bedrock-sdk';
 import { EnigmaHint } from '../types';
 
 /**
@@ -11,14 +12,33 @@ import { EnigmaHint } from '../types';
  * mot de passe », le modèle n'a aucun canal pour le faire, et un identifiant
  * hors de la liste est rejeté par `selectHint`.
  *
- * Ce module est partagé par les deux modes d'exécution : l'appel direct depuis
- * la lambda (mode `anthropic`) et le worker qui passe par `claude -p` (mode
- * `queue`). Le prompt et le contrôle d'identifiant sont donc écrits une fois,
- * et ce que voit le modèle ne dépend pas du chemin emprunté.
+ * Ce module est partagé par les trois modes d'exécution : l'appel direct à
+ * l'API Anthropic (mode `anthropic`), l'appel à Amazon Bedrock depuis le rôle
+ * IAM de la lambda (mode `bedrock`, sans clé à gérer) et le worker qui passe
+ * par `claude -p` (mode `queue`). Le prompt et le contrôle d'identifiant sont
+ * donc écrits une fois, et ce que voit le modèle ne dépend pas du chemin.
  */
 
-/** Modèle par défaut. Surchargeable par HINT_MODEL (déclarée dans serverless). */
+export type HintProvider = 'anthropic' | 'bedrock' | 'queue';
+
+/** Fournisseur actif, d'après HINT_PROVIDER. Tout ce qui n'est pas reconnu est l'API Anthropic. */
+export function hintProvider(): HintProvider {
+  const valeur = process.env.HINT_PROVIDER;
+  return valeur === 'bedrock' || valeur === 'queue' ? valeur : 'anthropic';
+}
+
+/**
+ * Modèle par défaut, selon le fournisseur. Surchargeable par HINT_MODEL.
+ *
+ * Sur Bedrock, le même modèle a deux écritures. L'identifiant nu
+ * (`anthropic.claude-opus-5`) passe par le point d'entrée Messages natif de la
+ * région configurée : en Irlande, l'inférence reste dans la région, ce qui est
+ * ce que l'on veut pour les textes des équipes. Un identifiant de profil
+ * d'inférence (`eu.`, `global.`) passe par l'ancien InvokeModel, gardé pour
+ * pouvoir router autrement sans toucher au code.
+ */
 export const DEFAULT_HINT_MODEL = 'claude-opus-5';
+export const DEFAULT_BEDROCK_HINT_MODEL = 'anthropic.claude-opus-5';
 
 export const OUTIL_CHOIX = 'choisir_indice';
 
@@ -56,7 +76,13 @@ export class HintSelectionError extends Error {
 }
 
 export function hintModel(): string {
-  return process.env.HINT_MODEL || DEFAULT_HINT_MODEL;
+  if (process.env.HINT_MODEL) return process.env.HINT_MODEL;
+  return hintProvider() === 'bedrock' ? DEFAULT_BEDROCK_HINT_MODEL : DEFAULT_HINT_MODEL;
+}
+
+/** Un identifiant de profil d'inférence Bedrock (`eu.`, `us.`, `global.`, ...) passe par InvokeModel. */
+export function isBedrockInferenceProfile(model: string): boolean {
+  return /^[a-z]{2,6}\.anthropic\./.test(model);
 }
 
 /**
@@ -134,22 +160,50 @@ export function buildPrompt(input: HintSelectionInput): string {
   return parties.join('\n');
 }
 
-let client: Anthropic | null = null;
+/**
+ * Ce dont l'appel a besoin. Les trois clients exposent `messages.create` avec
+ * la même forme de requête et de réponse, mais chacun le type à sa façon ; ce
+ * type structurel est leur intersection utile.
+ */
+interface ClientMessages {
+  messages: {
+    create(params: Anthropic.MessageCreateParamsNonStreaming): Promise<Anthropic.Message>;
+  };
+}
 
-function getClient(): Anthropic {
+let client: ClientMessages | null = null;
+
+/**
+ * Client selon le fournisseur. Sur Bedrock, l'authentification est celle du
+ * rôle IAM de la lambda (chaîne de credentials AWS par défaut) : aucune clé.
+ * Un identifiant de profil d'inférence impose le client InvokeModel ; un
+ * identifiant nu passe par le point d'entrée Messages natif (Mantle).
+ */
+function getClient(): ClientMessages {
   if (!client) {
-    client = new Anthropic();
+    if (hintProvider() === 'bedrock') {
+      const awsRegion = process.env.BEDROCK_REGION || process.env.AWS_REGION || 'eu-west-1';
+      client = isBedrockInferenceProfile(hintModel())
+        ? new AnthropicBedrock({ awsRegion })
+        : new AnthropicBedrockMantle({ awsRegion });
+    } else {
+      client = new Anthropic();
+    }
   }
   return client;
 }
 
-/** Implémentation réelle de l'appel au modèle, par l'API. */
+/** Implémentation réelle de l'appel au modèle, par l'API Anthropic ou par Bedrock. */
 export const callAnthropic: ModelCaller = async (input) => {
   const model = hintModel();
 
   const response = await getClient().messages.create({
     model,
     max_tokens: 2048,
+    // Réflexion adaptative demandée explicitement : c'est déjà le défaut
+    // d'Opus 5, mais pas celui d'Opus 4.8, et le jugement fin du choix
+    // (« h5 conclurait presque l'énigme, donc h4 ») en dépend.
+    thinking: { type: 'adaptive' },
     system: CONSIGNE_SYSTEME,
     tools: [
       {

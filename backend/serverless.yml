@@ -51,13 +51,15 @@ provider:
     # sans ce parametre doit pouvoir se deployer. En mode `anthropic`, une clef
     # absente se voit au premier appel, pas au deploiement.
     ANTHROPIC_API_KEY: ${ssm:/rallye-hiver/${self:provider.stage}/anthropic-api-key, ''}
-    # Modele charge de choisir l'indice. Parametrable sans redeploiement de code.
-    HINT_MODEL: ${env:HINT_MODEL, 'claude-opus-5'}
-    # Deux facons d'appeler le modele. `anthropic` : la lambda appelle l'API,
-    # reponse synchrone, c'est la production. `queue` : la lambda enregistre la
-    # demande et un worker exterieur la traite via l'abonnement Claude du
-    # commanditaire, sans clef d'API. Le defaut vaut pour les stages ou le
-    # parametre n'existe pas.
+    # Modele charge de choisir l'indice. Vide : le code prend son defaut selon le
+    # fournisseur (claude-opus-5 par l'API, eu.anthropic.claude-opus-5 sur Bedrock).
+    HINT_MODEL: ${ssm:/rallye-hiver/${self:provider.stage}/hint-model, ''}
+    # Trois facons d'appeler le modele. `bedrock` : la lambda appelle Amazon
+    # Bedrock avec son role IAM, reponse synchrone, aucune clef, c'est la
+    # production. `anthropic` : idem par l'API Anthropic, avec une clef.
+    # `queue` : la lambda enregistre la demande et un worker exterieur la traite
+    # via l'abonnement Claude du commanditaire. Le defaut vaut pour les stages
+    # ou le parametre n'existe pas.
     HINT_PROVIDER: ${ssm:/rallye-hiver/${self:provider.stage}/hint-provider, 'anthropic'}
   iam:
     role:
@@ -86,6 +88,18 @@ provider:
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.GAME_STATUS_TABLE}
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.HINT_REQUESTS_TABLE}
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.HINT_REQUESTS_TABLE}/index/*
+        # Choix d'indice par Bedrock (HINT_PROVIDER=bedrock). Le point d'entree
+        # Messages natif a son propre droit (bedrock-mantle:CreateInference) ;
+        # InvokeModel sert si HINT_MODEL designe un profil d'inference, qui
+        # route vers plusieurs regions : droit sur le profil et sur le modele.
+        - Effect: Allow
+          Action:
+            - bedrock-mantle:CreateInference
+            - bedrock:InvokeModel
+            - bedrock:InvokeModelWithResponseStream
+          Resource:
+            - arn:aws:bedrock:*::foundation-model/anthropic.claude-*
+            - arn:aws:bedrock:*:*:inference-profile/*.anthropic.claude-*
         - Effect: Allow
           Action:
             - cognito-idp:AdminCreateUser

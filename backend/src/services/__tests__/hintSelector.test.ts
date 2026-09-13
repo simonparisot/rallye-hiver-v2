@@ -6,6 +6,9 @@ import {
   HintSelectionInput,
   ModelCaller,
   DEFAULT_HINT_MODEL,
+  DEFAULT_BEDROCK_HINT_MODEL,
+  hintProvider,
+  isBedrockInferenceProfile,
 } from '../hintSelector';
 
 const INDICES = [
@@ -128,5 +131,51 @@ describe('choix du modele', () => {
   it('respecte HINT_MODEL', () => {
     process.env.HINT_MODEL = 'claude-sonnet-5';
     expect(hintModel()).toBe('claude-sonnet-5');
+  });
+});
+
+describe('fournisseur du modele', () => {
+  const ancienProvider = process.env.HINT_PROVIDER;
+  const ancienModel = process.env.HINT_MODEL;
+  afterEach(() => {
+    if (ancienProvider === undefined) delete process.env.HINT_PROVIDER;
+    else process.env.HINT_PROVIDER = ancienProvider;
+    if (ancienModel === undefined) delete process.env.HINT_MODEL;
+    else process.env.HINT_MODEL = ancienModel;
+  });
+
+  it("est l'API Anthropic par defaut, et pour toute valeur inconnue", () => {
+    delete process.env.HINT_PROVIDER;
+    expect(hintProvider()).toBe('anthropic');
+    process.env.HINT_PROVIDER = 'autre-chose';
+    expect(hintProvider()).toBe('anthropic');
+  });
+
+  it('reconnait bedrock et queue', () => {
+    process.env.HINT_PROVIDER = 'bedrock';
+    expect(hintProvider()).toBe('bedrock');
+    process.env.HINT_PROVIDER = 'queue';
+    expect(hintProvider()).toBe('queue');
+  });
+
+  it("prend le modele Bedrock par defaut quand le fournisseur est bedrock", () => {
+    delete process.env.HINT_MODEL;
+    process.env.HINT_PROVIDER = 'bedrock';
+    expect(hintModel()).toBe(DEFAULT_BEDROCK_HINT_MODEL);
+    process.env.HINT_PROVIDER = 'anthropic';
+    expect(hintModel()).toBe(DEFAULT_HINT_MODEL);
+  });
+
+  it('HINT_MODEL vide compte comme absent', () => {
+    process.env.HINT_MODEL = '';
+    process.env.HINT_PROVIDER = 'bedrock';
+    expect(hintModel()).toBe(DEFAULT_BEDROCK_HINT_MODEL);
+  });
+
+  it("distingue un profil d'inference d'un identifiant nu", () => {
+    expect(isBedrockInferenceProfile('eu.anthropic.claude-opus-5')).toBe(true);
+    expect(isBedrockInferenceProfile('global.anthropic.claude-sonnet-5')).toBe(true);
+    expect(isBedrockInferenceProfile('anthropic.claude-opus-5')).toBe(false);
+    expect(isBedrockInferenceProfile('claude-opus-5')).toBe(false);
   });
 });

@@ -116,6 +116,37 @@ Une seule nouvelle tentative en cas de réponse invalide, avec un rappel plus
 strict. Au-delà, la demande passe en `failed` : l'équipe voit un message et peut
 redemander, et aucun indice n'a été consommé.
 
+### 3.1 ter Le mode `bedrock` (13 septembre 2026)
+
+Troisième mode, retenu pour la production à la place d'une clé d'API : la
+lambda appelle Amazon Bedrock avec son propre rôle IAM. Aucun secret à
+gérer, les textes des équipes ne quittent pas AWS, et le code de sélection
+est strictement le même (même prompt, même appel d'outil forcé, même
+vérification de l'identifiant) : seul le client change.
+
+- `HINT_PROVIDER=bedrock` (paramètre SSM `hint-provider`), client
+  `AnthropicBedrockMantle` du paquet `@anthropic-ai/bedrock-sdk`, région
+  `eu-west-1` (variable `BEDROCK_REGION`, sinon `AWS_REGION`).
+- Modèle par défaut `anthropic.claude-opus-5` (identifiant nu du point d'entrée
+  Messages natif ; en Irlande, l'inférence reste dans la région). Un
+  identifiant de profil d'inférence (`eu.`, `global.`) dans `HINT_MODEL`
+  bascule automatiquement sur le client InvokeModel.
+- Réflexion adaptative demandée explicitement dans l'appel, pour tous les
+  fournisseurs : c'est le défaut d'Opus 5 mais pas d'Opus 4.8.
+- Droits IAM ajoutés au rôle des lambdas : `bedrock-mantle:CreateInference`,
+  `bedrock:InvokeModel` et `bedrock:InvokeModelWithResponseStream` sur les
+  modèles `anthropic.claude-*` et leurs profils d'inférence.
+- Choix du modèle et coût : voir l'analyse du 13 septembre (Opus 5 en profil
+  européen, environ 44 $ pour 1 600 demandes ; Fable 5.1 écarté, deux fois plus
+  cher, sans profil européen et sans `tool_choice` forcé).
+
+**Préalable, une fois par compte AWS** : activer l'accès aux modèles Anthropic
+dans la console Bedrock (Model access, formulaire de cas d'usage). Tant que ce
+n'est pas fait, tout appel répond 403 « not available for this account », même
+pour les modèles ouverts à tous. Au 13 septembre, ni le compte de test ni
+celui de production ne l'avaient fait ; le mode n'a donc pas encore été exercé
+sur une vraie demande, seulement compilé et couvert par les tests unitaires.
+
 ### 3.2 Coût en points : aucun, pour l'instant
 
 Le commanditaire veut d'abord savoir si le mécanisme de choix fonctionne.
