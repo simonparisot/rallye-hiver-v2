@@ -6,12 +6,21 @@ This file coordinates day-to-day work between frontend and backend agents. For c
 
 ## Current Status
 
-**Last Updated**: 2026-01-02
+**Last Updated**: 2026-09-26
 
 ### Backend Status
-- **Current Work**: ✅ **COMPLETE** - Password attempts timeline API updated to daily buckets
-- **Last Deployment**: 2026-01-02 05:08 UTC (Timeline API changed from 48h/hourly to 30d/daily - DEPLOYED)
-- **Latest Features**:
+- **Current Work**: 🚧 **Hints feature** - implemented on branch `feature/indices`, **not merged into `main`**
+- **Last Deployment**: 2026-01-02 05:08 UTC (Timeline API changed from 48h/hourly to 30d/daily - DEPLOYED). ⚠️ Deployment status of the hints endpoints is **unconfirmed** - verify before announcing to players
+- **Hints feature** (commit `cbbac4c`, 2026-01-25):
+  - `POST /hints/{enigmaId}/use` - unlocks the hint PDF, stamps `hintUsed` / `hintUsedAt` on first call only
+  - `GET /admin/hints/usage` - hint usage list + stats (full table Scan + N+1 lookups, fine at current volume)
+  - `GET /enigmas` now strips `hintPdfUrl` and returns `hasHint: boolean`
+  - `hintPdfUrl` accepted by `POST /enigmas`, `PUT /enigmas/{enigmaId}`, `PUT /admin/enigmas/{enigmaId}`; returned in full by `GET /admin/enigmas`
+  - `GET /progress` now carries `hintUsed` / `hintUsedAt`
+  - ⚠️ **The 25% point cost is NOT implemented** - see "Open Issues" below
+  - ⚠️ `GET /enigmas/{enigmaId}` still returns `hintPdfUrl` unfiltered (hint reachable without recording usage)
+- **Uncommitted on `feature/indices`**: admin endpoints added to `serverless-test.yml` (test stage), `PDF_BUCKET_NAME` env var in `generatePresignedUrl.ts` (test bucket `rallyehiver-enigmas-test`)
+- **Previous Features**:
   - **🔄 BREAKING CHANGE**: GET /admin/stats/password-attempts-timeline now returns 30 days of daily data (was 48h hourly)
   - **Beta team early access** - Teams marked as `isBetaTeam` can test the game before official start
   - GET /teams default limit increased from 50 to 200 teams
@@ -36,10 +45,16 @@ This file coordinates day-to-day work between frontend and backend agents. For c
   - User parisot.simon@gmail.com moved from "Les Bachibouzouks" to "Les Orcades"
 
 ### Frontend Status
-- **Current Work**: ✅ **COMPLETE** - Beta team access fully working (React Query cache fix)
-- **Last Build**: 2025-12-20 14:37 UTC (249.77 kB gzipped)
+- **Current Work**: 🚧 **Hints feature** - implemented on branch `feature/indices`, **not merged into `main`**
+- **Last Build**: 2025-12-20 14:37 UTC (249.77 kB gzipped) - no build recorded since the hints work started
 - **Last Deployment**: 2025-12-20 14:38 UTC
-- **Status**: ✅ **OPERATIONAL** at https://rallyehiver.fr
+- **Status**: ✅ **OPERATIONAL** at https://rallyehiver.fr (prod does not include hints yet)
+- **Hints feature** (commit `cbbac4c`, 2026-01-25):
+  - Player: "Avoir un indice" button on enigmas with `hasHint` (hidden once the enigma is solved), `ConfirmationModal` warning on first use only, then label becomes "Indice utilisé, le revoir". The hint PDF replaces the enigma PDF inline, with a "Retour à l'énigme" toggle (`EnigmasPanel.tsx`)
+  - Admin: optional hint PDF upload in the enigma form (`AdminEnigmas.tsx`), reusing `POST /admin/upload/generate-url`
+  - Admin: new `/admin/hints` page with usage table + stats, and a 💡 "Indices" nav entry (`AdminHintUsage.tsx`, `AdminLayout.tsx`)
+  - New shared `ConfirmationModal` component
+- **Uncommitted on `feature/indices`**: client-side team/enigma filters on `/admin/hints`, password field optional when editing an enigma ("laisser vide pour conserver")
 - **API**: Connected to single prod environment (https://rpg0alko8b.execute-api.eu-west-1.amazonaws.com/prod)
 - **Latest Features**:
   - ✅ **NEW: Beta team access FULLY FUNCTIONAL** - Cache invalidation on login/logout
@@ -86,6 +101,9 @@ This file coordinates day-to-day work between frontend and backend agents. For c
 
 | Request | Priority | Status | Details |
 |---------|----------|--------|---------|
+| **Decide on the 25% hint penalty** | **High** | 📋 **Open** | The player modal announces a 25% point cost that no backend code applies. Either implement it in the scoring path or reword the modal. Product decision - see `DECISIONS.md` > Hint System (2026-09-26) |
+| Strip `hintPdfUrl` from `GET /enigmas/{enigmaId}` | Medium | 📋 Requested | That endpoint returns the hint URL unfiltered, so a hint can be read without recording a usage. Return `hasHint` instead, like `GET /enigmas` (2026-09-26) |
+| Server-side filters / pagination on `GET /admin/hints/usage` | Low | 📋 Requested | Filtering is client-side today. Only needed if hint usage volume grows (2026-09-26) |
 | Increase GET /teams limit from 50 to 200 | High | ✅ Completed | Default limit increased to 200 - users can now browse all 55 registered teams (2025-12-12) |
 | Fix team name uniqueness validation | Medium | ✅ Completed | Team name normalization deployed - prevents duplicates with different case/spacing (2025-12-07) |
 
@@ -118,7 +136,20 @@ This file coordinates day-to-day work between frontend and backend agents. For c
 
 ## Recent Notifications
 
-### 2026-01-02 (TODAY)
+### 2026-09-26
+**Documentation sync → All**: 📝 **Hints feature documented (contracts were 8 months stale)**
+- **Context**: the hints feature was committed on 2026-01-25 (`cbbac4c`) but no shared contract had been updated since. `API_CONTRACT.md` was dated 2025-12-12, `DATA_MODELS.md` 2025-12-02, `DECISIONS.md` 2025-11-16, and both `DECISIONS.md` and `FRONTEND_REQUIREMENTS.md` still listed hints as a *future* feature
+- **Updated**:
+  - ✅ `API_CONTRACT.md` - new "Hint Endpoints" section (`POST /hints/{enigmaId}/use`), new "Admin Hints Management" section (`GET /admin/hints/usage`), `hasHint` / `hintPdfUrl` / `hintUsed` added to the enigma, progress and admin-enigma schemas, 5 changelog rows
+  - ✅ `DATA_MODELS.md` - `Enigma.hintPdfUrl`, `TeamEnigmaProgress.hintUsed` / `hintUsedAt`, new "Hint Usage" business rule, hint field-mapping table
+  - ✅ `DECISIONS.md` - new "Hint System" decision under Game Mechanics, with the open question on the point cost
+  - ✅ `FRONTEND_REQUIREMENTS.md` - hints moved to implemented, stale "future feature" line corrected, penalty mismatch raised as a high-priority blocker
+- **Two issues surfaced while documenting** (code, not docs):
+  1. 🔴 **The 25% hint penalty does not exist.** `EnigmasPanel.tsx:335` promises players that a hint costs 25% of the enigma's points. `getStats.ts:57` sums raw points, `getLeaderboard.ts` uses `team.points` as-is, and `hintUsed` is read only by the admin usage endpoint. **Decision needed before the next rallye**: implement the penalty, or reword the modal
+  2. ⚠️ **`GET /enigmas/{enigmaId}` leaks `hintPdfUrl`.** Only `correctPassword` is stripped (`get.ts:20`), unlike `GET /enigmas`. A team could read a hint without it being recorded, so usage stats are not airtight. The frontend doesn't use that path
+- **Branch state**: `feature/indices` is 1 commit ahead of `main` and has uncommitted work. Hints are **not in production**
+
+### 2026-01-02
 **Backend Agent → Frontend**: 🔄 **BREAKING CHANGE - Password Attempts Timeline API Updated**
 - **Endpoint**: `GET /admin/stats/password-attempts-timeline`
 - **Change**: Response format changed from hourly (48h) to daily (30 days)
@@ -1289,10 +1320,23 @@ This file coordinates day-to-day work between frontend and backend agents. For c
 
 ---
 
+## Open Issues
+
+Issues that are neither blockers nor breaking changes, but must be settled before the hints feature reaches players.
+
+| Date raised | Issue | Owner | Status |
+|---|---|---|---|
+| 2026-09-26 | **Hint 25% point cost announced to players but never applied.** `EnigmasPanel.tsx:335` promises a 25% penalty; `getStats.ts:57` sums raw points, `getLeaderboard.ts` uses `team.points` as-is, and `hintUsed` is read only by `GET /admin/hints/usage`. Either implement the penalty or reword the modal | Product + Backend (or Frontend if reworded) | 📋 Open - see `DECISIONS.md` > Hint System |
+| 2026-09-26 | **`GET /enigmas/{enigmaId}` returns `hintPdfUrl` unfiltered** (`get.ts:20` strips only `correctPassword`). A hint can be read without recording a usage, so `/admin/hints` stats are not airtight. Fix: strip it and return `hasHint`, like `GET /enigmas` | Backend | 📋 Open |
+| 2026-09-26 | **Hints not deployed / not merged.** `feature/indices` is 1 commit ahead of `main` with uncommitted work; no frontend build recorded since the feature landed. Confirm prod state before announcing hints | Both | 📋 Open |
+
+---
+
 ## Breaking Changes Alert
 
 | Date | Endpoint/Feature | Change | Migration Required |
 |------|------------------|--------|-------------------|
+| 2026-01-25 | **GET /enigmas** | `hintPdfUrl` is stripped from the response and replaced by `hasHint: boolean` | None - additive for existing clients, the URL was never exposed before |
 | 2025-11-22 | **POST /progress/attempt** | Removed `points` and `totalTeamPoints` from response | Frontend should stop displaying points (optional - graceful degradation) |
 | 2025-11-16 | **API Base URL** | Changed from `/dev/dev` to `/prod` | **Update frontend API base URL** (✅ completed 22:05) |
 | 2025-11-16 | OAuth | Removed Google OAuth | Remove OAuth buttons from UI (✅ completed) |
@@ -1302,10 +1346,10 @@ This file coordinates day-to-day work between frontend and backend agents. For c
 ## Work In Progress
 
 ### Backend
-- *(none)*
+- Hints feature on `feature/indices` (committed `cbbac4c`): admin endpoints being added to `serverless-test.yml`, bucket name moved to `PDF_BUCKET_NAME`. Not merged into `main`
 
 ### Frontend
-- *(none)*
+- Hints feature on `feature/indices` (committed `cbbac4c`): team/enigma filters on `/admin/hints`, optional password on enigma edit. Not merged into `main`, no build since 2025-12-20
 
 ---
 
@@ -1421,4 +1465,4 @@ For detailed information, see:
 
 ---
 
-**Last Review**: 2025-11-16 by documentation cleanup agent
+**Last Review**: 2026-09-26 - contracts synced with the hints feature (`cbbac4c`)

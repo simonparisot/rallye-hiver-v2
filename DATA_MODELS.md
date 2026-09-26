@@ -1,7 +1,7 @@
 # Data Models
 
 **Last updated by**: backend agent
-**Last updated**: 2025-12-02
+**Last updated**: 2026-09-26
 
 ---
 
@@ -102,6 +102,7 @@ interface Enigma {
   title: string;               // Enigma title/name
   description?: string;        // Short description
   pdfUrl: string;              // S3 URL to enigma PDF
+  hintPdfUrl?: string;         // S3 URL to optional hint PDF (NOT exposed by GET /enigmas)
   correctPassword: string;     // Solution (NOT exposed to clients)
   points: number;              // Points awarded when solved
   difficulty?: 'easy' | 'medium' | 'hard';  // Difficulty level
@@ -120,6 +121,7 @@ interface Enigma {
   "title": "Le Mystère de la Tour",
   "description": "Trouvez le code caché dans le plan",
   "pdfUrl": "https://s3.amazonaws.com/rallye-hiver-enigmas/2025/enigma-01.pdf",
+  "hintPdfUrl": "https://rallyehiver-enigmas.s3.eu-west-1.amazonaws.com/2025/a3f8c9d2-4e1b-4c7a-9f3e-5d2a1b4c6e8f.pdf",
   "correctPassword": "PARIS1889",
   "points": 10,
   "difficulty": "easy",
@@ -130,6 +132,12 @@ interface Enigma {
 ```
 
 **Security Note**: `correctPassword` is NEVER returned to clients via API
+
+**Hint Note** (added 2026-01-25):
+- `hintPdfUrl` is optional - an enigma without it simply has no hint
+- `GET /enigmas` strips `hintPdfUrl` and returns `hasHint: boolean` instead. The actual URL is only handed out by `POST /hints/{enigmaId}/use`
+- ⚠️ `GET /enigmas/{enigmaId}` currently returns `hintPdfUrl` unfiltered (see `API_CONTRACT.md`)
+- Admin endpoints (`GET /admin/enigmas`) return the full URL
 
 ---
 
@@ -191,6 +199,8 @@ interface TeamEnigmaProgress {
   attemptCount: number;        // Total number of attempts (default: 0)
   lastAttemptAt?: string;      // ISO 8601 timestamp of last attempt
   firstAttemptAt?: string;     // ISO 8601 timestamp of first attempt
+  hintUsed?: boolean;          // Whether the team unlocked the hint for this enigma
+  hintUsedAt?: string;         // ISO 8601 timestamp when the hint was unlocked
   createdAt: string;           // ISO 8601 timestamp
   updatedAt: string;           // ISO 8601 timestamp
 }
@@ -206,6 +216,8 @@ interface TeamEnigmaProgress {
   "attemptCount": 5,
   "lastAttemptAt": "2025-01-20T14:35:22Z",
   "firstAttemptAt": "2025-01-20T13:15:10Z",
+  "hintUsed": true,
+  "hintUsedAt": "2025-01-20T14:02:11Z",
   "createdAt": "2025-01-20T13:15:10Z",
   "updatedAt": "2025-01-20T14:35:22Z"
 }
@@ -214,6 +226,12 @@ interface TeamEnigmaProgress {
 **Access Patterns**:
 - Get team progress: Query by `teamId`
 - Get enigma leaderboard: Query on GSI by `enigmaId`, sort by `solvedAt`
+- Get all hint usages (admin): full table `Scan` with `FilterExpression: hintUsed = true` - no GSI exists for this access pattern
+
+**Hint Note** (added 2026-01-25):
+- `hintUsed` / `hintUsedAt` are only written the first time a team calls `POST /hints/{enigmaId}/use`
+- Both fields are **absent** (not `false`) when the hint was never used, which is why the admin scan filters on `hintUsed = true`
+- A progress record can exist with `attemptCount: 0` and `solved: false` when a team unlocks a hint before its first password attempt
 
 ---
 
@@ -398,6 +416,15 @@ Parcours ─── (1:N) TeamParcoursAccess
      - Update `team.lastActivityAt`
   4. Check if any parcours should unlock
 
+### Hint Usage (added 2026-01-25)
+- An enigma exposes a hint only if `enigma.hintPdfUrl` is set
+- Team must have `hasPaid: true` and the enigma must be `isActive` to unlock a hint
+- First call to `POST /hints/{enigmaId}/use`:
+  1. Update/create entry in `TeamEnigmaProgress` with `hintUsed: true` and `hintUsedAt: timestamp`
+  2. Return the hint URL with `isFirstUse: true`
+- Subsequent calls return the URL with `isFirstUse: false` and write nothing - a hint is charged once per team and per enigma
+- ⚠️ **Announced but NOT implemented**: the player UI states the hint costs 25% of the enigma's points. No scoring code applies this penalty - `totalPoints` in `GET /teams/{teamId}/stats` and `team.points` in the leaderboard ignore `hintUsed` entirely. See `DECISIONS.md`
+
 ### Parcours Unlocking
 - Parcours unlocks when team has solved at least `parcours.requiredEnigmasCount` of the enigmas in `parcours.requiredEnigmaIds`
 - When unlocked, create entry in `TeamParcoursAccess`:
@@ -460,5 +487,15 @@ Parcours ─── (1:N) TeamParcoursAccess
 ## Frontend Type Compatibility
 
 Frontend TypeScript types should match these models. When API returns data, it follows these schemas exactly (except `correctPassword` which is never exposed).
+
+**Hint field mapping** (`frontend/src/types/index.ts`, `frontend/src/services/gameService.ts`):
+
+| Backend model field | Player-facing type (`Enigma`) | Source |
+|---|---|---|
+| `Enigma.hintPdfUrl` | `hasHint: boolean` | `GET /enigmas` (URL stripped) |
+| `TeamEnigmaProgress.hintUsed` | `hintUsed: boolean` (defaults to `false`) | `GET /progress` |
+| `Enigma.hintPdfUrl` | returned on demand only | `POST /hints/{enigmaId}/use` |
+
+The admin-facing type (`frontend/src/admin/types/index.ts`) keeps `hintPdfUrl` as-is.
 
 See `API_CONTRACT.md` for endpoint response formats.

@@ -1,7 +1,7 @@
 # Frontend Requirements & Blockers
 
 **Last updated by**: frontend user agent
-**Last updated**: 2025-12-20
+**Last updated**: 2026-09-26
 
 ---
 
@@ -26,10 +26,15 @@ This document tracks frontend requirements, blockers, and questions that affect 
 - ✅ Admin panel with full CRUD for enigmas and parcours
 - ✅ Admin drag-and-drop reordering for enigmas
 - ✅ **Beta team early access system** - Teams marked as beta can access game before official launch
+- ✅ **Hints system** (2026-01-25) - "Avoir un indice" button per enigma, confirmation modal on first use, admin hint upload and usage dashboard at `/admin/hints`. ⚠️ On branch `feature/indices`, **not yet merged nor deployed**
 - ✅ **DEPLOYED** to production at https://rallyehiver.fr
 
 ### In Progress
-- None currently
+**Hints feature polish** (branch `feature/indices`, uncommitted at the time of writing):
+- Team / enigma filters on `/admin/hints` (client-side, since `GET /admin/hints/usage` has no query parameters)
+- Password field made optional when editing an enigma ("laisser vide pour conserver") - relies on `PUT /admin/enigmas/{enigmaId}` only applying keys present in the body
+- `serverless-test.yml`: admin endpoints added to the test stage (auth, stats, enigmas, upload, hints/usage) so the feature can be tested outside prod
+- `generatePresignedUrl.ts`: bucket name moved to the `PDF_BUCKET_NAME` env var (test stage uploads to `rallyehiver-enigmas-test`)
 
 ---
 
@@ -37,7 +42,15 @@ This document tracks frontend requirements, blockers, and questions that affect 
 
 ### High Priority
 
-*No current blockers*
+**⚠️ Hint point cost: modal text does not match backend behaviour** (Raised 2026-09-26)
+- **Current state**: `ConfirmationModal` in `EnigmasPanel.tsx:335` tells the player *"L'utilisation d'un indice coute 25% des points de cette enigme. Cette action est irreversible."*
+- **Issue**: No penalty is applied anywhere in the backend. `GET /teams/{teamId}/stats` sums raw enigma points, the leaderboard uses `team.points` unmodified, and `hintUsed` is read only by `GET /admin/hints/usage`
+- **Impact**: Players are told they lose points and they don't. Harmless for fairness (everyone is equally un-penalised) but the wording is misleading, and any team that compares its stats to the announcement will notice
+- **Decision needed** (product, not just technical):
+  1. Backend implements the 25% penalty → frontend keeps the current wording, and stats/leaderboard displays must be checked for teams that already used hints
+  2. Penalty is dropped → frontend reworks the modal text (e.g. "irreversible, et visible par les organisateurs")
+- **Also**: `GET /enigmas/{enigmaId}` returns `hintPdfUrl` without stripping it, so the hint is reachable without recording a usage. Frontend does not use that path, but usage stats can't be fully trusted until it is fixed
+- **Tracked in**: `DECISIONS.md` > Game Mechanics > Hint System
 
 ### Medium Priority
 
@@ -676,7 +689,7 @@ async function checkGameStatus(authToken?) {
 
 ### Future Enhancements Needed
 1. **Notifications**: When new parcours unlocks, show toast/modal (already handled)
-2. **Hints System**: Potential future feature (not in current spec)
+2. ~~**Hints System**: Potential future feature (not in current spec)~~ → **implemented 2026-01-25**. Depends on `hasHint` from `GET /enigmas`, `hintUsed` from `GET /progress`, and `POST /hints/{enigmaId}/use`
 3. **Team Chat**: Out of scope for MVP
 
 ---

@@ -1,7 +1,7 @@
 # API Contract
 
 **Last updated by**: backend agent
-**Last updated**: 2025-12-12
+**Last updated**: 2026-09-26
 **Base URL**: `https://rpg0alko8b.execute-api.eu-west-1.amazonaws.com/prod`
 
 ---
@@ -611,6 +611,7 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
       "title": "string",
       "description": "string",
       "pdfUrl": "string (S3 URL)",
+      "hasHint": boolean,
       "points": number,
       "difficulty": "'easy' | 'medium' | 'hard'",
       "isActive": boolean,
@@ -624,6 +625,9 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 
 **Notes**:
 - `correctPassword` is NEVER exposed to clients
+- `hintPdfUrl` is NEVER exposed on this endpoint - it is replaced by the `hasHint` boolean
+- `hasHint` tells the frontend whether an "Avoir un indice" button should be shown
+- To obtain the actual hint URL, the team must call `POST /hints/{enigmaId}/use` (see Hint Endpoints)
 - Returns all active enigmas
 
 #### GET /enigmas/{enigmaId}
@@ -641,6 +645,7 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
     "title": "string",
     "description": "string",
     "pdfUrl": "string",
+    "hintPdfUrl": "string (⚠️ currently exposed - see Notes)",
     "points": number,
     "difficulty": "'easy' | 'medium' | 'hard'",
     "isActive": boolean,
@@ -652,6 +657,11 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 
 **Errors**:
 - `404`: Enigma not found
+
+**Notes**:
+- `correctPassword` is stripped, but **`hintPdfUrl` is NOT stripped** (`backend/src/functions/enigmas/get.ts:20`), unlike `GET /enigmas`
+- ⚠️ **Known gap**: a team can therefore read the hint URL from this endpoint without going through `POST /hints/{enigmaId}/use`, so the usage is never recorded. To be fixed by stripping `hintPdfUrl` and returning `hasHint` instead, as `GET /enigmas` does
+- The frontend does not rely on this behaviour: it uses `GET /enigmas` + `POST /hints/{enigmaId}/use`
 
 #### GET /enigmas/by-difficulty
 
@@ -702,6 +712,7 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
   "title": "string",
   "description": "string",
   "pdfUrl": "string (S3 URL)",
+  "hintPdfUrl": "string (S3 URL, optional)",
   "correctPassword": "string",
   "points": number,
   "difficulty": "'easy' | 'medium' | 'hard'",
@@ -729,6 +740,7 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
   "title": "string",
   "description": "string",
   "pdfUrl": "string",
+  "hintPdfUrl": "string",
   "correctPassword": "string",
   "points": number,
   "difficulty": "'easy' | 'medium' | 'hard'",
@@ -738,6 +750,7 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 ```
 
 **Notes**:
+- **As of 2026-01-25**: Added `hintPdfUrl` field (optional hint PDF). Send `""` to remove an existing hint
 - **As of 2025-11-29**: Added `enigmaNumber` field support for drag-and-drop reordering
 - **As of 2025-11-29**: Fixed CORS configuration to support preflight OPTIONS requests
 
@@ -753,6 +766,45 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
   "message": "Enigma deleted successfully"
 }
 ```
+
+---
+
+### Hint Endpoints
+
+#### POST /hints/{enigmaId}/use
+
+**Status**: ✅ Implemented (2026-01-25)
+**Purpose**: Unlock and retrieve the hint PDF for an enigma, recording the usage on first call
+**Authentication**: Required (team member)
+
+**Request**: no body
+
+**Response** (200):
+```json
+{
+  "success": true,
+  "hintPdfUrl": "string (S3 URL of the hint PDF)",
+  "isFirstUse": boolean
+}
+```
+
+**Errors**:
+- `400`: Missing enigmaId parameter
+- `401`: Unauthorized
+- `403`: User must be in a team to use hints
+- `403`: Team must complete payment to use hints
+- `403`: This enigma is not currently active
+- `404`: Team not found
+- `404`: Enigma not found
+- `404`: No hint available for this enigma (enigma has no `hintPdfUrl`)
+
+**Behaviour**:
+- **First call** (`isFirstUse: true`): sets `hintUsed: true` and `hintUsedAt` on the team's `TeamEnigmaProgress` record. If no progress record exists yet, one is created with `solved: false` and `attemptCount: 0`
+- **Subsequent calls** (`isFirstUse: false`): returns the URL again without re-recording anything. The hint is charged only once per team and per enigma
+- The frontend uses `isFirstUse` indirectly: it shows a confirmation modal before the first call (based on the local `hintUsed` flag from `GET /progress`), then opens the PDF directly on later calls
+
+**⚠️ Point cost not implemented**:
+The player-facing modal announces a cost of 25% of the enigma's points (`frontend/src/components/panels/EnigmasPanel.tsx:335`), but **no scoring code applies any penalty**. `GET /teams/{teamId}/stats` sums the raw enigma points (`backend/src/functions/teams/getStats.ts:57`) and `GET /admin/leaderboard` uses `team.points` as-is. `hintUsed` is only read by `GET /admin/hints/usage`. Either the penalty must be implemented, or the modal wording must be corrected. See `DECISIONS.md`.
 
 ---
 
@@ -973,7 +1025,9 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
       "solvedAt": "ISO 8601 timestamp (if solved)",
       "attemptCount": number,
       "lastAttemptAt": "ISO 8601 timestamp",
-      "firstAttemptAt": "ISO 8601 timestamp"
+      "firstAttemptAt": "ISO 8601 timestamp",
+      "hintUsed": boolean,
+      "hintUsedAt": "ISO 8601 timestamp (if hintUsed)"
     }
   ],
   "totalSolved": number
@@ -982,6 +1036,9 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 
 **Errors**:
 - `403`: User must be in a team
+
+**Notes**:
+- **As of 2026-01-25**: `hintUsed` / `hintUsedAt` are returned for enigmas where the team used the hint. Both fields are absent (not `false`/`null`) when the hint was never used
 
 #### GET /progress/parcours
 
@@ -1545,6 +1602,7 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
       "title": "string",
       "description": "string",
       "pdfUrl": "string",
+      "hintPdfUrl": "string (optional, full URL - admin only)",
       "points": number,
       "difficulty": "'easy' | 'medium' | 'hard'",
       "isActive": boolean,
@@ -1625,6 +1683,7 @@ Where:
   "title": "string",
   "description": "string",
   "pdfUrl": "string",
+  "hintPdfUrl": "string",
   "correctPassword": "string",
   "points": number,
   "difficulty": "'easy' | 'medium' | 'hard'",
@@ -1632,6 +1691,10 @@ Where:
   "enigmaNumber": number
 }
 ```
+
+**Notes**:
+- **As of 2026-01-25**: Added `hintPdfUrl` field (optional hint PDF). Only keys present in the body are updated, so omitting `hintPdfUrl` leaves the existing hint untouched; send `""` to remove it
+- Since only present keys are applied, the admin UI omits `correctPassword` when the field is left blank on edit, which preserves the current password
 
 **Response** (200):
 ```json
@@ -1656,6 +1719,51 @@ Where:
 - **As of 2025-11-29**: Admin-specific endpoint with full CORS preflight support
 - Used by admin panel for drag-and-drop reordering via `enigmaNumber` field
 - CORS headers configured for `https://proto.rallyehiver.fr`
+
+#### Admin Hints Management
+
+##### GET /admin/hints/usage
+
+**Status**: ✅ Implemented (2026-01-25)
+**Purpose**: List every hint usage across all teams, with summary statistics
+**Authentication**: Required (admin only)
+
+**Request**: no parameters (no pagination, no server-side filtering)
+
+**Response** (200):
+```json
+{
+  "usages": [
+    {
+      "teamId": "uuid",
+      "teamName": "string (\"Unknown Team\" if the team was deleted)",
+      "enigmaId": "uuid",
+      "enigmaNumber": number,
+      "enigmaTitle": "string (\"Unknown Enigma\" if the enigma was deleted)",
+      "hintUsedAt": "ISO 8601 timestamp",
+      "solved": boolean,
+      "solvedAt": "ISO 8601 timestamp (if solved)"
+    }
+  ],
+  "stats": {
+    "totalUsages": number,
+    "uniqueTeams": number,
+    "uniqueEnigmas": number,
+    "solvedAfterHint": number
+  }
+}
+```
+
+**Errors**:
+- `401`: Authentication required
+- `403`: Admin access required
+- `500`: Failed to fetch hint usage
+
+**Notes**:
+- `usages` is sorted by `hintUsedAt` descending (most recent first)
+- `solvedAfterHint` counts usages where the enigma is now solved. It does **not** verify that the resolution happened after the hint was used
+- Team and enigma filtering is done client-side in the admin UI (`frontend/src/admin/pages/AdminHintUsage.tsx`)
+- ⚠️ **Performance**: implemented as a full DynamoDB `Scan` on `TeamEnigmaProgress` with a `hintUsed = true` filter, followed by one `GetCommand` per team and per enigma (N+1). Acceptable at the current data volume, to be revisited if hint usage grows. See `PERFORMANCE_AUDIT.md`
 
 #### Admin Parcours Management
 
@@ -1792,8 +1900,9 @@ data.attempts.forEach(attempt => {
 - Filename format: `2025/{random-uuid}.pdf` (e.g., `2025/a3f8c9d2-4e1b-4c7a-9f3e-5d2a1b4c6e8f.pdf`)
 - Upload URL is valid for 15 minutes
 - After receiving the response, admin frontend should upload the PDF file using a PUT request to `uploadUrl`
-- The `fileUrl` should be stored in the enigma or parcours `pdfUrl` field
-- S3 bucket: `rallyehiver-enigmas` (eu-west-1)
+- The `fileUrl` should be stored in the enigma or parcours `pdfUrl` field, or in the enigma `hintPdfUrl` field for a hint PDF
+- S3 bucket: `rallyehiver-enigmas` (eu-west-1), overridable per stage via the `PDF_BUCKET_NAME` environment variable
+- The same endpoint serves enigma PDFs, parcours PDFs and hint PDFs - there is no `type` parameter
 
 **Upload Flow**:
 1. Admin calls `POST /admin/upload/generate-url` with content type
@@ -1885,6 +1994,11 @@ data.attempts.forEach(attempt => {
 
 | Date | Endpoint | Change | Type | Impact |
 |------|----------|--------|------|--------|
+| 2026-01-25 | POST /hints/{enigmaId}/use | Added hint unlock endpoint (records `hintUsed` / `hintUsedAt` on first use) | Feature | Teams can unlock an optional hint PDF per enigma |
+| 2026-01-25 | GET /admin/hints/usage | Added hint usage listing + statistics | Feature | Admin can monitor which teams used which hints at /admin/hints |
+| 2026-01-25 | GET /enigmas | Added `hasHint` boolean; `hintPdfUrl` is stripped from the response | Feature | Frontend knows whether to show the "Avoir un indice" button without leaking the URL |
+| 2026-01-25 | POST /enigmas, PUT /enigmas/{enigmaId}, PUT /admin/enigmas/{enigmaId}, GET /admin/enigmas | Added optional `hintPdfUrl` field | Feature | Admin can attach a hint PDF to an enigma |
+| 2026-01-25 | GET /progress | Added `hintUsed` / `hintUsedAt` to progress records | Feature | Frontend can tell whether the confirmation modal still needs to be shown |
 | 2026-01-02 | GET /admin/attempts | Fixed pagination bug (Scan → Query) + added stats object + removed legacy count/total fields | Bug Fix + Breaking | **Critical fix**: Now returns ALL attempts (not just 1MB), shows correct success counts; **Breaking**: Removed `count` and `total` root fields - use `stats.totalAttempts` instead; **Frontend must use stats object for all statistics** |
 | 2024-12-24 | GET /enigmas/by-difficulty, GET /admin/enigmas/by-difficulty | Updated algorithm: removed A (abandonment), E now based on active teams only, T now from first attempt; sorting easiest→hardest; fixed enigma titles bug | Breaking | More accurate difficulty scores, better reflects actual challenge; **frontend must handle 3 metrics instead of 4** |
 | 2024-12-24 | GET /enigmas/by-difficulty | Added difficulty-sorted enigmas list with 24h cache | Feature | Users can see enigmas ranked by actual difficulty (0-10 scale based on team behavior) |

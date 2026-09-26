@@ -1,7 +1,7 @@
 # Decisions & Assumptions
 
 **Last updated by**: both agents
-**Last updated**: 2025-11-16
+**Last updated**: 2026-09-26
 
 ---
 
@@ -219,6 +219,40 @@ This document records architectural decisions, trade-offs, and shared assumption
 - Leaderboard sorts by total points
 
 **Future Consideration**: Could add time bonuses in future seasons
+
+---
+
+### Hint System
+**Decision**: One optional hint PDF per enigma, unlocked on demand, charged once per team
+**Date**: 2026-01-25
+**Status**: ⚠️ Partially implemented - the point cost is announced to players but not applied
+**Rationale**:
+- Teams that get stuck abandon the rallye; a hint keeps them playing
+- A PDF reuses the existing enigma-content pipeline (S3 + presigned upload), so no new content format was needed
+- Making it opt-in and irreversible preserves the challenge for teams that don't ask
+
+**Implementation**:
+- `Enigma.hintPdfUrl` is optional - an enigma without it has no hint
+- `GET /enigmas` never returns the URL: it returns `hasHint: boolean` so the button can be displayed without leaking the hint
+- `POST /hints/{enigmaId}/use` returns the URL and, on first call, stamps `hintUsed` / `hintUsedAt` on `TeamEnigmaProgress`
+- Re-opening an already-unlocked hint is free and writes nothing (`isFirstUse: false`)
+- The frontend shows a confirmation modal only before the first unlock, based on `hintUsed` from `GET /progress`
+- Hint PDFs are uploaded through the existing `POST /admin/upload/generate-url` (same bucket, no `type` parameter)
+- Admin monitoring at `/admin/hints` via `GET /admin/hints/usage`
+
+**Open decision - the 25% point cost**:
+The player-facing modal states: *"L'utilisation d'un indice coute 25% des points de cette enigme. Cette action est irreversible."* (`frontend/src/components/panels/EnigmasPanel.tsx:335`). **No penalty is implemented anywhere**:
+- `backend/src/functions/teams/getStats.ts:57` sums the raw `enigma.points` of solved enigmas
+- `backend/src/functions/admin/getLeaderboard.ts` sorts on `team.points`, written unmodified by `submitAttempt`
+- `hintUsed` is read only by `GET /admin/hints/usage`
+
+Two options, to be decided before the next rallye:
+1. **Implement the penalty** - apply `Math.round(points * 0.75)` when crediting a solved enigma whose `hintUsed` is `true`. Requires deciding what happens when the hint is unlocked *after* the enigma was solved (currently possible), and whether already-awarded points get recomputed
+2. **Drop the penalty** - reword the modal to "irreversible, et l'utilisation est visible par les organisateurs" and keep hints as a free but tracked assist
+
+Until this is resolved, the game is more generous than what players are told - which is the safe direction, but the wording is misleading.
+
+**Known gap**: `GET /enigmas/{enigmaId}` does not strip `hintPdfUrl`, so the URL is reachable without recording a usage. The frontend does not use that path, but it should be fixed for the tracking to be trustworthy.
 
 ---
 
@@ -506,7 +540,7 @@ src/
 - Multi-season support (add `gameId` field)
 - Team chat feature (out of scope for MVP)
 - Leaderboard with time-based rankings
-- Hint system for stuck teams
+- ~~Hint system for stuck teams~~ - implemented 2026-01-25, see Game Mechanics > Hint System
 - Email notifications
 
 ---
@@ -515,6 +549,7 @@ src/
 
 | Date | Decision | Category | Impact |
 |------|----------|----------|--------|
+| 2026-01-25 | Optional hint PDF per enigma, unlocked on demand | Game Mechanics | New player action + admin upload field; **25% point cost announced but not implemented** |
 | 2025-11-16 | Auto-unlock parcours | Game Mechanics | Frontend needs to show unlock notifications |
 | 2025-11-16 | Log all password attempts | Security | Increased write costs, admin audit capability |
 | 2025-11-16 | Case-insensitive passwords | UX | Simplified user experience |
