@@ -26,6 +26,14 @@ panneaux d'information, liste des énigmes, plateau du jeu de l'oie, espace
 admin) l'importent et lisent `edition.label`, `edition.copy.intro`,
 `edition.theme.logo`, etc. Aucun composant ne compare l'année : il lit un champ.
 
+**Les deux feuilles doivent déclarer les mêmes noms.** Les composants lisent
+ces variables sans valeur de repli : une variable indéfinie n'est pas ignorée,
+elle invalide toute la déclaration qui la contient, et la bordure ou l'ombre
+disparaît sans erreur en console. C'est le piège principal de ce mécanisme.
+Quand une refonte introduit un nom (`--ombre-affiche`, `--lambrequin-image`,
+`--barre-fond`…), il faut le déclarer aussi dans les thèmes des éditions
+passées, sans quoi leur build archive se dégrade en silence.
+
 **Le thème passe par un attribut et des variables.** Au démarrage,
 `applyEditionTheme()` (appelée dans `src/index.tsx`) pose
 `data-edition="<clé>"` sur `<html>` et injecte la balise des polices Google de
@@ -79,7 +87,9 @@ cœur de l'application et ne passe pas par ce dossier.
 3. Créer `themes/2028.css` sous `:root[data-edition='2028']`, en définissant les
    mêmes variables que les thèmes précédents. Le plus sûr est de partir de
    `themes/2027.css` et de ne changer que les valeurs : les composants attendent
-   ces noms-là.
+   ces noms-là, et une seule variable oubliée fait disparaître une bordure ou
+   une ombre sans rien signaler. Pour vérifier, comparer les noms déclarés par
+   les feuilles de thème à ceux employés en `var(--x)` dans `src/**/*.css`.
 4. Déplacer le `:root,` nu de `themes/2027.css` vers `themes/2028.css`.
 5. Importer la feuille et enregistrer l'édition dans `index.ts` : une entrée
    dans `EDITIONS`, et `edition2028` comme valeur par défaut.

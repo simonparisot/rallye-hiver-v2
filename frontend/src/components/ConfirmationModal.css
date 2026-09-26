@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(23, 38, 63, .45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -27,7 +27,8 @@
   padding: 24px;
   max-width: 400px;
   width: 90%;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  border: 2px solid var(--theatre-salle);
+  box-shadow: var(--ombre-affiche-haute);
   animation: slideUp 0.2s ease-out;
 }
 
@@ -46,12 +47,12 @@
   margin: 0 0 16px 0;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--theatre-salle);
 }
 
 .modal-message {
   margin: 0 0 24px 0;
-  color: #6b7280;
+  color: var(--theatre-coulisse);
   line-height: 1.6;
 }
 
@@ -70,54 +71,55 @@
 }
 
 .modal-actions .btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #e5e7eb;
+  background: var(--theatre-programme-2);
+  color: var(--theatre-salle);
+  border: 1px solid var(--theatre-filet);
 }
 
 .modal-actions .btn-secondary:hover {
-  background: #e5e7eb;
+  background: var(--theatre-filet);
 }
 
 .modal-actions .btn-warning {
-  background: #f59e0b;
-  color: white;
+  /* Le jaune d'affiche ne porte pas de texte blanc : contraste 1,7:1. */
+  background: var(--theatre-dorure);
+  color: var(--theatre-dorure-encre);
   border: none;
 }
 
 .modal-actions .btn-warning:hover {
-  background: #d97706;
+  background: #F5B829;
 }
 
 .modal-actions .btn-danger {
-  background: #ef4444;
+  background: var(--theatre-tragedie);
   color: white;
   border: none;
 }
 
 .modal-actions .btn-danger:hover {
-  background: #dc2626;
+  background: var(--theatre-tragedie-sombre);
 }
 
 .modal-actions .btn-info {
-  background: #3b82f6;
+  background: var(--theatre-comedie);
   color: white;
   border: none;
 }
 
 .modal-actions .btn-info:hover {
-  background: #2563eb;
+  background: var(--theatre-comedie-sombre);
 }
 
 /* Variant borders */
 .modal-warning {
-  border-top: 4px solid #f59e0b;
+  border-top: 4px solid var(--theatre-dorure);
 }
 
 .modal-danger {
-  border-top: 4px solid #ef4444;
+  border-top: 4px solid var(--theatre-tragedie);
 }
 
 .modal-info {
-  border-top: 4px solid #3b82f6;
+  border-top: 4px solid var(--theatre-comedie);
 }

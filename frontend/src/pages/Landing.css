@@ -3,7 +3,7 @@
 }
 
 .landing-hero {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--theatre-comedie) 0%, var(--theatre-comedie-clair) 100%);
   color: white;
   padding: 4rem 1.5rem;
   text-align: center;

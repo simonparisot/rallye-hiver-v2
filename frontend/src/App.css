@@ -256,13 +256,13 @@ body {
 }
 
 .paid {
-  color: #666;
+  color: var(--theatre-coulisse);
   font-weight: 400;
   font-size: 0.85rem;
 }
 
 .unpaid {
-  color: #999;
+  color: var(--theatre-coulisse-pale);
   font-weight: 400;
   font-size: 0.85rem;
 }

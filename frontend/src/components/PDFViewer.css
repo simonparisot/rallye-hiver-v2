@@ -167,7 +167,7 @@
 }
 
 .pdf-download-link:hover {
-  color: var(--color-primary-blue-dark);
+  color: var(--primary-hover);
 }
 
 /* React-PDF overrides */

@@ -5,35 +5,37 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: var(--theatre-scene);
+  border: 2px solid var(--theatre-salle);
+  box-shadow: var(--ombre-affiche);
 }
 
 .waiting-content {
   max-width: 600px;
   text-align: center;
-  color: #ffffff;
+  color: var(--theatre-salle);
 }
 
 .waiting-content h2 {
   font-size: 1.8rem;
   margin-bottom: 2rem;
-  color: #ffd700;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  color: var(--theatre-tragedie);
+  
 }
 
 .waiting-message {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--theatre-programme-2);
   border-radius: 12px;
   padding: 2rem;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1.5px solid var(--theatre-filet);
 }
 
 .waiting-text {
   font-size: 1.1rem;
   line-height: 1.6;
   margin-bottom: 1rem;
-  color: #e0e0e0;
+  color: var(--theatre-coulisse);
 }
 
 .waiting-text:last-of-type {
@@ -41,7 +43,7 @@
 }
 
 .highlight-date {
-  color: #ffd700;
+  color: var(--theatre-tragedie);
   font-size: 1.2em;
   font-weight: bold;
 }

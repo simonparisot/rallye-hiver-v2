@@ -1,10 +1,11 @@
 import { Edition } from './types';
 
 /**
- * Édition 2027 — thème « Le théâtre ».
+ * Édition 2027 — thème « Le théâtre », direction « L'Affiche ».
  *
- * La palette et les polices découlent du logo retenu par les organisateurs :
- * les deux masques, comédie et tragédie.
+ * La palette découle du logo retenu par les organisateurs — les deux masques,
+ * comédie et tragédie — mais en aplats d'affiche plutôt qu'en velours de
+ * salle. Le pourquoi est en tête de themes/2027.css.
  */
 export const edition2027: Edition = {
   gameId: 'rallye-2027',
@@ -14,9 +15,10 @@ export const edition2027: Edition = {
     key: '2027',
     name: 'Le théâtre',
     // Abril Fatface pour les titres : c'est déjà la police de rallyehiver.fr,
-    // ce qui relie l'édition au site du Rallye. Source Sans 3 pour le texte
-    // courant, dessinée pour les longues lectures.
-    fonts: 'https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap',
+    // ce qui relie l'édition au site du Rallye. Lora pour le texte courant :
+    // un serif de lecture, qui tient le petit corps sur téléphone là où une
+    // grasse d'affiche devient illisible.
+    fonts: 'https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Lora:ital,wght@0,400..700;1,400..600&display=swap',
     // Les deux masques, comédie et tragédie, retenus par les organisateurs.
     logo: '/logo-2027.jpg',
   },

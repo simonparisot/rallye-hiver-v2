@@ -12,8 +12,8 @@
 
 .hint-zone {
   padding: 20px 22px 22px;
-  background: rgba(194, 168, 104, .12);
-  border-bottom: 1px solid rgba(169, 143, 76, .28);
+  background: #FFF4D6;
+  border-bottom: 1px solid var(--theatre-filet);
   font-family: var(--font-body);
   color: var(--theatre-salle, #1B1720);
 }
@@ -35,7 +35,7 @@
   font-size: max(var(--display-taille-mini, 22px), 23px);
   line-height: 1.15;
   font-weight: 400;
-  color: #7A6428;
+  color: var(--theatre-dorure-encre);
 }
 
 .hint-zone-meta {
@@ -76,7 +76,7 @@
 }
 
 .hint-obtained-rank {
-  color: #7A6428;
+  color: var(--theatre-dorure-encre);
 }
 
 .hint-obtained-cost {
@@ -98,7 +98,7 @@
   padding: 14px 16px;
   background: var(--theatre-scene, #FBF9F5);
   border-top: 3px solid var(--theatre-dorure, #A98F4C);
-  box-shadow: 0 6px 20px rgba(27, 23, 32, .12);
+  box-shadow: 0 6px 20px rgba(23, 38, 63, .12);
 }
 
 .hint-fresh-label {
@@ -108,7 +108,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #7A6428;
+  color: var(--theatre-dorure-encre);
 }
 
 .hint-fresh p {
@@ -195,15 +195,18 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   cursor: pointer;
-  border: 1px solid rgba(169, 143, 76, .55);
-  background: transparent;
-  color: #7A6428;
+  /* Posé sur le bandeau jaune de la demande d'indice : transparent, il ne se
+     lisait pas comme un bouton. */
+  border: 1.5px solid var(--theatre-salle);
+  border-radius: 8px;
+  background: var(--theatre-scene);
+  color: var(--theatre-salle);
   transition: background-color .15s, border-color .15s;
 }
 
 .hint-action-btn:hover:not(:disabled) {
-  background: rgba(194, 168, 104, .18);
-  border-color: rgba(169, 143, 76, .8);
+  background: var(--theatre-programme-2);
+  border-color: var(--theatre-salle);
 }
 
 .hint-action-btn:focus-visible {
@@ -236,7 +239,7 @@
 }
 
 .hint-action-cancel:hover:not(:disabled) {
-  background: rgba(27, 23, 32, .05);
+  background: rgba(23, 38, 63, .05);
   border-color: var(--theatre-coulisse-pale, #8B8275);
 }
 

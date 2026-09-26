@@ -1,5 +1,5 @@
 .pending-requests {
-  background: #f8f9fa;
+  background: var(--theatre-programme-2);
   border: 1px solid #dee2e6;
   border-radius: 8px;
   padding: 20px;
@@ -13,13 +13,13 @@
 }
 
 .pending-requests-description {
-  color: #6c757d;
+  color: var(--theatre-coulisse);
   margin-bottom: 15px;
 }
 
 .pending-requests-description em {
   font-style: italic;
-  color: #dc3545;
+  color: var(--theatre-tragedie);
   font-size: 0.9rem;
 }
 
@@ -31,7 +31,7 @@
 
 .pending-request-item {
   background: white;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--theatre-programme-2);
   border-radius: 6px;
   padding: 15px;
   display: flex;
@@ -65,11 +65,11 @@
 .pending-requests-error {
   padding: 20px;
   text-align: center;
-  color: #6c757d;
+  color: var(--theatre-coulisse);
 }
 
 .pending-requests-error {
-  color: #dc3545;
+  color: var(--theatre-tragedie);
 }
 
 .btn-sm {

@@ -1,9 +1,25 @@
 /* ---------------------------------------------------------------------------
-   Édition 2027 — Le théâtre
+   Édition 2027 — Le théâtre, direction « L'Affiche »
 
-   Palette tirée du logo : le masque bleu de la comédie, le masque rouge de la
-   tragédie. Deux dominantes, et non un accent unique — le bleu porte l'action,
-   le rouge porte l'enjeu. L'or est réservé à la réussite, et à elle seule.
+   Une affiche de spectacle du XIXe siècle placardée sur un mur, pas une salle
+   plongée dans le noir. La première direction partait de la salle : velours
+   sombre, or patiné, photo de scène en fond. Elle se lisait mal de jour, sur
+   un téléphone, dehors — c'est-à-dire dans les conditions réelles du rallye,
+   où l'on consulte une énigme entre deux rues.
+
+   Le théâtre est donc porté par la structure plutôt que par l'obscurité :
+   le lambrequin festonné en tête de page, la typographie d'affiche, les
+   cartouches cernés d'un trait et posés sur une ombre nette, comme une
+   affiche collée qui se décolle.
+
+   Trois couleurs, et pas une de plus :
+   — le bleu encre porte l'action (boutons, navigation active) ;
+   — le vermillon porte le théâtre (lambrequin, titres, bouton « Tester ») ;
+   — le jaune d'affiche signale ce qui reste à faire.
+   Le vert est réservé au fait accompli, et il est volontairement discret :
+   à mi-saison, douze énigmes sur vingt sont résolues, et les colorer
+   franchement reviendrait à peindre la page en vert en noyant les huit qui
+   demandent encore du travail. Ce qui est fait s'efface, ce qui reste ressort.
 
    Ce thème est posé sur :root sans attendre l'attribut data-edition : c'est
    l'édition servie par défaut, et l'attendre provoquerait un flash au
@@ -11,25 +27,33 @@
    --------------------------------------------------------------------------- */
 :root,
 :root[data-edition='2027'] {
-  /* --- Les deux masques, en version velours ---
-     Les teintes du logo, désaturées et assombries : sur un fond de salle, des
-     couleurs franches deviennent criardes. On cherche le confort d'une lecture
-     longue plutôt que l'éclat. */
-  --theatre-comedie: #5687A8;        /* bleu d'action, patiné */
-  --theatre-comedie-clair: #6E9DBC;
-  --theatre-comedie-sombre: #3F6A88;
-  --theatre-tragedie: #A9503F;       /* bordeaux plutôt que rouge vif */
-  --theatre-tragedie-sombre: #8C3E30;
-  --theatre-dorure: #A98F4C;         /* or patiné, pas or vif */
-  --theatre-dorure-claire: #C2A868;
+  /* --- Les deux masques, en version affiche ---
+     Les teintes du logo, franches et non plus patinées : une affiche est
+     imprimée en aplats, elle ne cherche pas la demi-teinte. */
+  --theatre-comedie: #17263F;        /* bleu encre : l'action */
+  --theatre-comedie-clair: #33486A;
+  --theatre-comedie-sombre: #0E1A2D;
+  --theatre-tragedie: #E1443A;       /* vermillon d'affiche : aplats et grands titres */
+  --theatre-tragedie-sombre: #C4342B;
+  /* Le vermillon plein ne donne que 4:1 sur le papier : il ne porte pas de
+     texte courant. Cette variante, à 5,25:1, est celle des petits textes
+     rouges. (Valeurs vérifiées par scripts/audit-contraste.mjs.) */
+  --theatre-tragedie-texte: #C4342B;
+  --theatre-tragedie-fonce: #B93027;
+  --theatre-dorure: #FFC53D;         /* jaune d'affiche : ce qui reste à faire */
+  --theatre-dorure-claire: #FFE08A;
+  --theatre-dorure-encre: #5A3E00;   /* texte lisible sur le jaune */
 
-  /* --- La salle et la scène --- */
-  --theatre-salle: #1B1720;          /* velours brun-violet, pas un noir d'encre */
-  --theatre-programme: #EDE8E0;      /* papier de programme, légèrement chaud */
-  --theatre-scene: #FBF9F5;          /* surfaces surélevées */
-  --theatre-filet: #D6CFC4;          /* bordures sur fond clair */
-  --theatre-coulisse: #6B6357;       /* gris chaud, texte secondaire */
-  --theatre-coulisse-pale: #8B8275;
+  /* --- Le papier et l'encre --- */
+  --theatre-salle: #17263F;          /* l'encre, qui remplace le noir de salle */
+  --theatre-programme: #FFFBF2;      /* papier d'affiche, légèrement chaud */
+  --theatre-programme-2: #F7EFDF;    /* papier en retrait : ce qui est fait */
+  --theatre-scene: #FFFFFF;          /* surfaces surélevées, cartouches actifs */
+  --theatre-filet: #E7DECB;          /* bordures discrètes */
+  --theatre-coulisse: #4E5C73;       /* texte secondaire */
+  --theatre-coulisse-pale: #626E82;  /* 4,99:1 sur le papier : c'est un texte, pas un décor */
+  --theatre-fait: #27694C;           /* vert du fait accompli, en retrait */
+  --theatre-fait-pale: #E4F3EC;
 
   /* --- Remappage des variables historiques ---------------------------------
      Le reste du site continue de les employer : les redéfinir suffit à
@@ -37,43 +61,57 @@
   --color-primary-blue: var(--theatre-comedie);
   --color-primary-red: var(--theatre-tragedie);
   --color-primary-yellow: var(--theatre-dorure);
-  --color-primary-green: #4A7C59;                    /* vert de rideau, remplace le vert vif */
-  --color-secondary-orange: var(--theatre-dorure-claire);
-  --color-secondary-purple: var(--theatre-comedie-sombre);
+  --color-primary-green: var(--theatre-fait);
+  --color-secondary-orange: var(--theatre-dorure);
+  --color-secondary-purple: var(--theatre-comedie-clair);
   --color-neutral-black: var(--theatre-salle);
-  --color-neutral-gray: var(--theatre-programme);
+  --color-neutral-gray: var(--theatre-programme-2);
   --color-neutral-white: var(--theatre-scene);
 
-  /* Abril Fatface : la police de titre de rallyehiver.fr, ce qui relie
-     l'édition au site du Rallye. La déclarer ici ne suffit pas — elle doit
-     aussi être chargée par editions/2027.ts, faute de quoi les titres
-     retombent silencieusement sur la police de repli. */
+  /* Abril Fatface pour les titres : une grasse didone, la lettre des affiches
+     de théâtre des années 1830, et déjà la police de rallyehiver.fr. Lora pour
+     le texte courant : un serif de lecture, qui tient le petit corps sur
+     téléphone là où une grasse d'affiche devient illisible.
+     Les déclarer ici ne suffit pas — elles doivent aussi être chargées par
+     editions/2027.ts, faute de quoi les titres retombent silencieusement sur
+     la police de repli. */
   --font-display: 'Abril Fatface', Georgia, 'Times New Roman', serif;
-  --font-body: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-secondary: 'Source Sans 3', -apple-system, sans-serif;
+  --font-body: 'Lora', Georgia, 'Times New Roman', serif;
+  --font-secondary: 'Lora', Georgia, serif;
 
-  /* Le trait de la gravure est fin : les bordures épaisses de la bande
-     dessinée n'ont plus lieu d'être. */
+  /* Lora plafonne à 700, là où les thèmes précédents montaient à 800. */
+  --font-weight-fort: 700;
+
+  /* Le trait de l'affiche est net et franc, à l'opposé du filet de gravure de
+     la première direction : un cartouche est cerné, pas ombré en dégradé. */
   --border-width-thin: 1px;
-  --border-width-medium: 1px;
+  --border-width-medium: 1.5px;
   --border-width-thick: 2px;
   --border-color: var(--theatre-filet);
+
+  /* L'ombre portée nette, décalée, sans flou : une affiche collée qui se
+     décolle du mur. Elle remplace les ombres diffuses des thèmes précédents. */
+  --ombre-affiche: 3px 3px 0 var(--theatre-salle);
+  --ombre-affiche-haute: 5px 5px 0 var(--theatre-salle);
+  --ombre-douce: 0 1px 2px rgba(23, 38, 63, .06), 0 10px 24px -18px rgba(23, 38, 63, .5);
+  --shadow: var(--ombre-douce);
+  --shadow-lg: var(--ombre-douce);
 
   --primary-color: var(--theatre-comedie);
   --primary-hover: var(--theatre-comedie-sombre);
   --secondary-color: var(--theatre-dorure);
-  --success-color: var(--theatre-dorure);
+  --success-color: var(--theatre-fait);
   --danger-color: var(--theatre-tragedie);
 
   /* --- États d'une énigme ou d'un parcours ---
-     Introduits par la refonte : rien ne distinguait jusqu'ici une énigme
-     résolue d'une énigme jamais ouverte. */
-  --etat-resolu-fond: var(--theatre-dorure);
-  --etat-resolu-texte: #2A2205;
-  --etat-resolu-libelle: #7A6210;
+     Le fait accompli en retrait, le reste à faire en avant. Voir l'en-tête :
+     c'est la décision structurante de cette direction. */
+  --etat-resolu-fond: var(--theatre-fait-pale);
+  --etat-resolu-texte: var(--theatre-fait);
+  --etat-resolu-libelle: var(--theatre-fait);
   --etat-tente-fond: var(--theatre-scene);
   --etat-tente-trait: var(--theatre-tragedie);
-  --etat-vierge-fond: #E8E3DA;
+  --etat-vierge-fond: var(--theatre-programme-2);
   --etat-vierge-texte: var(--theatre-coulisse);
 
   /* Abril Fatface est une grasse à empattements, dessinée pour les affiches :
@@ -82,21 +120,29 @@
   --display-taille-mini: 22px;
 
   /* --- Le décor ---
-     Un velours de salle plutôt qu'une illustration : le fond de 2026 occupait
-     un quart de la largeur à pleine saturation et concurrençait le contenu.
-     Trois dégradés superposés suffisent à évoquer le tombé d'un rideau — sans
-     image à charger, et sans jamais monter en saturation. */
-  --fond-couleur: #1A1D24;
+     Un mur d'affichage : papier chaud, deux halos très pâles qui évitent
+     l'aplat mort d'un blanc uni. Aucune image à charger — la photo de scène
+     de la première direction pesait 890 ko et assombrissait tout le contenu
+     posé dessus. */
+  --fond-couleur: var(--theatre-programme);
   --fond-image:
-    linear-gradient(180deg, rgba(196, 64, 47, .16) 0%, rgba(196, 64, 47, 0) 42%),
-    repeating-linear-gradient(90deg,
-      rgba(255, 255, 255, .028) 0px,
-      rgba(255, 255, 255, .028) 2px,
-      rgba(0, 0, 0, .05) 2px,
-      rgba(0, 0, 0, .05) 26px,
-      rgba(255, 255, 255, .015) 26px,
-      rgba(255, 255, 255, .015) 30px),
-    radial-gradient(ellipse 140% 90% at 50% 0%, rgba(201, 162, 39, .1) 0%, rgba(201, 162, 39, 0) 60%);
+    radial-gradient(ellipse 900px 520px at 12% -6%, rgba(225, 68, 58, .07), transparent 62%),
+    radial-gradient(ellipse 900px 520px at 88% -6%, rgba(255, 197, 61, .10), transparent 62%);
   --fond-taille: auto;
-  --fond-repetition: repeat;
+  --fond-repetition: no-repeat;
+
+  /* La barre de navigation : translucide sur le papier. */
+  --barre-fond: rgba(255, 251, 242, .93);
+  --barre-trait: var(--theatre-salle);
+
+  /* --- Le lambrequin ---
+     Le feston de rideau qui coiffe la page. Construit en dégradés : une
+     rangée de demi-disques sous un bandeau plein. Sa hauteur est une variable
+     parce que la barre de navigation doit s'en décaler d'autant. */
+  --lambrequin-hauteur: 20px;
+  --lambrequin-image:
+    radial-gradient(circle 10px at 50% 0, var(--theatre-tragedie) 99%, transparent 100%),
+    linear-gradient(var(--theatre-tragedie), var(--theatre-tragedie));
+  --lambrequin-taille: 20px 20px, 100% 8px;
+  --lambrequin-position: 0 7px, 0 0;
 }

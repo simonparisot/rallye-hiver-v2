@@ -14,7 +14,9 @@
 .oie-page {
   min-height: 100vh;
   padding: 24px 16px 48px;
-  color: var(--theatre-programme);
+  /* La page était posée sur la scène sombre : son texte était clair. Sur le
+     papier de la direction « L'Affiche », il repasse à l'encre. */
+  color: var(--theatre-salle);
   font-family: var(--font-body);
 }
 
@@ -36,7 +38,7 @@
   font-size: clamp(var(--display-taille-mini, 22px), 4vw, 2.3rem);
   font-weight: 400;
   line-height: 1.15;
-  color: var(--theatre-dorure-claire);
+  color: var(--theatre-tragedie);
 }
 
 .oie-sous-titre {
@@ -86,9 +88,10 @@
 
 .oie-plateau-cadre {
   padding: 14px;
-  border: var(--border-width-thin) var(--border-style) var(--theatre-dorure);
+  border: var(--border-width-thick) var(--border-style) var(--theatre-salle);
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.26);
+  background: var(--theatre-programme-2);
+  box-shadow: var(--ombre-affiche);
   overflow-x: auto;
 }
 
@@ -106,10 +109,10 @@
   gap: 2px;
   min-height: 62px;
   padding: 5px;
-  border: 1px solid var(--theatre-coulisse);
+  border: 1px solid var(--theatre-filet);
   border-radius: 5px;
-  background: rgba(237, 232, 224, 0.07);
-  color: var(--theatre-programme);
+  background: var(--theatre-scene);
+  color: var(--theatre-salle);
   font-size: 0.68rem;
   line-height: 1.15;
   overflow: hidden;
@@ -119,15 +122,42 @@
   font-family: var(--font-body);
   font-size: 0.82rem;
   font-weight: 700;
-  color: var(--theatre-dorure-claire);
+  color: var(--theatre-comedie);
 }
 
 .oie-case-libelle {
   font-size: 0.58rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--theatre-coulisse-pale);
+  color: var(--theatre-coulisse);
 }
+
+/* Les cases spéciales gardent un aplat sombre : leur contenu, lui, reste clair.
+   Sans cela, le numéro et le libellé disparaissaient une fois le fond de page
+   passé au papier. */
+.oie-case-depart,
+.oie-case-arrivee,
+.oie-case-loge,
+.oie-case-puits,
+.oie-case-prison,
+.oie-case-mort,
+.oie-case-souffleur { color: var(--theatre-programme); }
+/* L'or pâle ne tient que sur les bleus profonds ; sur le vert et les rouges il
+   tombe à 3,2:1. Ces cases prennent le papier. */
+.oie-case-depart .oie-case-numero,
+.oie-case-arrivee .oie-case-numero,
+.oie-case-loge .oie-case-numero,
+.oie-case-puits .oie-case-numero { color: var(--theatre-dorure-claire); }
+.oie-case-prison .oie-case-numero,
+.oie-case-mort .oie-case-numero,
+.oie-case-souffleur .oie-case-numero { color: var(--theatre-programme); }
+.oie-case-depart .oie-case-libelle,
+.oie-case-arrivee .oie-case-libelle,
+.oie-case-loge .oie-case-libelle,
+.oie-case-puits .oie-case-libelle,
+.oie-case-prison .oie-case-libelle,
+.oie-case-mort .oie-case-libelle,
+.oie-case-souffleur .oie-case-libelle { color: var(--theatre-programme); }
 
 /* Les cases qui changent le cours de la partie. L'or est réservé à ce qui
    fait avancer, le bordeaux à ce qui coûte. */
@@ -156,10 +186,19 @@
 .oie-case-loge { background: var(--theatre-comedie-sombre); }
 .oie-case-puits { background: var(--theatre-coulisse); }
 .oie-case-prison { background: var(--theatre-tragedie-sombre); }
-.oie-case-mort { background: var(--theatre-tragedie); }
+.oie-case-mort { background: var(--theatre-tragedie-fonce); }
 
 .oie-case-mienne,
 .oie-case-surlignee {
+  box-shadow: inset 0 0 0 2px var(--theatre-tragedie);
+}
+.oie-case-depart.oie-case-mienne,
+.oie-case-arrivee.oie-case-mienne,
+.oie-case-loge.oie-case-mienne,
+.oie-case-puits.oie-case-mienne,
+.oie-case-prison.oie-case-mienne,
+.oie-case-mort.oie-case-mienne,
+.oie-case-souffleur.oie-case-mienne {
   box-shadow: inset 0 0 0 2px var(--theatre-dorure-claire);
 }
 
@@ -173,7 +212,7 @@
 .oie-pion {
   padding: 1px 5px;
   border-radius: 999px;
-  background: var(--theatre-programme);
+  background: var(--theatre-programme-2);
   color: var(--theatre-salle);
   font-size: 0.58rem;
   font-weight: 700;
@@ -182,7 +221,7 @@
 
 .oie-pion-mien {
   background: var(--theatre-dorure-claire);
-  color: var(--etat-resolu-texte);
+  color: var(--theatre-dorure-encre);
   box-shadow: 0 0 0 1px var(--theatre-salle);
 }
 
@@ -331,9 +370,9 @@
 
 .oie-bouton-secondaire {
   display: inline-block;
-  background: transparent;
-  border-color: var(--theatre-dorure);
-  color: var(--theatre-dorure-claire);
+  background: var(--theatre-scene);
+  border-color: var(--theatre-salle);
+  color: var(--theatre-salle);
   text-decoration: none;
   font-size: 0.88rem;
 }

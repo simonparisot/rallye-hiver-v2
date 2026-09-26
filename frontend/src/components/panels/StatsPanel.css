@@ -12,12 +12,12 @@
   justify-content: center;
   padding: 40px 20px;
   text-align: center;
-  color: #6c757d;
+  color: var(--theatre-coulisse);
   font-size: 14px;
 }
 
 .error-state {
-  color: #dc3545;
+  color: var(--theatre-tragedie);
 }
 
 .stats-container {
@@ -62,14 +62,14 @@
   align-items: center;
   gap: 12px;
   padding: 16px;
-  background: #f8f9fa;
+  background: var(--theatre-programme-2);
   border-radius: 10px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--theatre-comedie);
   transition: all 0.2s;
 }
 
 .stat-card:hover {
-  background: #e9ecef;
+  background: var(--theatre-programme-2);
   transform: translateX(4px);
 }
 
@@ -89,7 +89,7 @@
 .stat-value {
   font-size: 24px;
   font-weight: 700;
-  color: #333;
+  color: var(--theatre-salle);
   margin-bottom: 4px;
 }
 
@@ -102,7 +102,7 @@
 
 .stat-label {
   font-size: 13px;
-  color: #666;
+  color: var(--theatre-coulisse);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -110,14 +110,14 @@
 .stat-label-large {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--theatre-salle);
   text-align: center;
   line-height: 1.4;
 }
 
 .stat-card-highlight {
   background: linear-gradient(135deg, #e8f4f8 0%, #d4eef7 100%);
-  border-left-color: #17a2b8;
+  border-left-color: var(--theatre-comedie);
   padding: 20px;
 }
 
@@ -131,13 +131,13 @@
   padding: 16px;
   background: white;
   border-radius: 10px;
-  border: 2px solid #e9ecef;
+  border: 2px solid var(--theatre-programme-2);
 }
 
 .progress-label {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--theatre-salle);
   margin-bottom: 12px;
   text-align: center;
 }
@@ -145,7 +145,7 @@
 .progress-bar-large {
   width: 100%;
   height: 16px;
-  background: #e9ecef;
+  background: var(--theatre-programme-2);
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 8px;
@@ -153,7 +153,7 @@
 
 .progress-fill-large {
   height: 100%;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, var(--theatre-comedie) 0%, var(--theatre-comedie-clair) 100%);
   transition: width 0.3s ease;
   border-radius: 8px;
 }
@@ -162,7 +162,7 @@
   text-align: center;
   font-size: 18px;
   font-weight: 700;
-  color: #667eea;
+  color: var(--theatre-comedie);
 }
 
 /* Compact view adjustments */
@@ -229,7 +229,7 @@
 
 .notification-badge {
   display: inline-block;
-  background: #dc3545;
+  background: var(--theatre-tragedie);
   color: white;
   font-size: 11px;
   font-weight: 600;
@@ -278,7 +278,7 @@
 /* Info box for no-team screen */
 .info-box {
   padding: 12px;
-  background-color: #e7f3ff;
+  background-color: var(--theatre-programme-2);
   border: 2px solid var(--color-primary-blue);
   border-radius: 6px;
   color: var(--text-primary);
@@ -331,7 +331,7 @@
 .team-search-input:focus {
   outline: none;
   border-color: var(--color-primary-blue);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(23, 38, 63, .18);
 }
 
 .team-search-input {
@@ -362,7 +362,7 @@
 .loading-state-inline {
   text-align: center;
   padding: 20px;
-  color: #666;
+  color: var(--theatre-coulisse);
   font-size: 14px;
 }
 

@@ -12,22 +12,22 @@
   justify-content: center;
   padding: 40px 20px;
   text-align: center;
-  color: #6c757d;
+  color: var(--theatre-coulisse);
   font-size: 14px;
 }
 
 .error-state {
-  color: #dc3545;
+  color: var(--theatre-tragedie);
 }
 
 /* Access Blocked Message */
 .access-blocked-message {
   padding: 12px;
   margin-bottom: 16px;
-  background-color: #fff3cd;
-  border: 2px solid #ffc107;
+  background-color: #FFF4D6;
+  border: 2px solid var(--theatre-dorure);
   border-radius: 6px;
-  color: #856404;
+  color: var(--theatre-dorure-encre);
   font-size: 14px;
   line-height: 1.5;
   text-align: center;
@@ -59,20 +59,20 @@
 }
 
 .parcours-item-compact.completed {
-  background: rgba(40, 167, 69, 0.1);
-  border-left: 4px solid #28a745;
+  background: var(--theatre-fait-pale);
+  border-left: 4px solid var(--theatre-fait);
   border-left-color: var(--color-neutral-black);
 }
 
 .parcours-item-compact.unlocked {
-  background: rgba(255, 140, 0, 0.1);
+  background: #FFF4D6;
   border-left: 4px solid var(--color-secondary-orange);
 }
 
 .parcours-item-compact.locked {
   cursor: not-allowed;
   opacity: 0.6;
-  background: #f5f5f5;
+  background: var(--theatre-programme-2);
 }
 
 .parcours-item-compact.locked:hover {
@@ -86,9 +86,11 @@
   justify-content: center;
   width: 30px;
   height: 30px;
-  background: var(--color-secondary-orange);
-  color: white;
-  border: var(--border-width-thin) var(--border-style) var(--color-neutral-black);
+  /* Le jaune d'affiche ne porte pas de blanc : 1,58:1. La pastille suit
+     désormais l'état du parcours, comme celle des énigmes. */
+  background: var(--etat-vierge-fond);
+  color: var(--etat-vierge-texte);
+  border: var(--border-width-thin) var(--border-style) var(--etat-vierge-fond);
   border-radius: 50%;
   font-weight: bold;
   font-size: 14px;
@@ -103,16 +105,16 @@
 .parcours-title-compact {
   flex: 1;
   font-size: 14px;
-  color: #333;
+  color: var(--theatre-salle);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .completed-badge-small {
-  background: #28a745;
-  color: var(--color-neutral-white);
-  border: var(--border-width-thin) var(--border-style) var(--color-neutral-black);
+  background: var(--etat-resolu-fond);
+  color: var(--etat-resolu-texte);
+  border: var(--border-width-thin) var(--border-style) var(--etat-resolu-fond);
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 10px;
@@ -157,16 +159,16 @@
   background: var(--color-neutral-white);
   border-color: var(--color-secondary-orange);
   border-width: var(--border-width-medium);
-  box-shadow: 0 4px 12px rgba(255, 140, 0, 0.3);
+  box-shadow: 0 4px 12px #FFF4D6;
 }
 
 .parcours-item.completed {
-  background: rgba(40, 167, 69, 0.1);
-  border-left: 4px solid #28a745;
+  background: var(--theatre-fait-pale);
+  border-left: 4px solid var(--theatre-fait);
 }
 
 .parcours-item.unlocked {
-  background: rgba(255, 140, 0, 0.1);
+  background: #FFF4D6;
   border-left: 4px solid var(--color-secondary-orange);
 }
 
@@ -234,9 +236,9 @@
 }
 
 .completed-badge {
-  background: #28a745;
-  color: var(--color-neutral-white);
-  border: var(--border-width-thin) var(--border-style) var(--color-neutral-black);
+  background: var(--etat-resolu-fond);
+  color: var(--etat-resolu-texte);
+  border: var(--border-width-thin) var(--border-style) var(--etat-resolu-fond);
   padding: 3px 10px;
   border-radius: 12px;
   font-size: 11px;
@@ -248,7 +250,7 @@
 
 .parcours-pages {
   font-size: 12px;
-  color: #666;
+  color: var(--theatre-coulisse);
 }
 
 .parcours-progress {
@@ -260,21 +262,21 @@
 .progress-bar-container {
   width: 100%;
   height: 8px;
-  background: #e9ecef;
+  background: var(--theatre-programme-2);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, #17a2b8 0%, #138496 100%);
+  background: linear-gradient(90deg, var(--theatre-comedie) 0%, var(--theatre-comedie-sombre) 100%);
   transition: width 0.3s ease;
   border-radius: 4px;
 }
 
 .progress-text {
   font-size: 12px;
-  color: #666;
+  color: var(--theatre-coulisse);
 }
 
 /* Parcours viewer - Comic Book Style */
@@ -323,7 +325,7 @@
 }
 
 .btn-mark-completed:hover:not(:disabled) {
-  background: #5568d3;
+  background: var(--theatre-comedie-sombre);
   transform: translateY(-1px);
   box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.15);
 }
@@ -342,9 +344,9 @@
 
 .parcours-completed-badge {
   padding: 6px 12px;
-  background: #d4edda;
-  color: #155724;
-  border: 2px solid #28a745;
+  background: var(--theatre-fait-pale);
+  color: var(--theatre-fait);
+  border: 2px solid var(--theatre-fait);
   border-radius: 6px;
   font-weight: 600;
   font-size: 14px;
@@ -356,15 +358,15 @@
 .completed-date {
   font-weight: 400;
   font-size: 12px;
-  color: #155724;
+  color: var(--theatre-fait);
   opacity: 0.8;
 }
 
 .btn-unmark-completed {
   padding: 6px 12px;
   background: var(--color-neutral-white);
-  color: #dc3545;
-  border: var(--border-width-thin) var(--border-style) #dc3545;
+  color: var(--theatre-tragedie);
+  border: var(--border-width-thin) var(--border-style) var(--theatre-tragedie);
   border-radius: 6px;
   font-weight: 600;
   font-size: 12px;
@@ -376,7 +378,7 @@
 }
 
 .btn-unmark-completed:hover:not(:disabled) {
-  background: #dc3545;
+  background: var(--theatre-tragedie);
   color: white;
   transform: translateY(-1px);
   box-shadow: 3px 3px 0px rgba(220, 53, 69, 0.2);
@@ -398,14 +400,14 @@
 }
 
 .completion-message.success {
-  background: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
+  background: var(--theatre-fait-pale);
+  color: var(--theatre-fait);
+  border: 1px solid var(--theatre-fait-pale);
 }
 
 .completion-message.error {
-  background: #f8d7da;
-  color: #721c24;
+  background: #FDECEA;
+  color: var(--theatre-tragedie-sombre);
   border: 1px solid #f5c6cb;
 }
 
@@ -442,7 +444,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #f8f9fa;
+  background: var(--theatre-programme-2);
   border-radius: 8px;
   min-height: 400px;
 }
@@ -453,7 +455,7 @@
 }
 
 .pdf-note {
-  color: #666;
+  color: var(--theatre-coulisse);
   text-align: center;
   margin-top: 10px;
 }
@@ -475,12 +477,12 @@
 
 .parcours-locked-view h4 {
   margin: 0 0 16px 0;
-  color: #333;
+  color: var(--theatre-salle);
   font-size: 24px;
 }
 
 .parcours-locked-view p {
-  color: #666;
+  color: var(--theatre-coulisse);
   font-size: 16px;
   margin-bottom: 32px;
   text-align: center;
@@ -497,14 +499,14 @@
 .unlock-progress-bar {
   width: 100%;
   height: 12px;
-  background: #e9ecef;
+  background: var(--theatre-programme-2);
   border-radius: 6px;
   overflow: hidden;
 }
 
 .unlock-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, var(--theatre-comedie) 0%, var(--theatre-comedie-clair) 100%);
   transition: width 0.3s ease;
   border-radius: 6px;
 }
@@ -512,7 +514,7 @@
 .unlock-progress-text {
   text-align: center;
   font-size: 14px;
-  color: #666;
+  color: var(--theatre-coulisse);
   font-weight: 600;
 }
 
@@ -521,7 +523,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #999;
+  color: var(--theatre-coulisse-pale);
   font-size: 18px;
 }
 
@@ -532,9 +534,25 @@
     gap: 16px;
   }
 
+  /* Sur téléphone, la liste défilait à l'intérieur d'une fenêtre de 300 px :
+     quatre énigmes visibles sur vingt, un défilement imbriqué dans celui de la
+     page, et un grand cadre vide en dessous tant que rien n'était choisi. La
+     liste suit maintenant le défilement de la page. */
   .parcours-list-full {
-    max-height: 300px;
-    padding-right: 8px;
+    max-height: none;
+    overflow-y: visible;
+    padding-right: 0;
+  }
+
+  /* Rien de choisi : l'invite se réduit à une ligne au lieu d'occuper un
+     écran entier au-dessous de la liste. */
+  .parcours-viewer:has(.parcours-placeholder) {
+    min-height: 0;
+  }
+  .parcours-placeholder {
+    min-height: 0;
+    padding: 18px;
+    font-size: 14px;
   }
 
   .parcours-item {
@@ -562,4 +580,12 @@
   .parcours-header-detail h3 {
     font-size: 20px;
   }
+}
+
+/* Un parcours réalisé : la pastille passe au vert en retrait. */
+.parcours-item.completed .parcours-number,
+.parcours-item-compact.completed .parcours-number {
+  background: var(--etat-resolu-fond);
+  color: var(--etat-resolu-texte);
+  border-color: var(--etat-resolu-fond);
 }

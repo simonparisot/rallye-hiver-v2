@@ -24,7 +24,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     <div data-testid="admin-layout" className="admin-layout">
       <aside data-testid="admin-sidebar" className="admin-sidebar">
         <div className="admin-logo">
-          <img src="/logo.png" alt="Rallye d'Hiver" className="admin-sidebar-logo" />
+          <img src={edition.theme.logo} alt={edition.label} className="admin-sidebar-logo" />
           <h2>Panneau Admin</h2>
         </div>
 

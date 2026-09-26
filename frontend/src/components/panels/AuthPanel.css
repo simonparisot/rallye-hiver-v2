@@ -51,7 +51,7 @@
 
 .auth-info-text {
   padding: 12px;
-  background-color: #e7f3ff;
+  background-color: var(--theatre-programme-2);
   border: 2px solid var(--color-primary-blue);
   border-radius: 6px;
   color: var(--text-primary);
@@ -105,10 +105,10 @@
 
 .success-message {
   padding: 12px;
-  background-color: #d4edda;
-  border: 2px solid #28a745;
+  background-color: var(--theatre-fait-pale);
+  border: 2px solid var(--theatre-fait);
   border-radius: 4px;
-  color: #155724;
+  color: var(--theatre-fait);
   font-size: 14px;
   font-weight: 600;
   text-align: center;
@@ -137,8 +137,8 @@
    --------------------------------------------------------------------------- */
 .error-message {
   border-left: 3px solid var(--theatre-tragedie, var(--color-primary-red));
-  background: rgba(196, 64, 47, 0.07);
-  color: #8E2C1E;
+  background: rgba(225, 68, 58, .08);
+  color: var(--theatre-tragedie-sombre);
   padding: 12px 14px;
   margin-bottom: 16px;
   font-size: 14.5px;
@@ -148,8 +148,8 @@
 
 .success-message {
   border-left: 3px solid var(--theatre-dorure, var(--color-primary-yellow));
-  background: rgba(201, 162, 39, 0.09);
-  color: #6E5709;
+  background: #FFF4D6;
+  color: var(--theatre-dorure-encre);
   padding: 12px 14px;
   margin-bottom: 16px;
   font-size: 14.5px;

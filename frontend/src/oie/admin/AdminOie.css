@@ -20,7 +20,7 @@
 }
 
 .admin-oie-message-succes {
-  background: var(--color-primary-green, #28a745);
+  background: var(--color-primary-green, var(--theatre-fait));
   color: #fff;
 }
 
@@ -50,7 +50,7 @@
 .admin-oie-reglage input {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid var(--text-secondary, #333);
+  border: 1px solid var(--text-secondary, var(--theatre-salle));
   border-radius: var(--border-radius, 6px);
   font: inherit;
 }
@@ -58,7 +58,7 @@
 .admin-oie-aide {
   margin: 8px 0 0;
   font-size: 0.82rem;
-  color: var(--text-secondary, #333);
+  color: var(--text-secondary, var(--theatre-salle));
 }
 
 .admin-oie-aide-alerte {

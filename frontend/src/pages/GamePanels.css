@@ -1,18 +1,24 @@
 /* =============================================================================
-   Mise en scène — édition 2027
+   Mise en scène — édition 2027, direction « L'Affiche »
 
-   Une photo de scène voilée, la navigation posée par-dessus, une section à la
-   fois sur toute la largeur. Remplace les trois panneaux dépliants, qui
-   obligeaient à choisir entre voir la liste et lire une énigme, et réduisaient
-   les panneaux fermés à 4 % de largeur.
+   Une section à la fois sur toute la largeur, la navigation en tête. Remplace
+   les trois panneaux dépliants, qui obligeaient à choisir entre voir la liste
+   et lire une énigme, et réduisaient les panneaux fermés à 4 % de largeur.
+
+   Le décor est un mur d'affichage et non plus une salle plongée dans le noir :
+   la photo de scène voilée pesait 890 ko, assombrissait tout le contenu posé
+   dessus et se lisait mal de jour sur un téléphone — c'est-à-dire dans les
+   conditions réelles du rallye. Tout ce qui suit lit les variables du thème :
+   changer d'édition ne demande pas de revenir ici.
    ============================================================================= */
 
 .scene-container {
   min-height: 100vh;
-  background:
-    linear-gradient(rgba(9, 11, 16, .74), rgba(9, 11, 16, .82)),
-    #090B10 url('../../public/scene-2027.jpg') center / cover no-repeat fixed;
-  color: var(--theatre-programme, #F2EFE9);
+  background-color: var(--fond-couleur);
+  background-image: var(--fond-image);
+  background-repeat: var(--fond-repetition);
+  background-attachment: fixed;
+  color: var(--theatre-salle);
 }
 
 /* --- Barre de navigation --- */
@@ -20,10 +26,26 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  background: rgba(9, 11, 16, .86);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, .13);
+  background: var(--barre-fond);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 2px solid var(--barre-trait);
+}
+
+/* Le lambrequin : le feston de rideau qui coiffe la page. Il déborde sur le
+   contenu comme un vrai cantonnière, d'où pointer-events: none. */
+.barre::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: var(--lambrequin-hauteur, 20px);
+  background-image: var(--lambrequin-image);
+  background-size: var(--lambrequin-taille);
+  background-position: var(--lambrequin-position);
+  background-repeat: repeat-x, no-repeat;
+  pointer-events: none;
 }
 
 .barre-contenu {
@@ -48,10 +70,10 @@
   font-family: var(--font-display);
   font-size: 21px;
   white-space: nowrap;
-  color: #fff;
+  color: var(--theatre-salle);
 }
-.marque em { font-style: italic; color: var(--theatre-dorure-claire, #E8C547); }
-.marque .annee { color: rgba(255, 255, 255, .55); font-size: 17px; }
+.marque em { font-style: normal; color: var(--theatre-tragedie-texte); }
+.marque .annee { color: var(--theatre-coulisse-pale); font-size: 17px; }
 
 /* --- Onglets de section --- */
 .sections { display: flex; gap: 3px; margin-left: auto; }
@@ -60,7 +82,7 @@
   font-family: var(--font-body);
   font-size: 15.5px;
   font-weight: 600;
-  color: rgba(255, 255, 255, .72);
+  color: var(--theatre-coulisse);
   background: none;
   border: 0;
   border-bottom: 2px solid transparent;
@@ -68,14 +90,15 @@
   cursor: pointer;
   white-space: nowrap;
 }
-.onglet:hover { color: #fff; }
-.onglet.actif { color: var(--theatre-dorure-claire, #E8C547); border-bottom-color: var(--theatre-dorure-claire, #E8C547); }
-.onglet:focus-visible { outline: 2px solid var(--theatre-dorure-claire, #E8C547); outline-offset: 2px; }
+.onglet:hover { color: var(--theatre-salle); }
+.onglet.actif { color: var(--theatre-salle); border-bottom-color: var(--theatre-tragedie); }
+.onglet:focus-visible { outline: 2px solid var(--theatre-tragedie); outline-offset: 2px; }
 
 .avancement {
   margin-left: 14px;
   padding: 7px 15px;
-  border: 1px solid rgba(255, 255, 255, .16);
+  border: 1.5px solid var(--theatre-filet);
+  background: var(--theatre-scene);
   border-radius: 999px;
   font-size: 13.5px;
   display: flex;
@@ -88,12 +111,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: rgba(255, 255, 255, .78);
+  color: var(--theatre-coulisse);
 }
-.avancement b { color: var(--theatre-dorure-claire, #E8C547); font-variant-numeric: tabular-nums; }
+.avancement b { color: var(--theatre-tragedie-texte); font-variant-numeric: tabular-nums; }
 
 /* --- Contenu --- */
-.section-contenu { max-width: 1240px; margin: 0 auto; padding: 30px 22px 90px; }
+/* Le padding haut dégage le lambrequin, qui déborde de la barre. */
+.section-contenu { max-width: 1240px; margin: 0 auto; padding: 38px 22px 90px; }
 .section[hidden] { display: none; }
 
 .chargement {
@@ -102,14 +126,14 @@
   place-items: center;
   font-family: var(--font-display);
   font-size: 22px;
-  color: #F2EFE9;
+  color: var(--theatre-salle);
 }
 
 /* --- Écran d'accueil, avant connexion --- */
 .accueil-grille {
   max-width: 1240px;
   margin: 0 auto;
-  padding: 40px 22px 90px;
+  padding: 46px 22px 90px;
   display: grid;
   grid-template-columns: 400px 1fr;
   gap: 22px;
@@ -118,17 +142,25 @@
 .accueil-textes { display: grid; gap: 22px; }
 
 .feuille {
-  background: rgba(18, 16, 22, .84);
-  border: 1px solid rgba(255, 255, 255, .13);
+  background: var(--theatre-scene);
+  border: 2px solid var(--theatre-salle);
+  border-radius: 12px;
+  box-shadow: var(--ombre-affiche);
   padding: 30px 32px;
 }
 .feuille-auth { padding: 34px 32px; }
 
-/* --- Adaptation des panneaux au fond sombre ---
-   Les panneaux ont été dessinés pour un fond clair. Plutôt que de réécrire leurs
-   feuilles de style, on redéfinit ici ce qui est directement posé sur la scène :
-   les surfaces et le texte. Les documents — énoncés, PDF — restent sur fond
-   clair, ce qui est leur nature. */
+/* --- Les cartouches de la liste ---------------------------------------------
+   La direction précédente devait rendre lisibles sur un fond sombre des
+   panneaux dessinés pour du papier : une trentaine de règles ne faisaient que
+   repeindre en clair ce qui l'était déjà. Le fond étant redevenu clair, il ne
+   reste ici que la forme propre à l'affiche — le cartouche cerné d'un trait,
+   posé sur une ombre nette.
+
+   La hiérarchie est volontairement inversée par rapport à l'usage : ce qui est
+   résolu s'efface, ce qui reste à faire ressort. À mi-saison, douze énigmes sur
+   vingt sont résolues ; les mettre en avant reviendrait à noyer les huit qui
+   demandent encore du travail. */
 .section .enigma-panel,
 .section .parcours-panel,
 .section .stats-panel {
@@ -138,49 +170,78 @@
   padding: 0;
 }
 
-.section h2,
-.section h3,
-.feuille h2,
-.feuille h3 {
-  color: #fff;
-}
-
 .section .enigma-item,
 .section .enigma-item-compact,
 .section .parcours-item,
 .section .parcours-item-compact,
 .section .stat-card {
-  background: rgba(18, 16, 22, .8);
-  border: 1px solid rgba(255, 255, 255, .13);
-  color: var(--theatre-programme, #F2EFE9);
+  background: var(--theatre-scene);
+  border: 2px solid var(--theatre-salle);
+  border-radius: 12px;
+  box-shadow: var(--ombre-affiche);
+  color: var(--theatre-salle);
+  transition: transform .12s, box-shadow .12s;
 }
 .section .enigma-item:hover,
 .section .enigma-item-compact:hover,
 .section .parcours-item:hover,
 .section .parcours-item-compact:hover {
-  border-color: rgba(232, 197, 71, .45);
+  transform: translate(-2px, -2px);
+  box-shadow: var(--ombre-affiche-haute);
+  background: var(--theatre-scene);
 }
+
+/* Fait : en retrait. Pas d'ombre, pas de trait franc, un papier plus sourd. */
+.section .enigma-item.solved,
+.section .enigma-item-compact.solved,
+.section .parcours-item.completed,
+.section .parcours-item-compact.completed {
+  background: var(--theatre-programme-2);
+  border-color: var(--theatre-filet);
+  border-left: 2px solid var(--theatre-filet);
+  box-shadow: none;
+}
+.section .enigma-item.solved:hover,
+.section .enigma-item-compact.solved:hover,
+.section .parcours-item.completed:hover,
+.section .parcours-item-compact.completed:hover {
+  transform: none;
+  box-shadow: none;
+  background: #F2E9D6;
+}
+.section .enigma-item.solved .enigma-title,
+.section .enigma-item-compact.solved .enigma-title-compact,
+.section .parcours-item.completed .parcours-title,
+.section .parcours-item-compact.completed .parcours-title-compact {
+  color: var(--theatre-coulisse);
+  font-weight: 600;
+}
+
+/* Verrouillé : le trait se fait pointillé, comme une affiche pas encore collée. */
+.section .enigma-item-compact.locked,
+.section .parcours-item-compact.locked,
+.section .parcours-item.locked {
+  background: var(--theatre-programme-2);
+  border: 2px dashed var(--theatre-filet);
+  box-shadow: none;
+}
+
+/* Sélectionné : le vermillon, la seule fois où il sert de repère de position. */
 .section .enigma-item.active,
-.section .parcours-item.active {
-  border-color: var(--theatre-dorure-claire, #E8C547);
-  background: rgba(40, 34, 20, .7);
+.section .parcours-item.active,
+.section .enigma-item.solved.active,
+.section .parcours-item.completed.active {
+  background: var(--theatre-scene);
+  border-color: var(--theatre-tragedie);
+  box-shadow: var(--ombre-affiche-haute);
 }
 
-.section .enigma-title,
-.section .enigma-title-compact,
-.section .parcours-title,
-.section .parcours-title-compact,
-.section .stat-value {
-  color: #fff;
-}
-.section .stat-label { color: rgba(255, 255, 255, .62); }
-
-/* Les documents gardent leur fond clair : un énoncé se lit sur du papier. */
+/* Le document reste sur son papier : un énoncé se lit sur du blanc. */
 .section .enigma-pdf-container,
 .section .parcours-pdf-container,
 .section .enigma-viewer,
 .section .parcours-viewer {
-  background: #FBF9F4;
+  background: var(--theatre-scene);
 }
 
 /* --- Téléphone : la navigation reste atteignable --- */
@@ -205,7 +266,7 @@
     margin-left: 0;
     width: 100%;
     gap: 0;
-    border-top: 1px solid rgba(255, 255, 255, .1);
+    border-top: 1px solid var(--theatre-filet);
     padding-top: 2px;
   }
   .onglet {
@@ -214,8 +275,8 @@
     font-size: 14px;
     text-align: center;
   }
-  .section-contenu { padding: 20px 14px 70px; }
-  .accueil-grille { grid-template-columns: 1fr; padding: 22px 14px 70px; gap: 16px; }
+  .section-contenu { padding: 28px 14px 70px; }
+  .accueil-grille { grid-template-columns: 1fr; padding: 30px 14px 70px; gap: 16px; }
   .feuille { padding: 22px 18px; }
 }
 
@@ -233,26 +294,34 @@
 .section .enigma-viewer:has(.enigma-placeholder),
 .section .parcours-viewer:has(.parcours-placeholder) {
   background: transparent;
-  border: 1px dashed rgba(255, 255, 255, .18);
+  border: 2px dashed var(--theatre-filet);
+  border-radius: 12px;
   box-shadow: none;
   min-height: 220px;
 }
 
 .section .enigma-placeholder,
 .section .parcours-placeholder {
-  color: rgba(255, 255, 255, .5);
+  color: var(--theatre-coulisse-pale);
   font-size: 16px;
   min-height: 220px;
   padding: 30px;
   text-align: center;
 }
 
-/* Le voile laissait la scène invisible : on l'allège, en le renforçant
-   seulement derrière la barre de navigation où le texte doit rester lisible. */
-.scene-container {
-  background:
-    linear-gradient(rgba(9, 11, 16, .58), rgba(9, 11, 16, .74)),
-    #090B10 url('../../public/scene-2027.jpg') center / cover no-repeat fixed;
+/* Sur téléphone, la liste passe au-dessus du lecteur : l'invite ne doit plus
+   occuper un écran entier sous la liste. */
+@media (max-width: 860px) {
+  .section .enigma-viewer:has(.enigma-placeholder),
+  .section .parcours-viewer:has(.parcours-placeholder) {
+    min-height: 0;
+  }
+  .section .enigma-placeholder,
+  .section .parcours-placeholder {
+    min-height: 0;
+    padding: 18px;
+    font-size: 14px;
+  }
 }
 
 /* La liste ne doit pas s'étirer sur toute la hauteur quand rien n'est ouvert. */
@@ -312,44 +381,39 @@
    salle et cesse de capter le regard avant les compteurs.
    --------------------------------------------------------------------------- */
 .section .discord-card {
-  background: rgba(86, 135, 168, .14);
-  border: 1px solid rgba(110, 157, 188, .3);
-  color: var(--theatre-programme, #EDE8E0);
+  background: var(--theatre-programme-2);
+  border: 1.5px solid var(--theatre-filet);
+  border-radius: 12px;
+  color: var(--theatre-salle);
 }
 .section .discord-card:hover {
-  background: rgba(86, 135, 168, .2);
-  border-color: rgba(110, 157, 188, .45);
+  background: #F2E9D6;
+  border-color: var(--theatre-coulisse-pale);
 }
-.section .discord-title { color: var(--theatre-dorure-claire, #C2A868); }
-.section .discord-text { color: rgba(237, 232, 224, .74); }
+.section .discord-title { color: var(--theatre-comedie); }
+.section .discord-text { color: var(--theatre-coulisse); }
 .section .discord-icon { opacity: .82; }
 
-/* Le bloc de l'équipe était un grand rectangle blanc sur la scène. */
 .section .team-section-panel,
-.section .no-team-message {
-  background: rgba(27, 23, 32, .82);
-  border: 1px solid rgba(255, 255, 255, .12);
-  color: var(--theatre-programme, #EDE8E0);
-}
-/* .team-header garde un fond clair : son texte doit rester sombre.
-   Une règle antérieure y posait du blanc en supposant un fond de scène,
-   ce qui rendait le nom d'équipe illisible. */
+.section .no-team-message,
 .section .team-header {
-  background: rgba(27, 23, 32, .82);
-  border: 1px solid rgba(255, 255, 255, .12);
-  color: var(--theatre-programme, #EDE8E0);
+  background: var(--theatre-scene);
+  border: 2px solid var(--theatre-salle);
+  border-radius: 12px;
+  box-shadow: var(--ombre-affiche);
+  color: var(--theatre-salle);
 }
 .section .team-header .team-name,
 .section .team-header h2,
-.section .team-header h3 { color: #fff; }
+.section .team-header h3 { color: var(--theatre-salle); }
 
-.section .logout-section { border-top-color: rgba(255, 255, 255, .12); }
+.section .logout-section { border-top-color: var(--theatre-filet); }
 .section .btn-logout {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, .22);
-  color: var(--theatre-programme, #EDE8E0);
+  background: var(--theatre-scene);
+  border: 1.5px solid var(--theatre-filet);
+  color: var(--theatre-coulisse);
 }
-.section .btn-logout:hover { border-color: var(--theatre-dorure-claire, #C2A868); color: var(--theatre-dorure-claire, #C2A868); }
+.section .btn-logout:hover { border-color: var(--theatre-tragedie); color: var(--theatre-tragedie); }
 
 /* ---------------------------------------------------------------------------
    La barre de réponse et l'indice
@@ -362,18 +426,18 @@
    --------------------------------------------------------------------------- */
 .section .password-form,
 .section .password-form-compact {
-  background: rgba(27, 23, 32, .06);
-  border-bottom: 1px solid var(--theatre-filet, #D6CFC4);
+  background: var(--theatre-programme-2);
+  border-bottom: 1.5px solid var(--theatre-filet);
 }
 
 /* L'or du bandeau d'indice a suivi la fonctionnalité : la demande d'indice
    porte désormais son propre habillage, dans HintRequestSection.css. Rien ne
    reste ici, sans quoi ces règles viseraient des classes disparues. */
 
-/* Le reste à faire, sous la barre de progression. */
+/* Le reste à faire, sous le compteur. */
 .section .stat-reste {
   font-size: 13px;
-  color: rgba(237, 232, 224, .55);
+  color: var(--theatre-coulisse-pale);
   margin-top: 4px;
 }
 
@@ -388,32 +452,37 @@
 .section .info-box,
 .section .pending-requests,
 .section .team-info-inline {
-  background: rgba(27, 23, 32, .82);
-  border: 1px solid rgba(255, 255, 255, .12);
-  color: var(--theatre-programme, #EDE8E0);
+  background: var(--theatre-scene);
+  border: 2px solid var(--theatre-salle);
+  border-radius: 12px;
+  box-shadow: var(--ombre-affiche);
+  color: var(--theatre-salle);
 }
 
 .section .info-box {
-  border-left: 3px solid var(--theatre-dorure, #A98F4C);
-  color: rgba(237, 232, 224, .82);
+  background: var(--theatre-programme-2);
+  border: 1.5px solid var(--theatre-filet);
+  border-left: 4px solid var(--theatre-dorure);
+  box-shadow: none;
+  color: var(--theatre-coulisse);
 }
 
 .section .team-members h4,
 .section .pending-requests h4 {
-  color: #fff;
+  color: var(--theatre-salle);
   font-family: var(--font-display);
   font-weight: 400;
 }
 
 .section .members-list li,
 .section .team-members li {
-  color: var(--theatre-programme, #EDE8E0);
-  border-bottom-color: rgba(255, 255, 255, .1);
+  color: var(--theatre-salle);
+  border-bottom-color: var(--theatre-filet);
 }
 
 .section .badge {
-  background: var(--theatre-dorure, #A98F4C);
-  color: #221B08;
+  background: var(--theatre-dorure);
+  color: var(--theatre-dorure-encre);
   font-weight: 700;
 }
 

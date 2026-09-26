@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
 import { adminAuthAPI } from '../services/adminAPI';
 import { getErrorMessage } from '../../utils/errorMessages';
+import { edition } from '../../editions';
 import './AdminLogin.css';
 
 const AdminLogin: React.FC = () => {
@@ -76,7 +77,7 @@ const AdminLogin: React.FC = () => {
     <div data-testid="admin-login-page" className="admin-login-container">
       <div className="admin-login-card card">
         <div className="admin-login-header">
-          <img src="/logo.png" alt="Rallye d'Hiver" className="admin-login-logo" />
+          <img src={edition.theme.logo} alt={edition.label} className="admin-login-logo" />
           <h2>{getTitle()}</h2>
         </div>
 

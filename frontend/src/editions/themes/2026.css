@@ -45,4 +45,51 @@
   --fond-image: url(../../../public/tintin_bg.jpg);
   --fond-taille: cover;
   --fond-repetition: no-repeat;
+
+  /* --- Équivalents des variables nommées par la refonte 2027 ----------------
+     Les composants les emploient sans valeur de repli. Sans ces déclarations,
+     un build `REACT_APP_EDITION=2026` perdrait bordures, ombres et couleurs
+     d'état : une variable indéfinie invalide toute la déclaration qui la
+     contient. Elles traduisent ici la palette bande dessinée, de sorte que
+     l'archive 2026 reste fidèle à ce qui a tourné.                          */
+  --theatre-comedie: var(--color-primary-blue);
+  --theatre-comedie-clair: #1A6FE8;
+  --theatre-comedie-sombre: #003d99;
+  --theatre-tragedie: var(--color-primary-red);
+  --theatre-tragedie-sombre: #A80F2D;
+  --theatre-tragedie-texte: #A80F2D;
+  --theatre-tragedie-fonce: #8C0C25;
+  --theatre-dorure: var(--color-primary-yellow);
+  --theatre-dorure-claire: #FFE666;
+  --theatre-dorure-encre: #4A3A00;
+
+  --theatre-salle: var(--color-neutral-black);
+  --theatre-programme: #F5F5F5;
+  --theatre-programme-2: #E9ECEF;
+  --theatre-scene: #FFFFFF;
+  --theatre-filet: #CCCCCC;
+  --theatre-coulisse: #333333;
+  --theatre-coulisse-pale: #5C5C5C;
+  --theatre-fait: var(--color-primary-green);
+  --theatre-fait-pale: #E3F3E8;
+
+  --font-weight-fort: 700;
+
+  /* L'ombre nette de la bande dessinée, celle d'origine. */
+  --ombre-affiche: 4px 4px 0 rgba(0, 0, 0, .1);
+  --ombre-affiche-haute: 6px 6px 0 rgba(0, 0, 0, .15);
+  --ombre-douce: 4px 4px 0 rgba(0, 0, 0, .1);
+  --shadow: var(--ombre-affiche);
+  --shadow-lg: var(--ombre-affiche-haute);
+
+  /* La barre de navigation : translucide sur le papier peint. */
+  --barre-fond: rgba(255, 255, 255, .92);
+  --barre-trait: var(--color-neutral-black);
+
+  /* Pas de lambrequin en 2026 : hauteur nulle et aucun fond, la règle qui le
+     dessine reste inerte. */
+  --lambrequin-hauteur: 0px;
+  --lambrequin-image: none;
+  --lambrequin-taille: auto;
+  --lambrequin-position: 0 0;
 }
