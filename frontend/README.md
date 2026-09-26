@@ -38,6 +38,9 @@ REACT_APP_COGNITO_CLIENT_ID=xxxxx
 REACT_APP_COGNITO_REGION=eu-west-1
 ```
 
+Optionally, `REACT_APP_EDITION=2026` builds a past edition instead of the
+current one (see [Editions and themes](#editions-and-themes)).
+
 ### Run Development Server
 
 ```bash
@@ -53,6 +56,16 @@ npm run build
 ```
 
 Creates optimized build in `build/` directory.
+
+## Editions and themes
+
+Everything that changes from one year to the next (theme, fonts, logo, dates,
+copy) lives in `src/editions/`, one file per edition plus one CSS file per
+theme. Components never know which edition they display: they read the
+`edition` constant and use CSS variables. A build contains a single active
+edition, selected at compile time by `REACT_APP_EDITION` (latest by default).
+The mechanism and the recipe for adding an edition are documented in
+[`src/editions/README.md`](src/editions/README.md).
 
 ## Routes
 
