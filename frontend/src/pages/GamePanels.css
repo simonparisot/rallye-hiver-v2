@@ -226,14 +226,25 @@
   box-shadow: none;
 }
 
-/* Sélectionné : le vermillon, la seule fois où il sert de repère de position. */
+/* Sélectionné : le vermillon, la seule fois où il sert de repère de position.
+
+   L'ombre prend la couleur de la bordure. Avec l'ombre encre par défaut, le
+   filet vermillon se retrouvait coincé entre le blanc de la carte et une masse
+   sombre de cinq pixels — et de sept au survol, la carte glissant vers le haut
+   à gauche sans que son ombre suive. Le rouge paraissait alors rogné sur la
+   droite. Une ombre de la même teinte que le filet la prolonge au lieu de la
+   concurrencer. */
 .section .enigma-item.active,
 .section .parcours-item.active,
 .section .enigma-item.solved.active,
 .section .parcours-item.completed.active {
   background: var(--theatre-scene);
   border-color: var(--theatre-tragedie);
-  box-shadow: var(--ombre-affiche-haute);
+  box-shadow: 5px 5px 0 var(--theatre-tragedie-sombre);
+}
+.section .enigma-item.active:hover,
+.section .parcours-item.active:hover {
+  box-shadow: 5px 5px 0 var(--theatre-tragedie-sombre);
 }
 
 /* Le document reste sur son papier : un énoncé se lit sur du blanc. */

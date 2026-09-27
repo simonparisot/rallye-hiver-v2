@@ -132,7 +132,11 @@
   flex-direction: column;
   gap: 10px;
   overflow-y: auto;
-  padding-right: 10px;
+  /* overflow-y: auto force overflow-x à auto : la liste rogne donc aussi sur
+     les côtés. Les cartes portent une ombre décalée de 5 px et se soulèvent de
+     2 px au survol ; sans cette réserve, le bord droit et le bas passent à la
+     coupe dès qu'une barre de défilement s'affiche. */
+  padding: 3px 12px 10px 3px;
 }
 
 .enigma-item {
@@ -145,8 +149,10 @@
 }
 
 .enigma-item:hover {
+  /* Poussait la carte de 4 px vers la droite, c'est-à-dire vers le bord où la
+     liste rogne. Elle se soulève désormais, comme les autres cartes du site. */
   background: var(--theatre-programme-2);
-  transform: translateX(4px);
+  transform: translateY(-2px);
 }
 
 .enigma-item.active {

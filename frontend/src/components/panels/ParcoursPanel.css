@@ -137,7 +137,11 @@
   flex-direction: column;
   gap: 10px;
   overflow-y: auto;
-  padding-right: 10px;
+  /* overflow-y: auto force overflow-x à auto : la liste rogne donc aussi sur
+     les côtés. Les cartes portent une ombre décalée de 5 px et se soulèvent de
+     2 px au survol ; sans cette réserve, le bord droit et le bas passent à la
+     coupe dès qu'une barre de défilement s'affiche. */
+  padding: 3px 12px 10px 3px;
 }
 
 .parcours-item {
