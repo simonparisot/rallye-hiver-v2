@@ -83,8 +83,21 @@ export function ordonnerIndices(hints: any): EnigmaHint[] {
 export const handler = async (
   event: APIGatewayProxyEvent,
   // Injectable pour les tests : l'appel reel au modele reste le defaut.
-  caller?: ModelCaller
+  //
+  // Lambda invoque toujours le handler avec (event, context, callback). Ce
+  // second parametre recoit donc le contexte d'execution en production, et non
+  // un appelant. Sans ce garde, `caller(input)` levait « e is not a function »
+  // des la premiere demande d'indice reelle. Le defaut ne rattrapait rien :
+  // une valeur est bien passee, elle n'est simplement pas appelable.
+  //
+  // Le bug est reste invisible parce que les deux seuls chemins qui appellent
+  // le modele depuis la lambda — HINT_PROVIDER a `anthropic` ou `bedrock` —
+  // n'avaient jamais tourne : l'environnement de test etait en `queue`, ou
+  // c'est un worker exterieur qui appelle le modele.
+  injecte?: unknown
 ): Promise<APIGatewayProxyResult> => {
+  const caller: ModelCaller | undefined =
+    typeof injecte === 'function' ? (injecte as ModelCaller) : undefined;
   let cleVerrou: string | null = null;
 
   try {
