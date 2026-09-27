@@ -1,318 +1,395 @@
 /* ---------------------------------------------------------------------------
-   Demander un indice — édition 2027
+   Le souffleur
 
-   La zone prend la place du bandeau d'indice qu'elle remplace : entre la barre
-   de réponse et l'énoncé. Elle en garde l'or patiné, seule couleur que la
-   refonte a laissée à l'indice, et hérite du fond clair de `.enigma-viewer` :
-   un énoncé se lit sur du papier, ce qui vaut aussi pour ce qui l'entoure.
+   Au repos : un bouton. Une fois appelé : un cartouche cerné d'un trait et
+   posé sur son ombre, comme les autres cartes du site.
 
-   Tout tient dans ce fichier, sans couleur écrite en dur autrement que comme
-   valeur de repli d'une variable de l'édition.
+   Tout passe par les variables du thème — aucune couleur ni police en dur :
+   cette zone suivra l'édition 2028 sans qu'on y revienne.
    --------------------------------------------------------------------------- */
 
-.hint-zone {
-  padding: 20px 22px 22px;
-  background: #FFF4D6;
-  border-bottom: 1px solid var(--theatre-filet);
-  font-family: var(--font-body);
-  color: var(--theatre-salle, #1B1720);
+.souffleur {
+  margin: 0 0 18px;
 }
 
-.hint-zone-header {
+.souffleur-icone {
+  width: 19px;
+  height: 19px;
+  flex: none;
+}
+
+/* ===================== Replié ===================== */
+
+.souffleur-appel {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-bottom: 14px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 14px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--theatre-salle);
+  text-align: left;
+  background: var(--theatre-programme-2);
+  border: var(--border-width-medium) var(--border-style) var(--theatre-filet);
+  border-radius: 12px;
+  transition: background-color .15s, border-color .15s, transform .12s, box-shadow .12s;
+}
+.souffleur-appel:hover:not(:disabled) {
+  background: var(--theatre-scene);
+  border-color: var(--theatre-salle);
+  transform: translate(-1px, -1px);
+  box-shadow: var(--ombre-affiche);
+}
+.souffleur-appel:focus-visible { outline: 3px solid var(--theatre-tragedie); outline-offset: 2px; }
+.souffleur-appel:disabled { cursor: default; color: var(--theatre-coulisse); }
+.souffleur-appel .souffleur-icone { color: var(--theatre-tragedie); }
+.souffleur-appel:disabled .souffleur-icone { color: var(--theatre-coulisse-pale); }
+.souffleur-appel-texte { flex: 1; }
+
+.souffleur-reste {
+  flex: none;
+  font-size: 11px;
+  font-weight: var(--font-weight-fort, 700);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--theatre-dorure);
+  color: var(--theatre-dorure-encre);
 }
 
-/* Abril Fatface s'épaissit et devient illisible en petit corps : la borne de
-   l'édition empêche la police de titre de descendre dans le texte courant. */
-.hint-zone-header h3 {
+/* ===================== Indices obtenus ===================== */
+
+.souffleur-acquis {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.souffleur-indice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--theatre-scene);
+  border: var(--border-width-medium) var(--border-style) var(--theatre-filet);
+  border-left: 4px solid var(--theatre-dorure);
+  border-radius: 10px;
+}
+.souffleur-indice-neuf {
+  border-color: var(--theatre-tragedie);
+  border-left-color: var(--theatre-tragedie);
+  box-shadow: var(--ombre-affiche);
+}
+
+.souffleur-indice-rang {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--theatre-dorure);
+  color: var(--theatre-dorure-encre);
+  font-size: 12.5px;
+  font-weight: var(--font-weight-fort, 700);
+}
+.souffleur-indice-neuf .souffleur-indice-rang {
+  background: var(--theatre-tragedie-sombre);
+  color: #fff;
+}
+
+.souffleur-indice-corps { min-width: 0; }
+.souffleur-neuf {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: var(--font-weight-fort, 700);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--theatre-tragedie-texte);
+  margin-bottom: 3px;
+}
+.souffleur-indice-texte {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--theatre-salle);
+}
+
+/* ===================== Déplié ===================== */
+
+.souffleur-panneau {
+  background: var(--theatre-scene);
+  border: var(--border-width-thick) var(--border-style) var(--theatre-salle);
+  border-radius: 14px;
+  box-shadow: var(--ombre-affiche);
+  overflow: hidden;
+}
+
+.souffleur-tete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--theatre-tragedie-sombre);
+  border-bottom: var(--border-width-thick) var(--border-style) var(--theatre-salle);
+}
+.souffleur-tete h3 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   margin: 0;
   font-family: var(--font-display);
-  font-size: max(var(--display-taille-mini, 22px), 23px);
-  line-height: 1.15;
+  font-size: var(--display-taille-mini, 22px);
   font-weight: 400;
-  color: var(--theatre-dorure-encre);
-}
-
-.hint-zone-meta {
-  font-size: 13px;
-  color: var(--theatre-coulisse, #6B6357);
-}
-
-/* --- Indices déjà obtenus ------------------------------------------------
-   Ils restent lisibles sans nouvelle dépense : c'est du papier de programme,
-   pas une alerte. */
-.hint-obtained-list {
-  list-style: none;
-  margin: 0 0 16px 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.hint-obtained {
-  padding: 12px 14px;
-  background: var(--theatre-scene, #FBF9F5);
-  border-left: 3px solid var(--theatre-dorure, #A98F4C);
-  border-top: 1px solid var(--theatre-filet, #D6CFC4);
-  border-right: 1px solid var(--theatre-filet, #D6CFC4);
-  border-bottom: 1px solid var(--theatre-filet, #D6CFC4);
-}
-
-.hint-obtained-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 6px;
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
   text-transform: uppercase;
+  letter-spacing: .01em;
+  color: #fff;
 }
-
-.hint-obtained-rank {
-  color: var(--theatre-dorure-encre);
-}
-
-.hint-obtained-cost {
-  color: var(--theatre-coulisse-pale, #8B8275);
-}
-
-.hint-obtained-text {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  color: var(--theatre-salle, #1B1720);
-}
-
-/* --- L'indice qui vient d'arriver ---
-   Mis en avant le temps de la visite : c'est ce que l'équipe vient de payer. */
-.hint-fresh {
-  margin-bottom: 16px;
-  padding: 14px 16px;
-  background: var(--theatre-scene, #FBF9F5);
-  border-top: 3px solid var(--theatre-dorure, #A98F4C);
-  box-shadow: 0 6px 20px rgba(23, 38, 63, .12);
-}
-
-.hint-fresh-label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--theatre-dorure-encre);
-}
-
-.hint-fresh p {
-  margin: 0;
-  font-size: 16px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-
-/* --- Saisie de l'avancement --------------------------------------------- */
-.hint-label {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.hint-help {
-  margin: 0 0 10px 0;
-  font-size: 13.5px;
-  line-height: 1.55;
-  color: var(--theatre-coulisse, #6B6357);
-}
-
-.hint-textarea {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 11px 12px;
-  font-family: var(--font-body);
-  font-size: 15px;
-  line-height: 1.55;
-  color: var(--theatre-salle, #1B1720);
-  background: var(--theatre-scene, #FBF9F5);
-  border: 1px solid var(--theatre-filet, #D6CFC4);
-  border-radius: 0;
-  resize: vertical;
-}
-
-.hint-textarea::placeholder {
-  color: var(--theatre-coulisse-pale, #8B8275);
-}
-
-.hint-textarea:focus {
-  outline: 2px solid var(--theatre-comedie, #5687A8);
-  outline-offset: -1px;
-  border-color: var(--theatre-comedie, #5687A8);
-}
-
-.hint-textarea:disabled {
-  background: var(--etat-vierge-fond, #E8E3DA);
-  cursor: not-allowed;
-}
-
-.hint-counter {
-  margin-top: 5px;
-  font-size: 12.5px;
-  color: var(--theatre-coulisse-pale, #8B8275);
-  text-align: right;
-}
-
-/* --- Avertissement de coût ---
-   Un filet, pas un panneau : l'information doit se lire, pas alarmer. */
-.hint-warning {
-  margin: 14px 0;
-  padding: 11px 14px;
-  background: var(--theatre-scene, #FBF9F5);
-  border-left: 3px solid var(--theatre-tragedie, #A9503F);
-  font-size: 14.5px;
-  line-height: 1.55;
-  color: var(--theatre-salle, #1B1720);
-}
-
-.hint-warning strong {
-  color: var(--theatre-tragedie, #A9503F);
-}
-
-/* --- Boutons ---
-   Le rouge du rideau reste au geste central du rallye, « Valider ma réponse ».
-   Demander un indice se tient en retrait, dans l'or de l'édition. */
-.hint-action-btn {
-  padding: 11px 24px;
-  font-family: var(--font-body);
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+.souffleur-fermer {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .2);
+  color: #fff;
+  font-size: 19px;
+  line-height: 1;
   cursor: pointer;
-  /* Posé sur le bandeau jaune de la demande d'indice : transparent, il ne se
-     lisait pas comme un bouton. */
-  border: 1.5px solid var(--theatre-salle);
-  border-radius: 8px;
-  background: var(--theatre-scene);
-  color: var(--theatre-salle);
-  transition: background-color .15s, border-color .15s;
 }
+.souffleur-fermer:hover { background: rgba(255, 255, 255, .34); }
 
-.hint-action-btn:hover:not(:disabled) {
-  background: var(--theatre-programme-2);
-  border-color: var(--theatre-salle);
-}
-
-.hint-action-btn:focus-visible {
-  outline: 3px solid var(--theatre-comedie, #5687A8);
-  outline-offset: 2px;
-}
-
-.hint-action-btn:disabled {
-  background: var(--etat-vierge-fond, #E8E3DA);
-  border-color: var(--theatre-filet, #D6CFC4);
-  color: var(--etat-vierge-texte, #6B6357);
-  cursor: not-allowed;
-}
-
-/* La confirmation est le point de non-retour : elle seule est pleine. */
-.hint-action-confirm:not(:disabled) {
-  background: var(--theatre-dorure, #A98F4C);
-  border-color: var(--theatre-dorure, #A98F4C);
-  color: #2A2205;
-}
-
-.hint-action-confirm:hover:not(:disabled) {
-  background: var(--theatre-dorure-claire, #C2A868);
-  border-color: var(--theatre-dorure-claire, #C2A868);
-}
-
-.hint-action-cancel {
-  border-color: var(--theatre-filet, #D6CFC4);
-  color: var(--theatre-coulisse, #6B6357);
-}
-
-.hint-action-cancel:hover:not(:disabled) {
-  background: rgba(23, 38, 63, .05);
-  border-color: var(--theatre-coulisse-pale, #8B8275);
-}
-
-/* --- Confirmation ------------------------------------------------------- */
-.hint-confirm {
-  padding: 14px 16px;
-  background: var(--theatre-scene, #FBF9F5);
-  border-top: 3px solid var(--theatre-dorure, #A98F4C);
-}
-
-.hint-confirm-question {
-  margin: 0 0 12px 0;
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.55;
-}
-
-.hint-confirm-actions {
+/* --- Les trois temps --- */
+.souffleur-etapes {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--theatre-programme-2);
+  border-bottom: 1px solid var(--theatre-filet);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--theatre-coulisse);
   flex-wrap: wrap;
 }
-
-/* --- Le souffleur au travail ---
-   L'appel prend quelques secondes, parfois davantage quand il passe par la file
-   d'attente : le dire vaut mieux qu'un écran figé. */
-.hint-loading {
-  margin: 14px 0;
-  padding: 12px 14px;
-  background: rgba(86, 135, 168, .12);
-  border-left: 3px solid var(--theatre-comedie, #5687A8);
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.55;
-  color: var(--theatre-comedie-sombre, #3F6A88);
+.souffleur-etapes li { display: flex; align-items: center; gap: 7px; }
+/* Le trait qui relie les étapes : il montre qu'elles se suivent. */
+.souffleur-etapes li:not(:last-child)::after {
+  content: '';
+  width: 22px;
+  height: 2px;
+  background: var(--theatre-filet);
+  margin: 0 4px;
+}
+.souffleur-puce {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11.5px;
+  font-weight: var(--font-weight-fort, 700);
+  background: var(--theatre-scene);
+  border: 1.5px solid var(--theatre-filet);
+  color: var(--theatre-coulisse-pale);
+}
+.souffleur-etapes .courante { color: var(--theatre-salle); }
+.souffleur-etapes .courante .souffleur-puce {
+  background: var(--theatre-tragedie);
+  border-color: var(--theatre-tragedie);
+  color: #fff;
+}
+.souffleur-etapes .faite { color: var(--theatre-fait); }
+.souffleur-etapes .faite .souffleur-puce {
+  background: var(--etat-resolu-fond);
+  border-color: var(--theatre-fait);
+  color: var(--theatre-fait);
 }
 
-.hint-loading-note {
+.souffleur-corps { padding: 16px; }
+
+/* --- Étape 1 : décrire --- */
+.souffleur-label {
   display: block;
-  margin-top: 4px;
+  font-size: 15px;
+  font-weight: var(--font-weight-fort, 700);
+  color: var(--theatre-salle);
+  margin-bottom: 4px;
+}
+.souffleur-aide {
+  margin: 0 0 10px;
   font-size: 13.5px;
-  font-weight: 400;
-  color: var(--theatre-coulisse, #6B6357);
+  line-height: 1.5;
+  color: var(--theatre-coulisse);
 }
-
-/* Au-delà de trois minutes, on cesse d'interroger et on l'annonce : la demande
-   n'est pas perdue, elle aboutira. */
-.hint-slow {
-  margin: 14px 0;
+.souffleur-champ {
+  display: block;
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
   padding: 12px 14px;
-  background: var(--theatre-scene, #FBF9F5);
-  border-left: 3px solid var(--theatre-coulisse, #6B6357);
-  font-size: 14.5px;
-  line-height: 1.55;
-  color: var(--theatre-coulisse, #6B6357);
+  border: var(--border-width-medium) var(--border-style) var(--theatre-filet);
+  border-radius: 10px;
+  background: var(--theatre-programme);
+  color: var(--theatre-salle);
+  resize: vertical;
+}
+.souffleur-champ:focus {
+  outline: 2px solid var(--theatre-tragedie);
+  outline-offset: 0;
+  background: var(--theatre-scene);
+}
+.souffleur-champ::placeholder { color: var(--theatre-coulisse-pale); }
+
+/* La jauge : la longueur se lit d'un coup d'œil, le texte reste pour qui ne
+   la voit pas. */
+.souffleur-jauge-ligne {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.souffleur-jauge {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--theatre-programme-2);
+  border: 1px solid var(--theatre-filet);
+  overflow: hidden;
+}
+.souffleur-jauge i {
+  display: block;
+  height: 100%;
+  background: var(--theatre-dorure);
+  transition: width .15s linear;
+}
+.souffleur-jauge.assez i { background: var(--theatre-fait); }
+.souffleur-jauge.trop i { background: var(--theatre-tragedie); }
+.souffleur-compteur {
+  flex: none;
+  font-size: 12px;
+  color: var(--theatre-coulisse);
 }
 
-.hint-error {
+.souffleur-avertissement {
+  margin: 12px 0 0;
+  padding: 9px 12px;
+  border-left: 4px solid var(--theatre-dorure);
+  background: var(--theatre-programme-2);
+  border-radius: 0 8px 8px 0;
+  font-size: 13px;
+  color: var(--theatre-salle);
+}
+
+/* --- Boutons --- */
+.souffleur-actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 14px; }
+.souffleur-bouton {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: var(--font-weight-fort, 700);
+  padding: 11px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  background: var(--theatre-scene);
+  color: var(--theatre-salle);
+  border: var(--border-width-medium) var(--border-style) var(--theatre-filet);
+}
+.souffleur-bouton:hover:not(:disabled) { background: var(--theatre-programme-2); border-color: var(--theatre-salle); }
+.souffleur-bouton:focus-visible { outline: 3px solid var(--theatre-tragedie); outline-offset: 2px; }
+.souffleur-bouton-fort {
+  background: var(--theatre-tragedie-sombre);
+  border-color: var(--theatre-tragedie-sombre);
+  color: #fff;
+}
+.souffleur-bouton-fort:hover:not(:disabled) {
+  background: var(--theatre-tragedie-sombre);
+  border-color: var(--theatre-tragedie-sombre);
+}
+.souffleur-bouton:disabled {
+  background: var(--theatre-scene);
+  color: var(--theatre-coulisse-pale);
+  border: var(--border-width-medium) dashed var(--theatre-filet);
+  cursor: not-allowed;
+}
+
+/* --- Étape 2 : confirmer --- */
+.souffleur-confirme {
   margin-top: 14px;
-  padding: 11px 14px;
-  background: var(--theatre-scene, #FBF9F5);
-  border-left: 3px solid var(--theatre-tragedie, #A9503F);
-  font-size: 14.5px;
+  padding: 14px;
+  background: var(--theatre-programme-2);
+  border: var(--border-width-medium) var(--border-style) var(--theatre-salle);
+  border-radius: 10px;
+}
+.souffleur-confirme-question {
+  margin: 0;
+  font-size: 15px;
+  font-weight: var(--font-weight-fort, 700);
+  color: var(--theatre-salle);
+}
+.souffleur-confirme .souffleur-actions { margin-top: 12px; }
+
+/* --- Étape 3 : l'attente --- */
+.souffleur-attente { text-align: center; padding: 18px 12px 6px; }
+.souffleur-attente-titre {
+  margin: 12px 0 4px;
+  font-family: var(--font-display);
+  font-size: var(--display-taille-mini, 22px);
+  font-weight: 400;
+  color: var(--theatre-salle);
+}
+.souffleur-attente-note {
+  margin: 0 auto;
+  max-width: 46ch;
+  font-size: 13.5px;
   line-height: 1.55;
-  color: var(--theatre-tragedie-sombre, #8C3E30);
+  color: var(--theatre-coulisse);
+}
+/* Trois points qui se soulèvent l'un après l'autre : le souffleur parle. */
+.souffleur-points { display: inline-flex; gap: 7px; }
+.souffleur-points i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--theatre-tragedie);
+  animation: souffleur-respire 1.1s ease-in-out infinite;
+}
+.souffleur-points i:nth-child(2) { animation-delay: .18s; background: var(--theatre-dorure); }
+.souffleur-points i:nth-child(3) { animation-delay: .36s; }
+@keyframes souffleur-respire {
+  0%, 100% { transform: translateY(0); opacity: .45; }
+  50% { transform: translateY(-6px); opacity: 1; }
 }
 
-@media (max-width: 768px) {
-  .hint-zone {
-    padding: 16px 14px 18px;
-  }
+.souffleur-alerte {
+  margin: 12px 0 0;
+  padding: 11px 13px;
+  border-left: 4px solid var(--theatre-tragedie);
+  background: var(--theatre-programme-2);
+  border-radius: 0 8px 8px 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--theatre-salle);
+}
 
-  .hint-confirm-actions .hint-action-btn {
-    flex: 1 1 100%;
-  }
+@media (max-width: 700px) {
+  .souffleur-tete { padding: 11px 13px; }
+  .souffleur-etapes { padding: 10px 13px; gap: 4px; font-size: 11.5px; }
+  .souffleur-etapes li:not(:last-child)::after { width: 12px; margin: 0 2px; }
+  .souffleur-corps { padding: 13px; }
+  .souffleur-actions button { flex: 1 1 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .souffleur-points i { animation: none; opacity: 1; }
+  .souffleur-appel:hover:not(:disabled) { transform: none; }
 }

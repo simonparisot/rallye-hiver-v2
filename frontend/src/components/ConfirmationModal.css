@@ -92,7 +92,7 @@
 }
 
 .modal-actions .btn-danger {
-  background: var(--theatre-tragedie);
+  background: var(--theatre-tragedie-sombre);
   color: white;
   border: none;
 }

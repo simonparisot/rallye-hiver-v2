@@ -544,7 +544,7 @@
    du rideau et la place qui lui revient.
    --------------------------------------------------------------------------- */
 .submit-btn.submit-btn-principal {
-  background: var(--theatre-tragedie, var(--color-primary-red));
+  background: var(--theatre-tragedie-sombre);
   color: #fff;
   border: none;
   padding: 12px 24px;

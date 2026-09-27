@@ -229,7 +229,7 @@
 
 .notification-badge {
   display: inline-block;
-  background: var(--theatre-tragedie);
+  background: var(--theatre-tragedie-sombre);
   color: white;
   font-size: 11px;
   font-weight: 600;

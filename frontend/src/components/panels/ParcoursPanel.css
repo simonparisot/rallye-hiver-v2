@@ -382,7 +382,7 @@
 }
 
 .btn-unmark-completed:hover:not(:disabled) {
-  background: var(--theatre-tragedie);
+  background: var(--theatre-tragedie-sombre);
   color: white;
   transform: translateY(-1px);
   box-shadow: 3px 3px 0px rgba(220, 53, 69, 0.2);

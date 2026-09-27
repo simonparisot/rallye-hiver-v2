@@ -13,7 +13,19 @@ import { enigmaWithHints } from '../helpers/enigmas.js';
  *
  * Le chemin au-delà de la confirmation est couvert en test unitaire avec un
  * faux client de modèle (`backend/src/functions/hints/__tests__/`).
+ *
+ * La zone est repliée tant qu'on ne la demande pas : ouvrir une énigme ne doit
+ * plus faire apparaître le formulaire, seulement le bouton qui l'appelle. Les
+ * tests passent donc par `ouvrirSouffleur`.
  */
+/** Ouvre une énigme puis déplie la zone du souffleur. */
+async function ouvrirSouffleur(page: import('@playwright/test').Page, numero: number) {
+  await page.goto('/');
+  await page.getByTestId(`enigma-card-${numero}`).click();
+  await page.getByTestId('hint-trigger').click();
+  await expect(page.getByTestId('hint-progress-input')).toBeVisible();
+}
+
 test.describe('Demande d\'indice', () => {
   let enigme: Awaited<ReturnType<typeof enigmaWithHints>>;
 
@@ -25,18 +37,28 @@ test.describe('Demande d\'indice', () => {
     test.skip(!enigme, 'Aucune énigme dotée d\'indices dans cet environnement.');
   });
 
-  test('la zone de demande est visible sous une énigme non résolue', async ({ page }) => {
+  test('la zone reste repliée tant qu\'on ne demande rien', async ({ page }) => {
     await page.goto('/');
     await page.getByTestId(`enigma-card-${enigme!.enigmaNumber}`).click();
 
+    // Ce qu'on vient lire en ouvrant une énigme, c'est l'énoncé : le formulaire
+    // ne doit pas s'interposer entre la barre de réponse et le PDF.
     await expect(page.getByTestId('hint-section')).toBeVisible();
-    await expect(page.getByTestId('hint-progress-input')).toBeVisible();
+    await expect(page.getByTestId('hint-trigger')).toBeVisible();
+    await expect(page.getByTestId('hint-progress-input')).toBeHidden();
+    await expect(page.getByTestId('hint-cost-warning')).toBeHidden();
+  });
+
+  test('le bouton déplie le formulaire et son avertissement', async ({ page }) => {
+    await ouvrirSouffleur(page, enigme!.enigmaNumber);
+
     await expect(page.getByTestId('hint-cost-warning')).toBeVisible();
+    // Le bouton d'appel cède la place au panneau : les deux ne coexistent pas.
+    await expect(page.getByTestId('hint-trigger')).toBeHidden();
   });
 
   test('le bouton reste inactif tant que la description est trop courte', async ({ page }) => {
-    await page.goto('/');
-    await page.getByTestId(`enigma-card-${enigme!.enigmaNumber}`).click();
+    await ouvrirSouffleur(page, enigme!.enigmaNumber);
 
     const bouton = page.getByTestId('hint-request-button');
     await expect(bouton).toBeDisabled();
@@ -47,8 +69,7 @@ test.describe('Demande d\'indice', () => {
   });
 
   test('le risque est annoncé avant la confirmation, et l\'annulation ne demande rien', async ({ page }) => {
-    await page.goto('/');
-    await page.getByTestId(`enigma-card-${enigme!.enigmaNumber}`).click();
+    await ouvrirSouffleur(page, enigme!.enigmaNumber);
 
     await page.getByTestId('hint-progress-input').fill(
       "Nous avons relevé les sept horloges et tenté plusieurs additions, sans résultat. " +
@@ -75,8 +96,7 @@ test.describe('Demande d\'indice', () => {
   });
 
   test('la zone annonce le risque sans chiffrer le coût', async ({ page }) => {
-    await page.goto('/');
-    await page.getByTestId(`enigma-card-${enigme!.enigmaNumber}`).click();
+    await ouvrirSouffleur(page, enigme!.enigmaNumber);
 
     const avertissement = page.getByTestId('hint-cost-warning');
     await expect(avertissement).toBeVisible();
@@ -85,22 +105,22 @@ test.describe('Demande d\'indice', () => {
     await expect(avertissement).not.toContainText(/\d+\s*point/);
   });
 
-  test('changer d\'énigme vide le champ de la précédente', async ({ page }) => {
-    await page.goto('/');
-    await page.getByTestId(`enigma-card-${enigme!.enigmaNumber}`).click();
-
-    const champ = page.getByTestId('hint-progress-input');
-    await champ.fill('Un texte saisi pour cette énigme précise, et pour elle seule.');
+  test('changer d\'énigme referme la zone et vide le champ', async ({ page }) => {
+    await ouvrirSouffleur(page, enigme!.enigmaNumber);
+    await page.getByTestId('hint-progress-input')
+      .fill('Un texte saisi pour cette énigme précise, et pour elle seule.');
 
     const autre = enigme!.enigmaNumber === 1 ? 2 : 1;
     const carteAutre = page.getByTestId(`enigma-card-${autre}`);
     test.skip(!(await carteAutre.count()), 'Une seule énigme dans cet environnement.');
 
     await carteAutre.click();
-    // La zone peut disparaître (énigme sans indice ou déjà résolue) ; si elle
-    // reste, le champ doit être vide.
-    if (await page.getByTestId('hint-progress-input').count()) {
-      await expect(page.getByTestId('hint-progress-input')).toHaveValue('');
-    }
+    // La zone se replie : le texte saisi pour une énigme ne doit pas être
+    // proposé pour la suivante, ni le formulaire rester ouvert.
+    await expect(page.getByTestId('hint-progress-input')).toBeHidden();
+
+    await page.getByTestId(`enigma-card-${enigme!.enigmaNumber}`).click();
+    await page.getByTestId('hint-trigger').click();
+    await expect(page.getByTestId('hint-progress-input')).toHaveValue('');
   });
 });

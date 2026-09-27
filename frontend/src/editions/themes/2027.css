@@ -39,6 +39,8 @@
      texte courant. Cette variante, à 5,25:1, est celle des petits textes
      rouges. (Valeurs vérifiées par scripts/audit-contraste.mjs.) */
   --theatre-tragedie-texte: #C4342B;
+  /* Même valeur, autre emploi : tout aplat rouge portant du texte blanc
+     (bandeaux, boutons pleins) prend celle-ci, jamais le vermillon plein. */
   --theatre-tragedie-fonce: #B93027;
   --theatre-dorure: #FFC53D;         /* jaune d'affiche : ce qui reste à faire */
   --theatre-dorure-claire: #FFE08A;

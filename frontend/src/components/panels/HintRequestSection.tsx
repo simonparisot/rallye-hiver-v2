@@ -5,16 +5,21 @@ import { hintsAPI } from '../../services/api';
 import './HintRequestSection.css';
 
 /**
- * Zone « Demander un indice » d'une énigme.
+ * Le souffleur : demander un indice sur une énigme.
  *
- * L'équipe décrit son avancement, confirme, et reçoit un indice. Les indices
- * déjà obtenus restent affichés sous l'énigme, pour qu'elle puisse les relire
- * sans redemander.
+ * Au repos, la zone tient en un bouton. La version précédente dépliait tout —
+ * titre, consigne, champ, compteur, avertissement, bouton — au-dessus de
+ * l'énoncé : un bandeau de quatre cents pixels que la plupart des équipes ne
+ * lisaient jamais, entre la barre de réponse et le PDF. Ce qui compte quand on
+ * ouvre une énigme, c'est l'énoncé ; l'indice est un recours.
+ *
+ * Une fois appelé, le souffleur occupe la place qu'il faut et le parcours est
+ * explicite : décrire, confirmer, recevoir. Les trois étapes sont montrées, et
+ * la longueur du texte se lit à une jauge plutôt qu'à un décompte.
  *
  * Le composant ne sait pas comment le modèle est appelé. Selon le réglage du
- * serveur, la réponse est immédiate (appel direct depuis la lambda) ou différée
- * (une demande part en file d'attente, un worker la traite). Il se contente donc
- * du statut renvoyé : tant qu'une demande est `pending`, il réinterroge.
+ * serveur, la réponse est immédiate ou différée : il se contente du statut
+ * renvoyé et réinterroge tant qu'une demande est `pending`.
  */
 
 const LONGUEUR_MIN = 20;
@@ -33,19 +38,30 @@ interface HintRequestSectionProps {
   enigma: Enigma;
 }
 
-type Etape = 'repos' | 'confirmation';
+/** Les trois temps du parcours, montrés à l'équipe. */
+const ETAPES = ['Décrire', 'Confirmer', "L'indice"] as const;
+
+const MasqueSouffleur: React.FC = () => (
+  <svg className="souffleur-icone" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 3c-4.4 0-8 2.9-8 6.5 0 2 1.1 3.8 2.9 5v2.2c0 .6.6 1 1.1.7l2.2-1.3c.6.1 1.2.2 1.8.2 4.4 0 8-2.9 8-6.8S16.4 3 12 3z" />
+    <path d="M9 10h.01M15 10h.01M9.5 13c.8.6 4.2.6 5 0" />
+  </svg>
+);
 
 const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
   const queryClient = useQueryClient();
+  const [ouvert, setOuvert] = useState(false);
   const [avancement, setAvancement] = useState('');
-  const [etape, setEtape] = useState<Etape>('repos');
+  const [confirmation, setConfirmation] = useState(false);
   const [messageErreur, setMessageErreur] = useState('');
   const [tropLong, setTropLong] = useState(false);
 
-  // Identifiant de la demande que l'on suit, pour mettre en avant l'indice qui
-  // vient d'arriver plutôt que le premier de la liste.
+  // Identifiant de la demande suivie, pour signaler l'indice qui vient
+  // d'arriver plutôt que le premier de la liste.
   const [demandeSuivie, setDemandeSuivie] = useState<string | null>(null);
   const debutAttente = useRef<number | null>(null);
+  const champ = useRef<HTMLTextAreaElement>(null);
 
   // Une clé par saisie : elle identifie la demande côté serveur et permet de
   // distinguer un second clic (même clé, refusé) d'une nouvelle demande.
@@ -55,8 +71,6 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
     queryKey: ['hints', enigma.id],
     queryFn: () => hintsAPI.listHints(enigma.id),
     enabled: !!enigma.id,
-    // Tant qu'une demande est en attente, on réinterroge. La reprise est donc
-    // automatique à la réouverture de l'énigme, sans état à restaurer.
     refetchInterval: (query) => {
       const d: any = query.state.data;
       return d?.pendingRequest && !tropLong ? PERIODE_ATTENTE_MS : false;
@@ -68,8 +82,9 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
   // Changer d'énigme remet la zone à zéro : sans cela, le texte saisi pour une
   // énigme se retrouverait proposé pour la suivante.
   useEffect(() => {
+    setOuvert(false);
     setAvancement('');
-    setEtape('repos');
+    setConfirmation(false);
     setMessageErreur('');
     setDemandeSuivie(null);
     setTropLong(false);
@@ -77,17 +92,20 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
     setCleDemande(creerCle());
   }, [enigma.id]);
 
-  // Compteur de patience. Il démarre à la première attente observée, qu'elle
-  // vienne de cette session ou d'une demande laissée en plan.
+  // Une demande laissée en plan rouvre la zone : sans cela, l'indice en cours
+  // d'écriture arriverait derrière un bouton replié, sans rien pour le dire.
+  useEffect(() => {
+    if (enAttente) setOuvert(true);
+  }, [enAttente]);
+
+  // Compteur de patience, démarré à la première attente observée.
   useEffect(() => {
     if (!enAttente) {
       debutAttente.current = null;
       setTropLong(false);
       return;
     }
-    if (debutAttente.current === null) {
-      debutAttente.current = Date.now();
-    }
+    if (debutAttente.current === null) debutAttente.current = Date.now();
     const minuteur = setInterval(() => {
       if (debutAttente.current && Date.now() - debutAttente.current > PATIENCE_MAX_MS) {
         setTropLong(true);
@@ -101,7 +119,7 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
     onSuccess: (reponse) => {
       setDemandeSuivie(reponse.requestId || null);
       setAvancement('');
-      setEtape('repos');
+      setConfirmation(false);
       setMessageErreur('');
       setTropLong(false);
       debutAttente.current = Date.now();
@@ -111,10 +129,9 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
       queryClient.invalidateQueries({ queryKey: ['team-stats'] });
     },
     onError: (erreur: any) => {
-      setEtape('repos');
+      setConfirmation(false);
       setMessageErreur(
-        erreur?.response?.data?.error ||
-          "La demande n'a pas abouti. Réessayez dans un instant."
+        erreur?.response?.data?.error || "La demande n'a pas abouti. Réessayez dans un instant."
       );
     },
   });
@@ -124,182 +141,236 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
   const longueur = avancement.trim().length;
   const texteValide = longueur >= LONGUEUR_MIN && longueur <= LONGUEUR_MAX;
 
-  // La demande que l'on vient de faire, si elle a abouti.
-  const fraiche = useMemo(() => {
-    if (!demandeSuivie) return null;
-    const d = (data?.requests || []).find((r) => r.requestId === demandeSuivie);
-    return d?.status === 'done' && d.hint ? d.hint.text : null;
-  }, [data, demandeSuivie]);
-
-  // Un échec du souffleur, à dire à l'équipe plutôt qu'à laisser en silence.
-  const echouee = useMemo(() => {
-    if (!demandeSuivie) return null;
-    const d = (data?.requests || []).find((r) => r.requestId === demandeSuivie);
-    return d?.status === 'failed' ? d : null;
-  }, [data, demandeSuivie]);
+  const suivie = useMemo(
+    () => (data?.requests || []).find((r) => r.requestId === demandeSuivie),
+    [data, demandeSuivie]
+  );
+  /** Identifiant de l'indice tout juste reçu, pour le distinguer des autres. */
+  const idFrais = suivie?.status === 'done' ? suivie.hint?.id ?? null : null;
+  const echouee = suivie?.status === 'failed';
 
   const compteur = useMemo(() => {
     if (longueur === 0) return `${LONGUEUR_MIN} caractères minimum`;
     if (longueur < LONGUEUR_MIN) return `Encore ${LONGUEUR_MIN - longueur} caractères`;
     if (longueur > LONGUEUR_MAX) return `${longueur - LONGUEUR_MAX} caractères de trop`;
-    return `${longueur} / ${LONGUEUR_MAX} caractères`;
+    return `${longueur} caractères`;
   }, [longueur]);
 
-  if (enigma.isSolved || !enigma.hintsCount) {
-    return null;
-  }
+  if (enigma.isSolved || !enigma.hintsCount) return null;
 
-  const peutDemander = indicesRestants > 0 && !enAttente;
+  const epuise = indicesRestants <= 0;
+  const etapeCourante = enAttente || idFrais ? 2 : confirmation ? 1 : 0;
+
+  const ouvrir = () => {
+    setOuvert(true);
+    setMessageErreur('');
+    // Le champ est la seule chose à faire une fois la zone ouverte.
+    window.setTimeout(() => champ.current?.focus(), 60);
+  };
 
   return (
-    <div className="hint-zone" data-testid="hint-section">
-      <div className="hint-zone-header">
-        <h3>Demander un indice</h3>
-        <span className="hint-zone-meta" data-testid="hint-remaining">
-          {indicesRestants > 0
-            ? `${indicesRestants} indice${indicesRestants > 1 ? 's' : ''} encore disponible${indicesRestants > 1 ? 's' : ''}`
-            : 'Tous les indices ont été donnés'}
-        </span>
-      </div>
-
+    <section className="souffleur" data-testid="hint-section">
+      {/* Les indices déjà obtenus restent lisibles : c'est ce que l'équipe a
+          payé, et les relire évite de redemander. */}
       {indicesObtenus.length > 0 && (
-        <ul className="hint-obtained-list" data-testid="hint-obtained-list">
+        <ul className="souffleur-acquis" data-testid="hint-obtained-list">
           {indicesObtenus.map((indice, rang) => (
-            <li className="hint-obtained" key={indice.id} data-testid={`hint-obtained-${indice.id}`}>
-              <div className="hint-obtained-head">
-                <span className="hint-obtained-rank">Indice {rang + 1}</span>
+            <li
+              key={indice.id}
+              className={`souffleur-indice ${indice.id === idFrais ? 'souffleur-indice-neuf' : ''}`}
+              data-testid={`hint-obtained-${indice.id}`}
+            >
+              <span className="souffleur-indice-rang" aria-hidden="true">{rang + 1}</span>
+              <div className="souffleur-indice-corps">
+                {indice.id === idFrais && <span className="souffleur-neuf">Nouvel indice</span>}
+                <p className="souffleur-indice-texte">{indice.text}</p>
               </div>
-              <p className="hint-obtained-text">{indice.text}</p>
             </li>
           ))}
         </ul>
       )}
 
-      {fraiche && (
-        <div className="hint-fresh" data-testid="hint-fresh" role="status">
-          <span className="hint-fresh-label">Nouvel indice</span>
-          <p>{fraiche}</p>
-        </div>
-      )}
-
-      {/* Le souffleur travaille. L'appel prend quelques secondes, parfois
-          davantage : le dire vaut mieux qu'un écran figé. */}
-      {enAttente && !tropLong && (
-        <div className="hint-loading" data-testid="hint-loading" role="status">
-          Le souffleur réfléchit...
-          <span className="hint-loading-note">
-            Il compare votre avancement à la résolution de l'énigme. Vous pouvez continuer à
-            chercher, l'indice s'affichera ici.
+      {/* --- Replié : un bouton, et rien d'autre. --- */}
+      {!ouvert && (
+        <button
+          type="button"
+          className="souffleur-appel"
+          data-testid="hint-trigger"
+          onClick={ouvrir}
+          disabled={epuise}
+        >
+          <MasqueSouffleur />
+          <span className="souffleur-appel-texte">
+            {epuise ? 'Tous les indices ont été donnés' : 'Demander un indice'}
           </span>
-        </div>
-      )}
-
-      {enAttente && tropLong && (
-        <div className="hint-slow" data-testid="hint-slow" role="status">
-          Le souffleur ne répond pas pour le moment. Votre demande n'est pas perdue : l'indice
-          arrivera. Revenez sur cette énigme dans quelques minutes pour le retrouver.
-        </div>
-      )}
-
-      {echouee && (
-        <div className="hint-error" data-testid="hint-failed" role="alert">
-          Le souffleur n'a pas réussi à choisir un indice pour cette demande. Aucun indice n'a été
-          consommé : vous pouvez redemander.
-        </div>
-      )}
-
-      {peutDemander && (
-        <>
-          <label className="hint-label" htmlFor={`hint-progress-${enigma.id}`}>
-            Où en êtes-vous ?
-          </label>
-          <p className="hint-help">
-            Décrivez votre avancement le plus précisément possible : ce que vous avez testé, ce que
-            vous avez trouvé, vos blocages, vos idées. L'indice sera choisi en fonction de ce texte,
-            donc plus il est détaillé, plus il sera utile.
-          </p>
-          <textarea
-            id={`hint-progress-${enigma.id}`}
-            className="hint-textarea"
-            data-testid="hint-progress-input"
-            value={avancement}
-            onChange={(e) => {
-              setAvancement(e.target.value);
-              setMessageErreur('');
-              if (etape === 'confirmation') setEtape('repos');
-            }}
-            rows={5}
-            maxLength={LONGUEUR_MAX + 200}
-            placeholder="Nous avons compris que les sept horloges comptent, on a essayé de les additionner sans résultat, et on bloque sur le papier peint..."
-            disabled={demande.isPending}
-          />
-          <div className="hint-counter" data-testid="hint-counter">
-            {compteur}
-          </div>
-
-          {/* Le barème n'est pas fixé : annoncer un chiffre qui changera serait
-              pire que de prévenir sans en donner. */}
-          <div className="hint-warning" data-testid="hint-cost-warning">
-            Attention : demander un indice pourra coûter des points à votre équipe.
-          </div>
-
-          {etape === 'repos' && (
-            <button
-              type="button"
-              className="hint-action-btn"
-              data-testid="hint-request-button"
-              disabled={!texteValide || demande.isPending}
-              onClick={() => setEtape('confirmation')}
-            >
-              Demander un indice
-            </button>
+          {!epuise && (
+            <span className="souffleur-reste" data-testid="hint-remaining">
+              {indicesRestants} restant{indicesRestants > 1 ? 's' : ''}
+            </span>
           )}
+        </button>
+      )}
 
-          {etape === 'confirmation' && (
-            <div className="hint-confirm" data-testid="hint-confirm">
-              <p className="hint-confirm-question">
-                Confirmez-vous la demande ?
-              </p>
-              <div className="hint-confirm-actions">
-                <button
-                  type="button"
-                  className="hint-action-btn hint-action-confirm"
-                  data-testid="hint-confirm-button"
-                  disabled={demande.isPending}
-                  onClick={() => demande.mutate()}
-                >
-                  {demande.isPending ? 'Envoi...' : "Oui, demander l'indice"}
-                </button>
-                <button
-                  type="button"
-                  className="hint-action-btn hint-action-cancel"
-                  data-testid="hint-cancel-button"
-                  disabled={demande.isPending}
-                  onClick={() => setEtape('repos')}
-                >
-                  Annuler
-                </button>
+      {/* --- Déplié : le parcours, en trois temps. --- */}
+      {ouvert && (
+        <div className="souffleur-panneau">
+          <header className="souffleur-tete">
+            <h3><MasqueSouffleur /> Le souffleur</h3>
+            {!enAttente && (
+              <button
+                type="button"
+                className="souffleur-fermer"
+                onClick={() => { setOuvert(false); setConfirmation(false); }}
+                aria-label="Refermer la demande d'indice"
+              >
+                ×
+              </button>
+            )}
+          </header>
+
+          <ol className="souffleur-etapes" aria-label="Étapes de la demande">
+            {ETAPES.map((libelle, i) => (
+              <li
+                key={libelle}
+                className={i < etapeCourante ? 'faite' : i === etapeCourante ? 'courante' : ''}
+                aria-current={i === etapeCourante ? 'step' : undefined}
+              >
+                <span className="souffleur-puce">{i < etapeCourante ? '✓' : i + 1}</span>
+                {libelle}
+              </li>
+            ))}
+          </ol>
+
+          <div className="souffleur-corps">
+            {/* Étape 3 — le souffleur cherche. */}
+            {enAttente && !tropLong && (
+              <div className="souffleur-attente" data-testid="hint-loading" role="status">
+                <span className="souffleur-points" aria-hidden="true"><i /><i /><i /></span>
+                <p className="souffleur-attente-titre">Le souffleur cherche…</p>
+                <p className="souffleur-attente-note">
+                  Il compare votre avancement à la résolution de l'énigme. Vous pouvez continuer à
+                  chercher, l'indice s'affichera ici.
+                </p>
               </div>
-            </div>
-          )}
-        </>
-      )}
+            )}
 
-      {messageErreur && (
-        <div className="hint-error" data-testid="hint-error" role="alert">
-          {messageErreur}
+            {enAttente && tropLong && (
+              <p className="souffleur-alerte" data-testid="hint-slow" role="status">
+                Le souffleur ne répond pas pour le moment. Votre demande n'est pas perdue : revenez
+                sur cette énigme dans quelques minutes pour retrouver l'indice.
+              </p>
+            )}
+
+            {echouee && (
+              <p className="souffleur-alerte" data-testid="hint-failed" role="alert">
+                Le souffleur n'a pas su choisir un indice. Aucun indice n'a été consommé : vous
+                pouvez redemander.
+              </p>
+            )}
+
+            {/* Étapes 1 et 2 — décrire, puis confirmer. */}
+            {!enAttente && !epuise && (
+              <>
+                <label className="souffleur-label" htmlFor={`hint-progress-${enigma.id}`}>
+                  Où en êtes-vous ?
+                </label>
+                <p className="souffleur-aide">
+                  Plus vous décrivez précisément ce que vous avez testé, trouvé, ou ce qui vous
+                  bloque, plus l'indice sera utile.
+                </p>
+                <textarea
+                  id={`hint-progress-${enigma.id}`}
+                  ref={champ}
+                  className="souffleur-champ"
+                  data-testid="hint-progress-input"
+                  value={avancement}
+                  onChange={(e) => {
+                    setAvancement(e.target.value);
+                    setMessageErreur('');
+                    if (confirmation) setConfirmation(false);
+                  }}
+                  rows={4}
+                  maxLength={LONGUEUR_MAX + 200}
+                  placeholder="Nous avons compris que les sept horloges comptent, on a essayé de les additionner sans résultat, et on bloque sur le papier peint…"
+                  disabled={demande.isPending}
+                />
+
+                {/* La longueur se lit d'un coup d'œil ; le texte reste, pour
+                    qui ne voit pas la jauge. */}
+                <div className="souffleur-jauge-ligne">
+                  <span
+                    className={`souffleur-jauge ${texteValide ? 'assez' : ''} ${longueur > LONGUEUR_MAX ? 'trop' : ''}`}
+                    aria-hidden="true"
+                  >
+                    <i style={{ width: `${Math.min(100, (longueur / LONGUEUR_MIN) * 100)}%` }} />
+                  </span>
+                  <span className="souffleur-compteur" data-testid="hint-counter">{compteur}</span>
+                </div>
+
+                {/* Le barème n'est pas fixé : annoncer un chiffre qui changera
+                    serait pire que de prévenir sans en donner. */}
+                <p className="souffleur-avertissement" data-testid="hint-cost-warning">
+                  Demander un indice pourra coûter des points à votre équipe.
+                </p>
+
+                {!confirmation ? (
+                  <div className="souffleur-actions">
+                    <button
+                      type="button"
+                      className="souffleur-bouton souffleur-bouton-fort"
+                      data-testid="hint-request-button"
+                      disabled={!texteValide || demande.isPending}
+                      onClick={() => setConfirmation(true)}
+                    >
+                      Demander un indice
+                    </button>
+                  </div>
+                ) : (
+                  <div className="souffleur-confirme" data-testid="hint-confirm">
+                    <p className="souffleur-confirme-question">Confirmez-vous la demande ?</p>
+                    <div className="souffleur-actions">
+                      <button
+                        type="button"
+                        className="souffleur-bouton souffleur-bouton-fort"
+                        data-testid="hint-confirm-button"
+                        disabled={demande.isPending}
+                        onClick={() => demande.mutate()}
+                      >
+                        {demande.isPending ? 'Envoi…' : "Oui, demander l'indice"}
+                      </button>
+                      <button
+                        type="button"
+                        className="souffleur-bouton"
+                        data-testid="hint-cancel-button"
+                        disabled={demande.isPending}
+                        onClick={() => setConfirmation(false)}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {epuise && !enAttente && (
+              <p className="souffleur-aide">Tous les indices de cette énigme ont été donnés.</p>
+            )}
+
+            {messageErreur && (
+              <p className="souffleur-alerte" data-testid="hint-error" role="alert">{messageErreur}</p>
+            )}
+          </div>
         </div>
       )}
-    </div>
+    </section>
   );
 };
 
 /** Identifiant de demande. `randomUUID` n'existe pas partout (Safari ancien). */
 function creerCle(): string {
   const c = globalThis.crypto as Crypto | undefined;
-  if (c && typeof c.randomUUID === 'function') {
-    return c.randomUUID();
-  }
+  if (c && typeof c.randomUUID === 'function') return c.randomUUID();
   return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 

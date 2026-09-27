@@ -430,7 +430,7 @@
 }
 
 .oie-message-erreur {
-  background: var(--theatre-tragedie);
+  background: var(--theatre-tragedie-sombre);
   color: #fff;
 }
 
