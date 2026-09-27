@@ -1,0 +1,218 @@
+/* ---------------------------------------------------------------------------
+   Le compte, dans la barre de navigation
+
+   Tout est tiré des variables du thème : ce bouton suit l'édition servie sans
+   rien savoir d'elle.
+   --------------------------------------------------------------------------- */
+
+.compte {
+  position: relative;
+  margin-left: 14px;
+  flex: none;
+}
+
+.compte-bouton {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: var(--border-width-thick) var(--border-style) var(--theatre-salle);
+  /* Le vermillon plein ne donne que 4,13:1 avec du blanc, sous le seuil pour
+     ces initiales de 13 px. */
+  background: var(--theatre-tragedie-sombre);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  transition: transform .12s, box-shadow .12s;
+}
+.compte-bouton:hover { transform: translateY(-1px); box-shadow: var(--ombre-affiche); }
+.compte-bouton[aria-expanded='true'] { background: var(--theatre-salle); }
+.compte-bouton:focus-visible { outline: 3px solid var(--theatre-comedie); outline-offset: 2px; }
+
+/* --- Le menu --- */
+.compte-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 60;
+  min-width: 268px;
+  background: var(--theatre-scene);
+  border: var(--border-width-thick) var(--border-style) var(--theatre-salle);
+  border-radius: 12px;
+  box-shadow: var(--ombre-affiche-haute);
+  padding: 6px;
+}
+.compte-identite { padding: 10px 11px 8px; margin: 0; }
+.compte-nom { display: block; font-size: 14.5px; font-weight: 700; color: var(--theatre-salle); }
+.compte-mail {
+  display: block;
+  font-size: 12.5px;
+  color: var(--theatre-coulisse);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.compte-menu hr { border: 0; border-top: 1px solid var(--theatre-filet); margin: 4px 2px 6px; }
+
+.compte-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--theatre-salle);
+  text-align: left;
+  padding: 10px 11px;
+  border-radius: 8px;
+}
+.compte-menu button:hover { background: var(--theatre-programme-2); }
+.compte-menu button:focus-visible { outline: 2px solid var(--theatre-comedie); outline-offset: -2px; }
+.compte-menu button svg { width: 17px; height: 17px; flex: none; }
+.compte-menu .compte-sortie { color: var(--theatre-tragedie-texte); }
+
+/* --- La modale --- */
+.compte-voile {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(23, 38, 63, .45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow: auto;
+}
+.compte-modale {
+  background: var(--theatre-scene);
+  border: var(--border-width-thick) var(--border-style) var(--theatre-salle);
+  border-radius: 16px;
+  box-shadow: var(--ombre-affiche-haute);
+  width: min(440px, 100%);
+  overflow: hidden;
+}
+.compte-modale-tete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--theatre-tragedie);
+  border-bottom: var(--border-width-thick) var(--border-style) var(--theatre-salle);
+}
+.compte-modale-tete h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--display-taille-mini, 22px);
+  font-weight: 400;
+  text-transform: uppercase;
+  color: #fff;
+  letter-spacing: .01em;
+}
+.compte-fermer {
+  border: 0;
+  background: rgba(255, 255, 255, .2);
+  color: #fff;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  flex: none;
+}
+.compte-fermer:hover { background: rgba(255, 255, 255, .34); }
+
+.compte-modale-corps { padding: 20px 20px 22px; }
+.compte-modale-corps p { font-size: 14.5px; color: var(--theatre-coulisse); margin: 0 0 12px; }
+.compte-modale-corps p b { color: var(--theatre-salle); }
+
+.compte-adresse {
+  display: block;
+  border: var(--border-width-medium) var(--border-style) var(--theatre-filet);
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: var(--theatre-programme);
+}
+.compte-adresse span {
+  display: block;
+  font-size: 10.5px;
+  font-weight: var(--font-weight-fort, 700);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--theatre-coulisse-pale);
+}
+.compte-adresse b { font-size: 15px; color: var(--theatre-salle); }
+
+.compte-champ {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--theatre-salle);
+  margin-bottom: 14px;
+}
+.compte-champ input {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  padding: 11px 13px;
+  border: var(--border-width-medium) var(--border-style) var(--theatre-filet);
+  border-radius: 10px;
+  background: var(--theatre-programme);
+  color: var(--theatre-salle);
+}
+.compte-champ input:focus {
+  outline: 2px solid var(--theatre-comedie);
+  outline-offset: 0;
+  background: var(--theatre-scene);
+}
+
+.compte-erreur {
+  color: var(--theatre-tragedie-texte);
+  font-weight: 600;
+  font-size: 13.5px;
+}
+.compte-ok {
+  color: var(--theatre-fait);
+  font-family: var(--font-display);
+  font-size: var(--display-taille-mini, 22px);
+  margin-bottom: 8px;
+}
+
+.compte-actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 4px; }
+.compte-actions button {
+  flex: 1 1 auto;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 12px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: var(--border-width-medium) var(--border-style) transparent;
+}
+.compte-principal { background: var(--theatre-salle); color: #fff; }
+.compte-principal:hover:not(:disabled) { background: var(--theatre-comedie-sombre); }
+.compte-principal:disabled { background: var(--theatre-programme-2); color: var(--theatre-coulisse-pale); cursor: not-allowed; }
+.compte-secondaire {
+  background: var(--theatre-scene);
+  color: var(--theatre-coulisse);
+  border-color: var(--theatre-filet);
+}
+.compte-secondaire:hover { background: var(--theatre-programme-2); color: var(--theatre-salle); }
+
+@media (max-width: 860px) {
+  .compte { margin-left: auto; }
+  .compte-menu { min-width: 250px; }
+  .compte-voile { padding: 0; align-items: flex-start; }
+  .compte-modale { width: 100%; min-height: 100vh; border-radius: 0; border-width: 0 0 2px; }
+}

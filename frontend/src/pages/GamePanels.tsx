@@ -9,6 +9,7 @@ import GeneralInfoPanel from '../components/panels/GeneralInfoPanel';
 import EditionInfoPanel from '../components/panels/EditionInfoPanel';
 import AuthPanel from '../components/panels/AuthPanel';
 import WaitingPanel from '../components/panels/WaitingPanel';
+import CompteMenu from '../components/CompteMenu';
 import './GamePanels.css';
 import { edition } from '../editions';
 
@@ -25,7 +26,7 @@ type Section = 'enigmes' | 'parcours' | 'equipe';
 const SECTIONS: { id: Section; libelle: string }[] = [
   { id: 'enigmes', libelle: 'Énigmes' },
   { id: 'parcours', libelle: 'Parcours' },
-  { id: 'equipe', libelle: 'Mon équipe' },
+  { id: 'equipe', libelle: 'Ma troupe' },
 ];
 
 const GamePanels: React.FC = () => {
@@ -44,12 +45,6 @@ const GamePanels: React.FC = () => {
   const { data: team } = useQuery({
     queryKey: ['team', user?.teamId],
     queryFn: () => teamAPI.getTeam(user!.teamId!),
-    enabled: !!user?.teamId,
-  });
-
-  const { data: stats } = useQuery({
-    queryKey: ['team-stats', user?.teamId],
-    queryFn: () => teamAPI.getStats(),
     enabled: !!user?.teamId,
   });
 
@@ -117,9 +112,6 @@ const GamePanels: React.FC = () => {
   }
 
   /* --- Participant : navigation par sections --- */
-  const avancement = stats
-    ? `${stats.enigmasSolved}/${stats.totalEnigmas}`
-    : null;
 
   return (
     <div data-testid="nav-panels-container" className="scene-container">
@@ -144,12 +136,7 @@ const GamePanels: React.FC = () => {
             ))}
           </nav>
 
-          {avancement && team?.teamName && (
-            <span className="avancement" title={team.teamName}>
-              <span className="nom-equipe">{team.teamName}</span>
-              <b>{avancement}</b>
-            </span>
-          )}
+          <CompteMenu />
         </div>
       </header>
 

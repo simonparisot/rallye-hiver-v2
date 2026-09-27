@@ -22,6 +22,10 @@ case "$ENVIRONNEMENT" in
     API_URL="https://010h0tev7c.execute-api.eu-west-1.amazonaws.com/test"
     POOL_ID="eu-west-1_Sxj76KSAf"
     CLIENT_ID="76s9a0gtb59bem03urs771tovt"
+    # Énigme jouée sur le plateau du jeu de l'oie. Sans cet identifiant, le
+    # plateau reste accessible par son adresse mais l'entrée correspondante de
+    # la liste ouvre un PDF au lieu d'y mener.
+    OIE_ENIGMA_ID="0cc359c8-5ad6-407a-a42c-fa2d8ce195eb"
     ;;
   prod)
     PROFIL="rallye"
@@ -32,6 +36,9 @@ case "$ENVIRONNEMENT" in
     API_URL="https://rpg0alko8b.execute-api.eu-west-1.amazonaws.com/prod"
     POOL_ID="eu-west-1_cRMw8lhM3"
     CLIENT_ID="150sbtrvqtc885mpvp8i1sjck"
+    # À renseigner le jour où le jeu de l'oie passe en production : l'énigme y
+    # portera un autre identifiant qu'en test.
+    OIE_ENIGMA_ID="${OIE_ENIGMA_ID:-}"
     echo "⚠  Publication en PRODUCTION sur https://2026.rallyehiver.fr"
     ;;
   *)
@@ -55,6 +62,7 @@ REACT_APP_API_URL="$API_URL" \
 REACT_APP_COGNITO_USER_POOL_ID="$POOL_ID" \
 REACT_APP_COGNITO_CLIENT_ID="$CLIENT_ID" \
 REACT_APP_COGNITO_REGION="eu-west-1" \
+REACT_APP_OIE_ENIGMA_ID="$OIE_ENIGMA_ID" \
 CI=false \
 npm run build
 

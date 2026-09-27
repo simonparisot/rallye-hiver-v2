@@ -331,13 +331,6 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                               {stats.enigmasSolved} / {stats.totalEnigmas}
                             </div>
                             <div className="stat-label">énigmes résolues</div>
-                            {/* Ce qui reste est l'information utile en cours de rallye :
-                                « 3 sur 20 » se lit moins bien que « il en reste 17 ». */}
-                            <div className="stat-reste">
-                              {stats.totalEnigmas - stats.enigmasSolved > 0
-                                ? `il en reste ${stats.totalEnigmas - stats.enigmasSolved}`
-                                : 'toutes résolues'}
-                            </div>
                           </div>
                           <div className="stat-jauge" aria-hidden="true">
                             <span style={{ width: `${stats.totalEnigmas ? (stats.enigmasSolved / stats.totalEnigmas) * 100 : 0}%` }} />
@@ -350,11 +343,6 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                               {stats.parcoursCompleted} / {stats.totalParcours}
                             </div>
                             <div className="stat-label">parcours réalisés</div>
-                            <div className="stat-reste">
-                              {stats.totalParcours - stats.parcoursCompleted > 0
-                                ? `il en reste ${stats.totalParcours - stats.parcoursCompleted}`
-                                : 'tous réalisés'}
-                            </div>
                           </div>
                           <div className="stat-jauge" aria-hidden="true">
                             <span style={{ width: `${stats.totalParcours ? (stats.parcoursCompleted / stats.totalParcours) * 100 : 0}%` }} />

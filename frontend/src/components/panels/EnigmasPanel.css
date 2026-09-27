@@ -175,10 +175,17 @@
   align-items: center;
   gap: 12px;
   margin-bottom: 8px;
+  /* La colonne de gauche est étroite. Sans autoriser le retour à la ligne, la
+     pastille « plateau partagé » — insécable — comprimait le titre jusqu'à le
+     casser mot par mot : « Le jeu / de l'oie / du / théâtre » sur quatre
+     lignes. La pastille passe dessous quand la place manque. */
+  flex-wrap: wrap;
+  row-gap: 6px;
 }
 
 .enigma-title {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 11ch;
   font-weight: 600;
   color: var(--theatre-salle);
   font-size: 16px;
@@ -576,7 +583,7 @@
    pour un défaut.
    --------------------------------------------------------------------------- */
 .enigma-oie-badge {
-  margin-left: 10px;
+  margin-left: 0;
   padding: 2px 9px;
   border-radius: 999px;
   background: var(--theatre-comedie, var(--color-primary-blue));
