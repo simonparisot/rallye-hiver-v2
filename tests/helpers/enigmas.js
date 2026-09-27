@@ -58,3 +58,28 @@ export async function enigmaWithHints() {
     hintsCount: utilisable.hints.length,
   };
 }
+
+/**
+ * Une énigme sans aucun indice pré-écrit, ou `null` s'il n'y en a pas.
+ *
+ * Le pendant de `enigmaWithHints`, pour vérifier que le bouton d'indice ne
+ * s'affiche pas là où il n'y a rien à donner. Aujourd'hui c'est le cas le plus
+ * courant : une seule des vingt énigmes a des indices.
+ */
+export async function enigmaWithoutHints() {
+  const enigmas = await dynamo().send(new ScanCommand({
+    TableName: table(TABLES.enigmas),
+  }));
+
+  const utilisable = (enigmas.Items ?? [])
+    .filter((e) => e.isActive && (!Array.isArray(e.hints) || e.hints.length === 0))
+    .sort((a, b) => a.enigmaNumber - b.enigmaNumber)[0];
+
+  if (!utilisable) return null;
+
+  return {
+    enigmaId: utilisable.enigmaId,
+    enigmaNumber: utilisable.enigmaNumber,
+    title: utilisable.title,
+  };
+}

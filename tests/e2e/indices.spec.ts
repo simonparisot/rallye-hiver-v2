@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures.js';
-import { enigmaWithHints } from '../helpers/enigmas.js';
+import { enigmaWithHints, enigmaWithoutHints } from '../helpers/enigmas.js';
 
 /**
  * Parcours joueur de la demande d'indice, par le navigateur.
@@ -35,6 +35,19 @@ test.describe('Demande d\'indice', () => {
 
   test.beforeEach(async () => {
     test.skip(!enigme, 'Aucune énigme dotée d\'indices dans cet environnement.');
+  });
+
+  test("pas de bouton sur une énigme qui n'a aucun indice", async ({ page }) => {
+    const sansIndice = await enigmaWithoutHints();
+    test.skip(!sansIndice, 'Toutes les énigmes ont des indices dans cet environnement.');
+
+    await page.goto('/');
+    await page.getByTestId(`enigma-card-${sansIndice!.enigmaNumber}`).click();
+
+    // Le bouton ouvrirait une fenêtre vide, et la demande échouerait côté
+    // serveur : il ne doit pas exister. La barre de réponse, elle, reste.
+    await expect(page.getByTestId('hint-trigger')).toHaveCount(0);
+    await expect(page.getByTestId('hint-section')).toHaveCount(0);
   });
 
   test('rien ne s\'affiche tant qu\'on ne clique pas sur l\'icône', async ({ page }) => {

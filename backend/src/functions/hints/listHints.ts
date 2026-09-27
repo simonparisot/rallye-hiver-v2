@@ -87,6 +87,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       requests: suivi,
       hintsRequested: livres.length,
       remainingHints: restants,
+      // Taille du vivier de l'énigme, indépendante de ce que l'équipe a déjà
+      // reçu. Sans elle, « cette énigme n'a pas d'indice » et « l'équipe les a
+      // tous eus » se ressemblent : remainingHints vaut zéro dans les deux cas,
+      // et le frontend ne peut pas décider s'il doit proposer le bouton.
+      totalHints: tousLesIndices.length,
       pendingRequest: enAttente,
       enigmaPoints: enigma.points || 0,
       // Coût nul pendant l'essai : le barème dort dans utils/hintCost.ts.

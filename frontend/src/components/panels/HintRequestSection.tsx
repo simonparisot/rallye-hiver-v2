@@ -137,6 +137,12 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
 
   const indicesObtenus = data?.hints || [];
   const indicesRestants = data?.remainingHints ?? 0;
+
+  // Combien d'indices cette énigme porte, quoi que l'équipe ait déjà reçu.
+  // Le serveur le dit depuis peu ; tant qu'un déploiement plus ancien répond,
+  // la somme « obtenus + restants » donne la même chose, à ceci près qu'elle
+  // vaut zéro pendant le tout premier chargement — d'où l'attente ci-dessous.
+  const nombreIndices = data?.totalHints ?? (indicesObtenus.length + indicesRestants);
   const longueur = avancement.trim().length;
   const texteValide = longueur >= LONGUEUR_MIN && longueur <= LONGUEUR_MAX;
 
@@ -176,6 +182,11 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
     : indicesObtenus.length > 0
       ? `Indices (${indicesObtenus.length} obtenu${indicesObtenus.length > 1 ? 's' : ''}, ${indicesRestants} restant${indicesRestants > 1 ? 's' : ''})`
       : `Demander un indice (${indicesRestants} disponible${indicesRestants > 1 ? 's' : ''})`;
+
+  // Rien à proposer si l'énigme n'a pas d'indice écrit : le bouton ouvrirait
+  // une fenêtre vide, et la demande échouerait côté serveur. On attend d'abord
+  // la réponse — afficher le bouton puis le retirer serait pire que l'attente.
+  if (!data || nombreIndices === 0) return null;
 
   return (
     <div className="souffleur" data-testid="hint-section">

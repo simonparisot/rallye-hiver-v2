@@ -236,6 +236,12 @@ export interface HintsListResponse {
   requests: HintRequestTracking[];
   hintsRequested: number;
   remainingHints: number;
+  /**
+   * Nombre d'indices écrits pour cette énigme, quoi que l'équipe ait déjà reçu.
+   * Zéro veut dire qu'il n'y en a aucun : le bouton ne s'affiche pas.
+   * Facultatif le temps que le serveur déployé porte le champ.
+   */
+  totalHints?: number;
   /** Vrai tant qu'une demande n'est pas conclue : le frontend réinterroge. */
   pendingRequest: boolean;
   nextHintCost: number;
