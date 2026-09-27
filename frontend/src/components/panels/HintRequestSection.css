@@ -1,15 +1,17 @@
 /* ---------------------------------------------------------------------------
    Le souffleur
 
-   Au repos : un bouton. Une fois appelé : un cartouche cerné d'un trait et
-   posé sur son ombre, comme les autres cartes du site.
+   Au repos : une icône dans la barre de réponse. Ouvert : une fenêtre qui
+   voile la page, cernée d'un trait et posée sur son ombre comme les autres
+   cartes du site.
 
    Tout passe par les variables du thème — aucune couleur ni police en dur :
    cette zone suivra l'édition 2028 sans qu'on y revienne.
    --------------------------------------------------------------------------- */
 
 .souffleur {
-  margin: 0 0 18px;
+  display: inline-flex;
+  flex: none;
 }
 
 .souffleur-icone {
@@ -18,55 +20,70 @@
   flex: none;
 }
 
-/* ===================== Replié ===================== */
+/* ===================== Au repos : l'icône ===================== */
 
-.souffleur-appel {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 11px 14px;
+.souffleur-icone-btn {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
   cursor: pointer;
-  font-family: var(--font-body);
-  font-size: 14.5px;
-  font-weight: 600;
-  color: var(--theatre-salle);
-  text-align: left;
-  background: var(--theatre-programme-2);
+  background: var(--theatre-scene);
+  color: var(--theatre-tragedie-texte);
   border: var(--border-width-medium) var(--border-style) var(--theatre-filet);
-  border-radius: 12px;
+  border-radius: 10px;
   transition: background-color .15s, border-color .15s, transform .12s, box-shadow .12s;
 }
-.souffleur-appel:hover:not(:disabled) {
-  background: var(--theatre-scene);
+.souffleur-icone-btn:hover {
+  background: var(--theatre-programme-2);
   border-color: var(--theatre-salle);
   transform: translate(-1px, -1px);
   box-shadow: var(--ombre-affiche);
 }
-.souffleur-appel:focus-visible { outline: 3px solid var(--theatre-tragedie); outline-offset: 2px; }
-.souffleur-appel:disabled { cursor: default; color: var(--theatre-coulisse); }
-.souffleur-appel .souffleur-icone { color: var(--theatre-tragedie); }
-.souffleur-appel:disabled .souffleur-icone { color: var(--theatre-coulisse-pale); }
-.souffleur-appel-texte { flex: 1; }
+.souffleur-icone-btn:focus-visible { outline: 3px solid var(--theatre-tragedie); outline-offset: 2px; }
+.souffleur-icone-btn .souffleur-icone { width: 22px; height: 22px; }
 
-.souffleur-reste {
-  flex: none;
-  font-size: 11px;
-  font-weight: var(--font-weight-fort, 700);
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  padding: 4px 10px;
+/* La pastille dit l'essentiel sans un mot : combien d'indices sont déjà là,
+   ou qu'une demande est en cours. */
+.souffleur-pastille {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
   border-radius: 999px;
+  display: grid;
+  place-items: center;
   background: var(--theatre-dorure);
   color: var(--theatre-dorure-encre);
+  border: 1.5px solid var(--theatre-salle);
+  font-size: 11px;
+  font-weight: var(--font-weight-fort, 700);
+  line-height: 1;
+}
+.souffleur-pastille-attente {
+  min-width: 13px;
+  width: 13px;
+  height: 13px;
+  padding: 0;
+  background: var(--theatre-tragedie);
+  animation: souffleur-bat 1.2s ease-in-out infinite;
+}
+@keyframes souffleur-bat {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: .6; }
 }
 
 /* ===================== Indices obtenus ===================== */
 
 .souffleur-acquis {
   list-style: none;
-  margin: 0 0 12px;
-  padding: 0;
+  margin: 0 0 16px;
+  padding: 0 0 16px;
+  border-bottom: 1px dashed var(--theatre-filet);
   display: grid;
   gap: 8px;
 }
@@ -121,13 +138,30 @@
   color: var(--theatre-salle);
 }
 
-/* ===================== Déplié ===================== */
+/* ===================== Ouvert : la fenêtre ===================== */
+
+.souffleur-voile {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(23, 38, 63, .45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 20px;
+  overflow: auto;
+  /* Le texte de la fenêtre est cadré à gauche, quel que soit l'alignement
+     hérité de la carte qui porte le bouton. */
+  text-align: left;
+}
 
 .souffleur-panneau {
+  width: min(560px, 100%);
+  margin: auto;
   background: var(--theatre-scene);
   border: var(--border-width-thick) var(--border-style) var(--theatre-salle);
   border-radius: 14px;
-  box-shadow: var(--ombre-affiche);
+  box-shadow: var(--ombre-affiche-haute);
   overflow: hidden;
 }
 
@@ -218,6 +252,19 @@
 .souffleur-corps { padding: 16px; }
 
 /* --- Étape 1 : décrire --- */
+.souffleur-reste-ligne {
+  margin: 0 0 10px;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: var(--font-weight-fort, 700);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--theatre-dorure);
+  color: var(--theatre-dorure-encre);
+}
+
 .souffleur-label {
   display: block;
   font-size: 15px;
@@ -382,6 +429,8 @@
 }
 
 @media (max-width: 700px) {
+  .souffleur-voile { padding: 0; }
+  .souffleur-panneau { width: 100%; min-height: 100vh; border-radius: 0; border-width: 0; margin: 0; }
   .souffleur-tete { padding: 11px 13px; }
   .souffleur-etapes { padding: 10px 13px; gap: 4px; font-size: 11.5px; }
   .souffleur-etapes li:not(:last-child)::after { width: 12px; margin: 0 2px; }
@@ -390,6 +439,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .souffleur-points i { animation: none; opacity: 1; }
-  .souffleur-appel:hover:not(:disabled) { transform: none; }
+  .souffleur-points i,
+  .souffleur-pastille-attente { animation: none; opacity: 1; }
+  .souffleur-icone-btn:hover { transform: none; }
 }

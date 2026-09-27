@@ -270,15 +270,15 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                     >
                       {passwordMutation.isPending ? 'Envoi…' : 'Valider ma réponse'}
                     </button>
+                    {/* Le souffleur se tient à côté du geste principal : une
+                        icône, et la fenêtre qu'elle ouvre. */}
+                    <HintRequestSection enigma={selectedEnigma} />
                   </form>
                   <ResultatTentative
                     message={attemptMessage || null}
                     reussi={attemptSuccess === true}
                     onFermer={() => setAttemptMessage('')}
                   />
-                  {/* La demande d'indice garde la place du bandeau qu'elle
-                      remplace : après la barre de réponse, avant l'énoncé. */}
-                  <HintRequestSection enigma={selectedEnigma} />
                   {selectedEnigma.pdfUrl ? (
                     <div className="enigma-pdf-container" data-testid="enigma-pdf-container">
                       <PDFViewer pdfUrl={selectedEnigma.pdfUrl} title={selectedEnigma.title} />
@@ -292,7 +292,7 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                 </div>
               ) : (
                 <div className="enigma-placeholder" data-testid="enigma-placeholder">
-                  <p>Sélectionnez une énigme pour voir son PDF</p>
+                  <p>Sélectionnez une énigme pour afficher son énoncé</p>
                 </div>
               )}
             </div>

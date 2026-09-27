@@ -245,7 +245,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                 </div>
               ) : (
                 <div className="parcours-placeholder" data-testid="parcours-placeholder">
-                  <p>Sélectionnez un parcours pour voir son PDF</p>
+                  <p>Sélectionnez un parcours pour afficher son énoncé</p>
                 </div>
               )}
             </div>

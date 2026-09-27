@@ -37,7 +37,7 @@ test.describe('Demande d\'indice', () => {
     test.skip(!enigme, 'Aucune énigme dotée d\'indices dans cet environnement.');
   });
 
-  test('la zone reste repliée tant qu\'on ne demande rien', async ({ page }) => {
+  test('rien ne s\'affiche tant qu\'on ne clique pas sur l\'icône', async ({ page }) => {
     await page.goto('/');
     await page.getByTestId(`enigma-card-${enigme!.enigmaNumber}`).click();
 
@@ -47,14 +47,16 @@ test.describe('Demande d\'indice', () => {
     await expect(page.getByTestId('hint-trigger')).toBeVisible();
     await expect(page.getByTestId('hint-progress-input')).toBeHidden();
     await expect(page.getByTestId('hint-cost-warning')).toBeHidden();
+    // Les indices déjà donnés vivent dans la fenêtre, pas sous l'énigme.
+    await expect(page.getByTestId('hint-obtained-list')).toBeHidden();
   });
 
-  test('le bouton déplie le formulaire et son avertissement', async ({ page }) => {
+  test('l\'icône ouvre la fenêtre, avec sa consigne et son avertissement', async ({ page }) => {
     await ouvrirSouffleur(page, enigme!.enigmaNumber);
 
     await expect(page.getByTestId('hint-cost-warning')).toBeVisible();
-    // Le bouton d'appel cède la place au panneau : les deux ne coexistent pas.
-    await expect(page.getByTestId('hint-trigger')).toBeHidden();
+    // Une fenêtre modale, pas un dépliant : le fond est voilé.
+    await expect(page.getByRole('dialog')).toBeVisible();
   });
 
   test('le bouton reste inactif tant que la description est trop courte', async ({ page }) => {

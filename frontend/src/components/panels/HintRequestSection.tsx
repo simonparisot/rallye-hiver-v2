@@ -7,15 +7,15 @@ import './HintRequestSection.css';
 /**
  * Le souffleur : demander un indice sur une énigme.
  *
- * Au repos, la zone tient en un bouton. La version précédente dépliait tout —
- * titre, consigne, champ, compteur, avertissement, bouton — au-dessus de
- * l'énoncé : un bandeau de quatre cents pixels que la plupart des équipes ne
- * lisaient jamais, entre la barre de réponse et le PDF. Ce qui compte quand on
- * ouvre une énigme, c'est l'énoncé ; l'indice est un recours.
+ * Au repos, le souffleur tient en une icône posée dans la barre de réponse, à
+ * côté de « Valider ma réponse ». Rien d'autre : ni consigne, ni avertissement,
+ * ni les indices déjà obtenus. Ce qu'on vient faire en ouvrant une énigme,
+ * c'est lire l'énoncé et répondre ; l'indice est un recours.
  *
- * Une fois appelé, le souffleur occupe la place qu'il faut et le parcours est
- * explicite : décrire, confirmer, recevoir. Les trois étapes sont montrées, et
- * la longueur du texte se lit à une jauge plutôt qu'à un décompte.
+ * Tout le reste vit dans une fenêtre qui voile la page : les indices déjà
+ * donnés, la marche à suivre, les mises en garde, la demande. Le parcours y est
+ * montré plutôt qu'expliqué — décrire, confirmer, recevoir — et la longueur du
+ * texte se lit à une jauge plutôt qu'à un décompte.
  *
  * Le composant ne sait pas comment le modèle est appelé. Selon le réglage du
  * serveur, la réponse est immédiate ou différée : il se contente du statut
@@ -92,11 +92,9 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
     setCleDemande(creerCle());
   }, [enigma.id]);
 
-  // Une demande laissée en plan rouvre la zone : sans cela, l'indice en cours
-  // d'écriture arriverait derrière un bouton replié, sans rien pour le dire.
-  useEffect(() => {
-    if (enAttente) setOuvert(true);
-  }, [enAttente]);
+  // Une demande laissée en plan ne rouvre pas la fenêtre de force — surgir
+  // devant quelqu'un qui vient lire une énigme serait pire que le silence.
+  // C'est la pastille du bouton qui bat pour le dire.
 
   // Compteur de patience, démarré à la première attente observée.
   useEffect(() => {
@@ -164,68 +162,60 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
   const ouvrir = () => {
     setOuvert(true);
     setMessageErreur('');
-    // Le champ est la seule chose à faire une fois la zone ouverte.
+    // Le champ est la seule chose à faire une fois la fenêtre ouverte.
     window.setTimeout(() => champ.current?.focus(), 60);
   };
 
+  const fermer = () => {
+    setOuvert(false);
+    setConfirmation(false);
+  };
+
+  const libelleBouton = epuise
+    ? 'Indices : tous donnés'
+    : indicesObtenus.length > 0
+      ? `Indices (${indicesObtenus.length} obtenu${indicesObtenus.length > 1 ? 's' : ''}, ${indicesRestants} restant${indicesRestants > 1 ? 's' : ''})`
+      : `Demander un indice (${indicesRestants} disponible${indicesRestants > 1 ? 's' : ''})`;
+
   return (
-    <section className="souffleur" data-testid="hint-section">
-      {/* Les indices déjà obtenus restent lisibles : c'est ce que l'équipe a
-          payé, et les relire évite de redemander. */}
-      {indicesObtenus.length > 0 && (
-        <ul className="souffleur-acquis" data-testid="hint-obtained-list">
-          {indicesObtenus.map((indice, rang) => (
-            <li
-              key={indice.id}
-              className={`souffleur-indice ${indice.id === idFrais ? 'souffleur-indice-neuf' : ''}`}
-              data-testid={`hint-obtained-${indice.id}`}
-            >
-              <span className="souffleur-indice-rang" aria-hidden="true">{rang + 1}</span>
-              <div className="souffleur-indice-corps">
-                {indice.id === idFrais && <span className="souffleur-neuf">Nouvel indice</span>}
-                <p className="souffleur-indice-texte">{indice.text}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="souffleur" data-testid="hint-section">
+      {/* --- Au repos : une icône dans la barre de réponse. --- */}
+      <button
+        type="button"
+        className={`souffleur-icone-btn ${enAttente ? 'souffleur-icone-btn-actif' : ''}`}
+        data-testid="hint-trigger"
+        onClick={ouvrir}
+        aria-haspopup="dialog"
+        aria-label={libelleBouton}
+        title={libelleBouton}
+      >
+        <MasqueSouffleur />
+        {/* Une pastille dit ce qu'il y a à savoir sans prendre de place :
+            le nombre d'indices déjà obtenus, ou l'attente en cours. */}
+        {enAttente ? (
+          <span className="souffleur-pastille souffleur-pastille-attente" aria-hidden="true" />
+        ) : indicesObtenus.length > 0 ? (
+          <span className="souffleur-pastille" aria-hidden="true">{indicesObtenus.length}</span>
+        ) : null}
+      </button>
 
-      {/* --- Replié : un bouton, et rien d'autre. --- */}
-      {!ouvert && (
-        <button
-          type="button"
-          className="souffleur-appel"
-          data-testid="hint-trigger"
-          onClick={ouvrir}
-          disabled={epuise}
-        >
-          <MasqueSouffleur />
-          <span className="souffleur-appel-texte">
-            {epuise ? 'Tous les indices ont été donnés' : 'Demander un indice'}
-          </span>
-          {!epuise && (
-            <span className="souffleur-reste" data-testid="hint-remaining">
-              {indicesRestants} restant{indicesRestants > 1 ? 's' : ''}
-            </span>
-          )}
-        </button>
-      )}
-
-      {/* --- Déplié : le parcours, en trois temps. --- */}
+      {/* --- Ouvert : une fenêtre qui voile la page. --- */}
       {ouvert && (
-        <div className="souffleur-panneau">
+        <div
+          className="souffleur-voile"
+          onClick={(e) => { if (e.target === e.currentTarget && !enAttente) fermer(); }}
+        >
+        <div className="souffleur-panneau" role="dialog" aria-modal="true" aria-labelledby="souffleur-titre">
           <header className="souffleur-tete">
-            <h3><MasqueSouffleur /> Le souffleur</h3>
-            {!enAttente && (
-              <button
-                type="button"
-                className="souffleur-fermer"
-                onClick={() => { setOuvert(false); setConfirmation(false); }}
-                aria-label="Refermer la demande d'indice"
-              >
-                ×
-              </button>
-            )}
+            <h3 id="souffleur-titre"><MasqueSouffleur /> Le souffleur</h3>
+            <button
+              type="button"
+              className="souffleur-fermer"
+              onClick={fermer}
+              aria-label="Fermer"
+            >
+              ×
+            </button>
           </header>
 
           <ol className="souffleur-etapes" aria-label="Étapes de la demande">
@@ -242,6 +232,26 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
           </ol>
 
           <div className="souffleur-corps">
+            {/* Les indices déjà donnés : c'est ce que l'équipe a payé, et les
+                relire ici évite d'en redemander un pour rien. */}
+            {indicesObtenus.length > 0 && (
+              <ul className="souffleur-acquis" data-testid="hint-obtained-list">
+                {indicesObtenus.map((indice, rang) => (
+                  <li
+                    key={indice.id}
+                    className={`souffleur-indice ${indice.id === idFrais ? 'souffleur-indice-neuf' : ''}`}
+                    data-testid={`hint-obtained-${indice.id}`}
+                  >
+                    <span className="souffleur-indice-rang" aria-hidden="true">{rang + 1}</span>
+                    <div className="souffleur-indice-corps">
+                      {indice.id === idFrais && <span className="souffleur-neuf">Nouvel indice</span>}
+                      <p className="souffleur-indice-texte">{indice.text}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
             {/* Étape 3 — le souffleur cherche. */}
             {enAttente && !tropLong && (
               <div className="souffleur-attente" data-testid="hint-loading" role="status">
@@ -271,6 +281,9 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
             {/* Étapes 1 et 2 — décrire, puis confirmer. */}
             {!enAttente && !epuise && (
               <>
+                <p className="souffleur-reste-ligne" data-testid="hint-remaining">
+                  {indicesRestants} indice{indicesRestants > 1 ? 's' : ''} encore disponible{indicesRestants > 1 ? 's' : ''}
+                </p>
                 <label className="souffleur-label" htmlFor={`hint-progress-${enigma.id}`}>
                   Où en êtes-vous ?
                 </label>
@@ -362,8 +375,9 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
             )}
           </div>
         </div>
+        </div>
       )}
-    </section>
+    </div>
   );
 };
 
