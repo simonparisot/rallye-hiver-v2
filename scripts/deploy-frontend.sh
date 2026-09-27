@@ -25,7 +25,7 @@ case "$ENVIRONNEMENT" in
     # Énigme jouée sur le plateau du jeu de l'oie. Sans cet identifiant, le
     # plateau reste accessible par son adresse mais l'entrée correspondante de
     # la liste ouvre un PDF au lieu d'y mener.
-    OIE_ENIGMA_ID="0cc359c8-5ad6-407a-a42c-fa2d8ce195eb"
+    OIE_ENIGMA_ID="86d2f910-bc4f-4cf7-9444-eaa0885f4297"
     ;;
   prod)
     PROFIL="rallye"

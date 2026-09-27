@@ -63,3 +63,8 @@ tests/test-results/
 tests/playwright-report/
 tests/blob-report/
 .gstack/
+
+# Le contenu du jeu : énoncés, réponses, indices et solutions. Le dépôt est
+# public — rien de ce dossier ne doit y entrer. Les PDF étaient déjà couverts
+# par *.pdf ; les réponses et les solutions ne l'étaient pas.
+/content/
