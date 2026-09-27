@@ -23,21 +23,21 @@ const isSafari = () => {
 };
 
 const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, title }) => {
-  // Taille de la boîte, suivie en continu : la page doit s'y réinscrire à
-  // chaque redimensionnement, y compris quand on tourne le téléphone.
+  // Largeur utile de la boîte, suivie en continu : la page doit s'y réinscrire
+  // à chaque redimensionnement, y compris quand on tourne le téléphone.
+  // On lit contentRect, pas clientWidth : clientWidth compte le padding, et la
+  // micro-marge du téléphone serait alors ajoutée à la largeur de la page au
+  // lieu de lui être retranchée.
   const boite = useRef<HTMLDivElement>(null);
-  const [cadre, setCadre] = useState<{ l: number; h: number }>({ l: 0, h: 0 });
-  // Proportions de la page, connues une fois le PDF chargé.
-  const [ratio, setRatio] = useState<number | null>(null);
+  const [largeurBoite, setLargeurBoite] = useState(0);
 
   useEffect(() => {
     const el = boite.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    const obs = new ResizeObserver(() => {
-      setCadre({ l: el.clientWidth, h: el.clientHeight });
+    const obs = new ResizeObserver(([entree]) => {
+      setLargeurBoite(entree.contentRect.width);
     });
     obs.observe(el);
-    setCadre({ l: el.clientWidth, h: el.clientHeight });
     return () => obs.disconnect();
   }, []);
 
@@ -127,11 +127,10 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, title }) => {
   }
 
   // Standard Mode: Use react-pdf for Chrome/Firefox/Edge
-  // Tant que les proportions sont inconnues, on part de la largeur : le premier
-  // rendu sert justement à les apprendre.
-  const largeurPage = cadre.l
-    ? (ratio ? Math.max(120, Math.min(cadre.l, cadre.h * ratio)) : cadre.l)
-    : undefined;
+  // La page occupe toute la largeur disponible. Elle débordera souvent en
+  // hauteur — un A4 large de 800 px en fait 1130 de haut — et c'est la boîte
+  // qui défile : mieux vaut un énoncé lisible qu'un énoncé entier et minuscule.
+  const largeurPage = largeurBoite ? Math.floor(largeurBoite) : undefined;
 
   return (
     <div className="pdf-viewer-container">
@@ -151,21 +150,16 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, title }) => {
           loading={<div className="pdf-loading">Chargement...</div>}
           className="pdf-document"
         >
-          {/* La largeur découle de la boîte ET de sa hauteur : on prend la
-              contrainte qui mord. L'ancienne version lisait window.innerWidth
-              — sans rapport avec le conteneur, jamais recalculée, et sur grand
-              écran elle laissait la page à sa taille naturelle : une A4
-              dépassait le bas de l'écran de plusieurs centaines de pixels. */}
+          {/* La largeur vient du conteneur, mesuré. L'ancienne version lisait
+              window.innerWidth — sans rapport avec la boîte et jamais
+              recalculée ; celle d'après ajustait la page en hauteur, ce qui la
+              laissait étroite au milieu d'un conteneur large. */}
           <Page
             pageNumber={pageNumber}
             renderTextLayer={false}
             renderAnnotationLayer={false}
             className="pdf-page"
             width={largeurPage}
-            onLoadSuccess={(page) => {
-              const v = page.originalWidth / page.originalHeight;
-              if (Number.isFinite(v) && v > 0) setRatio(v);
-            }}
           />
         </Document>
       </div>

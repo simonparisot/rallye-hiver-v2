@@ -38,6 +38,14 @@ function etatDe(enigma: { isSolved: boolean; attemptCount?: number }): EtatEnigm
   return (enigma.attemptCount ?? 0) > 0 ? 'tentee' : 'vierge';
 }
 
+// La pastille change d'allure selon l'état, mais une couleur ne se lit pas
+// toute seule : l'infobulle dit ce que le cercle vermillon veut dire.
+const TITRE_ETAT: Record<EtatEnigme, string> = {
+  resolue: 'Énigme résolue',
+  tentee: 'Énigme commencée : au moins une réponse a déjà été proposée',
+  vierge: 'Énigme pas encore tentée',
+};
+
 function libelleEtat(enigma: { isSolved: boolean }): string | null {
   // Seule la résolution est annoncée. Le décompte des essais mettait un score
   // sous les yeux à chaque coup d'œil, là où le jeu se joue sur trois mois :
@@ -198,7 +206,7 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                 className={`enigma-item-compact etat-${etatDe(enigma)} ${enigma.isSolved ? 'solved' : ''} ${!hasAccess ? 'locked' : ''}`}
                 onClick={() => hasAccess && handleEnigmaSelect(enigma)}
               >
-                <span className={`enigma-number pastille-${etatDe(enigma)}`}>{enigma.order}</span>
+                <span className={`enigma-number pastille-${etatDe(enigma)}`} title={TITRE_ETAT[etatDe(enigma)]}>{enigma.order}</span>
                 <span className="enigma-title-compact">{enigma.title}</span>
                 {estEnigmeOie(enigma.id) && (
                   <span className="enigma-oie-badge" data-testid={`enigma-oie-badge-${enigma.order}`}>Plateau</span>
@@ -224,7 +232,7 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                   onClick={() => handleEnigmaSelect(enigma)}
                 >
                   <div className="enigma-header-item">
-                    <span className={`enigma-number pastille-${etatDe(enigma)}`}>{enigma.order}</span>
+                    <span className={`enigma-number pastille-${etatDe(enigma)}`} title={TITRE_ETAT[etatDe(enigma)]}>{enigma.order}</span>
                     <span className="enigma-title">{enigma.title}</span>
                     {estEnigmeOie(enigma.id) && (
                       <span className="enigma-oie-badge" data-testid={`enigma-oie-badge-${enigma.order}`}>

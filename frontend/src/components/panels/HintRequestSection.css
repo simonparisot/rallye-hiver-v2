@@ -225,6 +225,13 @@
 }
 .souffleur-fermer:hover { background: rgba(255, 255, 255, .34); }
 
+/* Le corps porte la marge de la fenêtre. Elle n'existait que sous 700 px : sur
+   grand écran le texte, les indices et le champ touchaient le trait du cadre.
+   La règle de base manquait, celle du média la remplaçait pour rien. */
+.souffleur-corps {
+  padding: 18px 20px 20px;
+}
+
 /* --- La demande --- */
 .souffleur-reste-ligne {
   margin: 0 0 10px;

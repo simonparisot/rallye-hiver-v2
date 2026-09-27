@@ -22,12 +22,16 @@ export const edition2027: Edition = {
     // Les deux masques, comédie et tragédie, retenus par les organisateurs.
     logo: '/logo-2027.jpg',
   },
-  startsAt: '2026-12-20',
-  endsAt: '2027-03-19',
+  // Le rallye est calé sur le ciel : il ouvre à l'instant du solstice d'hiver
+  // et ferme à celui de l'équinoxe de printemps. D'où les heures, qui ne sont
+  // pas des horaires de bureau. Heure de Paris, CET les deux fois (le passage
+  // à l'heure d'été 2027 n'a lieu que le 28 mars).
+  startsAt: '2026-12-21T21:50:00+01:00',
+  endsAt: '2027-03-20T21:24:00+01:00',
   copy: {
     tagline: 'Édition Hiver 2027 · Le théâtre',
-    intro: "Vous êtes sur le site de l'édition 2027 du Rallye d'Hiver, qui débutera le 20 décembre 2026 et se terminera le 19 mars 2027.",
-    duration: 'du 20 décembre 2026 au 19 mars 2027',
+    intro: "Vous êtes sur le site de l'édition 2027 du Rallye d'Hiver, qui lèvera le rideau au solstice d'hiver, le lundi 21 décembre 2026 à 21 h 50, et le baissera à l'équinoxe de printemps, le samedi 20 mars 2027 à 21 h 24.",
+    duration: 'du 21 décembre 2026 au 20 mars 2027',
   },
   // Essai isolé de 2027 : une des vingt énigmes se joue sur un plateau de jeu
   // de l'oie partagé. Retirer ce champ suffit à faire disparaître le plateau,
