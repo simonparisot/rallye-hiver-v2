@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { teamAPI, gameAPI } from '../services/api';
@@ -74,6 +74,19 @@ const GamePanels: React.FC = () => {
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
+
+  /* Sans équipe, rien d'autre n'est jouable : on ouvre sur « Ma troupe ».
+     Un compte fraîchement créé arrivait sur la liste des énigmes, avec pour
+     tout accueil une phrase disant de rejoindre une équipe — sans lien ni
+     bouton, et, sur téléphone, l'écran qui le permet enfoui dans le menu.
+     Le renvoi n'a lieu qu'une fois : ensuite la navigation est à l'équipe. */
+  const oriente = useRef(false);
+  useEffect(() => {
+    if (oriente.current || loading || !user) return;
+    if (team === undefined && user.teamId) return; // l'équipe n'est pas encore chargée
+    if (!hasAccess) setSection('equipe');
+    oriente.current = true;
+  }, [loading, user, team, hasAccess]);
 
   const choisirEnigme = (e: Enigma) => { setEnigmeId(e.id); setSection('enigmes'); };
   const choisirParcours = (p: Parcours) => { setParcoursId(p.id); setSection('parcours'); };

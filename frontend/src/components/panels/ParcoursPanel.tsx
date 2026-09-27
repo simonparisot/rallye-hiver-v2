@@ -138,7 +138,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
       <div className="panel-content">
         {!hasAccess && (
           <div className="access-blocked-message" data-testid="parcours-access-blocked">
-            Rejoignez ou créez une équipe et réglez les frais d'inscription pour accéder aux parcours.
+            Pour accéder aux parcours, rejoignez ou créez une équipe depuis « Ma troupe », puis réglez les frais d'inscription.
           </div>
         )}
         {!isExpanded ? (

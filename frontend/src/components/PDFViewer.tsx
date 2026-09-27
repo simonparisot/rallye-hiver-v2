@@ -23,6 +23,24 @@ const isSafari = () => {
 };
 
 const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, title }) => {
+  // Taille de la boîte, suivie en continu : la page doit s'y réinscrire à
+  // chaque redimensionnement, y compris quand on tourne le téléphone.
+  const boite = useRef<HTMLDivElement>(null);
+  const [cadre, setCadre] = useState<{ l: number; h: number }>({ l: 0, h: 0 });
+  // Proportions de la page, connues une fois le PDF chargé.
+  const [ratio, setRatio] = useState<number | null>(null);
+
+  useEffect(() => {
+    const el = boite.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const obs = new ResizeObserver(() => {
+      setCadre({ l: el.clientWidth, h: el.clientHeight });
+    });
+    obs.observe(el);
+    setCadre({ l: el.clientWidth, h: el.clientHeight });
+    return () => obs.disconnect();
+  }, []);
+
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
@@ -109,10 +127,16 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, title }) => {
   }
 
   // Standard Mode: Use react-pdf for Chrome/Firefox/Edge
+  // Tant que les proportions sont inconnues, on part de la largeur : le premier
+  // rendu sert justement à les apprendre.
+  const largeurPage = cadre.l
+    ? (ratio ? Math.max(120, Math.min(cadre.l, cadre.h * ratio)) : cadre.l)
+    : undefined;
+
   return (
     <div className="pdf-viewer-container">
       {/* PDF Document */}
-      <div className="pdf-document-wrapper">
+      <div className="pdf-document-wrapper" ref={boite}>
         {loading && (
           <div className="pdf-loading">
             <div className="loading-spinner">Chargement du PDF...</div>
@@ -127,12 +151,21 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, title }) => {
           loading={<div className="pdf-loading">Chargement...</div>}
           className="pdf-document"
         >
+          {/* La largeur découle de la boîte ET de sa hauteur : on prend la
+              contrainte qui mord. L'ancienne version lisait window.innerWidth
+              — sans rapport avec le conteneur, jamais recalculée, et sur grand
+              écran elle laissait la page à sa taille naturelle : une A4
+              dépassait le bas de l'écran de plusieurs centaines de pixels. */}
           <Page
             pageNumber={pageNumber}
             renderTextLayer={false}
             renderAnnotationLayer={false}
             className="pdf-page"
-            width={window.innerWidth > 768 ? undefined : window.innerWidth - 40}
+            width={largeurPage}
+            onLoadSuccess={(page) => {
+              const v = page.originalWidth / page.originalHeight;
+              if (Number.isFinite(v) && v > 0) setRatio(v);
+            }}
           />
         </Document>
       </div>

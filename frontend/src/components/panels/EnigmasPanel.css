@@ -262,7 +262,11 @@
 .enigma-pdf-container {
   flex: 1 1 auto;
   width: 100%;
-  min-height: 0;
+  /* Une hauteur bornée : sans elle, « tenir en hauteur » n'a pas de sens, le
+     conteneur s'étirant à la taille de son contenu. C'est ce qui reste de
+     l'écran sous l'en-tête et la barre d'action. */
+  height: calc(100vh - 265px);
+  min-height: 320px;
   overflow: hidden;
 }
 

@@ -185,7 +185,7 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
       <div className="panel-content">
         {!hasAccess && (
           <div className="access-blocked-message" data-testid="enigma-access-blocked">
-            Rejoignez ou créez une équipe et réglez les frais d'inscription pour accéder aux énigmes.
+            Pour accéder aux énigmes, rejoignez ou créez une équipe depuis « Ma troupe », puis réglez les frais d'inscription.
           </div>
         )}
         {!isExpanded ? (

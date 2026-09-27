@@ -55,13 +55,17 @@
 }
 
 /* PDF Document Wrapper */
+/* La page doit tenir dans la boîte, en hauteur comme en largeur : c'est ce
+   qu'on attend d'un lecteur de PDF. Le conteneur prend donc toute la place
+   restante, et la page s'y inscrit. */
 .pdf-document-wrapper {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
   background: #fff;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   padding: 0;
 }
 
@@ -75,14 +79,16 @@
 
 .pdf-page {
   background: white;
-  width: 100% !important;
-  height: auto !important;
+  max-width: 100%;
+  max-height: 100%;
 }
 
+/* L'ancienne règle imposait width: 100% : la page épousait la largeur du
+   conteneur quelle que soit sa hauteur. C'est désormais le composant qui
+   calcule la largeur, à partir de la boîte et des proportions de la page ;
+   le CSS ne fait plus que garantir qu'on ne déborde jamais. */
 .pdf-page canvas {
   display: block;
-  width: 100% !important;
-  height: auto !important;
   max-width: 100%;
 }
 
@@ -191,9 +197,8 @@
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
-  .pdf-viewer-container {
-    max-height: 500px;
-  }
+  /* Plus de plafond en dur : la boîte est dimensionnée par le panneau, en
+     fonction de l'écran, et la page s'y inscrit. */
 
   .pdf-document-wrapper {
     padding: 0;
