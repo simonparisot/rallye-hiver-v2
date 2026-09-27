@@ -77,7 +77,32 @@
   50% { transform: scale(1.35); opacity: .6; }
 }
 
+/* ===================== Ce que coûte un indice ===================== */
+
+.souffleur-intro {
+  margin-bottom: 16px;
+  padding: 13px 15px;
+  border-left: 4px solid var(--theatre-dorure);
+  background: var(--theatre-programme-2);
+  border-radius: 0 10px 10px 0;
+}
+.souffleur-intro p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--theatre-salle);
+}
+.souffleur-intro p + p { margin-top: 8px; }
+
 /* ===================== Indices obtenus ===================== */
+
+.souffleur-acquis-titre {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: var(--display-taille-mini, 22px);
+  font-weight: 400;
+  color: var(--theatre-salle);
+}
 
 .souffleur-acquis {
   list-style: none;
@@ -200,58 +225,7 @@
 }
 .souffleur-fermer:hover { background: rgba(255, 255, 255, .34); }
 
-/* --- Les trois temps --- */
-.souffleur-etapes {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  list-style: none;
-  margin: 0;
-  padding: 12px 16px;
-  background: var(--theatre-programme-2);
-  border-bottom: 1px solid var(--theatre-filet);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--theatre-coulisse);
-  flex-wrap: wrap;
-}
-.souffleur-etapes li { display: flex; align-items: center; gap: 7px; }
-/* Le trait qui relie les étapes : il montre qu'elles se suivent. */
-.souffleur-etapes li:not(:last-child)::after {
-  content: '';
-  width: 22px;
-  height: 2px;
-  background: var(--theatre-filet);
-  margin: 0 4px;
-}
-.souffleur-puce {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 11.5px;
-  font-weight: var(--font-weight-fort, 700);
-  background: var(--theatre-scene);
-  border: 1.5px solid var(--theatre-filet);
-  color: var(--theatre-coulisse-pale);
-}
-.souffleur-etapes .courante { color: var(--theatre-salle); }
-.souffleur-etapes .courante .souffleur-puce {
-  background: var(--theatre-tragedie);
-  border-color: var(--theatre-tragedie);
-  color: #fff;
-}
-.souffleur-etapes .faite { color: var(--theatre-fait); }
-.souffleur-etapes .faite .souffleur-puce {
-  background: var(--etat-resolu-fond);
-  border-color: var(--theatre-fait);
-  color: var(--theatre-fait);
-}
-
-.souffleur-corps { padding: 16px; }
-
-/* --- Étape 1 : décrire --- */
+/* --- La demande --- */
 .souffleur-reste-ligne {
   margin: 0 0 10px;
   display: inline-block;
@@ -328,15 +302,6 @@
   color: var(--theatre-coulisse);
 }
 
-.souffleur-avertissement {
-  margin: 12px 0 0;
-  padding: 9px 12px;
-  border-left: 4px solid var(--theatre-dorure);
-  background: var(--theatre-programme-2);
-  border-radius: 0 8px 8px 0;
-  font-size: 13px;
-  color: var(--theatre-salle);
-}
 
 /* --- Boutons --- */
 .souffleur-actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 14px; }
@@ -432,8 +397,6 @@
   .souffleur-voile { padding: 0; }
   .souffleur-panneau { width: 100%; min-height: 100vh; border-radius: 0; border-width: 0; margin: 0; }
   .souffleur-tete { padding: 11px 13px; }
-  .souffleur-etapes { padding: 10px 13px; gap: 4px; font-size: 11.5px; }
-  .souffleur-etapes li:not(:last-child)::after { width: 12px; margin: 0 2px; }
   .souffleur-corps { padding: 13px; }
   .souffleur-actions button { flex: 1 1 100%; }
 }

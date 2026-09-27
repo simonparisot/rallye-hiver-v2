@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Parcours } from '../../types';
 import { getParcoursWithAccess, getParcoursPreview } from '../../services/gameService';
@@ -11,9 +11,12 @@ interface ParcoursPanelProps {
   isExpanded: boolean;
   isCompact: boolean;
   onExpand: () => void;
+  /** Voir EnigmasPanel : sélection pilotée de l'extérieur sur téléphone. */
+  selectionId?: string | null;
+  onSelectionner?: (parcours: Parcours) => void;
 }
 
-const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, onExpand }) => {
+const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, onExpand, selectionId, onSelectionner }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -34,7 +37,9 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
     gcTime: 10 * 60 * 1000, // 10 minutes - garbage collection time
   });
 
-  const [selectedParcours, setSelectedParcours] = useState<Parcours | null>(null);
+  const [selectionLocale, setSelectionLocale] = useState<string | null>(null);
+  const idSelectionne = selectionId !== undefined ? selectionId : selectionLocale;
+  const selectedParcours = parcoursList.find((p) => p.id === idSelectionne) ?? null;
   const [completionMessage, setCompletionMessage] = useState('');
 
   const markCompletedMutation = useMutation({
@@ -68,12 +73,15 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
   });
 
   const handleParcoursSelect = (parcours: Parcours) => {
-    setSelectedParcours(parcours);
-    setCompletionMessage('');
+    if (onSelectionner) onSelectionner(parcours);
+    else setSelectionLocale(parcours.id);
     if (!isExpanded) {
       onExpand();
     }
   };
+
+  // Le message de confirmation appartient au parcours affiché.
+  useEffect(() => setCompletionMessage(''), [idSelectionne]);
 
   const handleMarkCompleted = () => {
     if (selectedParcours && !selectedParcours.isCompleted) {

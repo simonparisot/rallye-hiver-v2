@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Enigma } from '../../types';
@@ -15,6 +15,13 @@ interface EnigmasPanelProps {
   isExpanded: boolean;
   isCompact: boolean;
   onExpand: () => void;
+  /**
+   * Énigme affichée, quand la sélection est pilotée de l'extérieur — c'est le
+   * cas sur téléphone, où la liste vit dans le menu et non dans le panneau.
+   * Absent, le panneau gère sa sélection lui-même, comme sur grand écran.
+   */
+  selectionId?: string | null;
+  onSelectionner?: (enigma: Enigma) => void;
 }
 
 /**
@@ -38,7 +45,7 @@ function libelleEtat(enigma: { isSolved: boolean }): string | null {
   return enigma.isSolved ? 'Résolue' : null;
 }
 
-const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onExpand }) => {
+const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onExpand, selectionId, onSelectionner }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -67,7 +74,10 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
     gcTime: 10 * 60 * 1000, // 10 minutes - garbage collection time
   });
 
-  const [selectedEnigma, setSelectedEnigma] = useState<Enigma | null>(null);
+  const [selectionLocale, setSelectionLocale] = useState<string | null>(null);
+  const pilotee = selectionId !== undefined;
+  const idSelectionne = pilotee ? selectionId : selectionLocale;
+  const selectedEnigma = enigmas.find((e) => e.id === idSelectionne) ?? null;
   const [password, setPassword] = useState('');
   const [attemptMessage, setAttemptMessage] = useState('');
   const [attemptSuccess, setAttemptSuccess] = useState<boolean | null>(null);
@@ -93,14 +103,20 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
       return;
     }
 
-    setSelectedEnigma(enigma);
-    setPassword('');
-    setAttemptMessage('');
-    setAttemptSuccess(null);
+    if (onSelectionner) onSelectionner(enigma);
+    else setSelectionLocale(enigma.id);
     if (!isExpanded) {
       onExpand();
     }
   };
+
+  // Le champ et le message de tentative appartiennent à l'énigme affichée :
+  // ils se vident quand elle change, d'où que vienne le changement.
+  useEffect(() => {
+    setPassword('');
+    setAttemptMessage('');
+    setAttemptSuccess(null);
+  }, [idSelectionne]);
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

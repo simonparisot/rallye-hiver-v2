@@ -10,6 +10,10 @@ import EditionInfoPanel from '../components/panels/EditionInfoPanel';
 import AuthPanel from '../components/panels/AuthPanel';
 import WaitingPanel from '../components/panels/WaitingPanel';
 import CompteMenu from '../components/CompteMenu';
+import MenuMobile from '../components/MenuMobile';
+import ModaleMotDePasse from '../components/ModaleMotDePasse';
+import { Enigma, Parcours } from '../types';
+import { getEnigmasWithProgress, getEnigmasPreview, getParcoursWithAccess, getParcoursPreview } from '../services/gameService';
 import './GamePanels.css';
 import { edition } from '../editions';
 
@@ -32,6 +36,11 @@ const SECTIONS: { id: Section; libelle: string }[] = [
 const GamePanels: React.FC = () => {
   const { user, loading } = useAuth();
   const [section, setSection] = useState<Section>('enigmes');
+  // La sélection remonte ici : sur téléphone, c'est le menu qui la pilote, et
+  // il vit en dehors des panneaux.
+  const [enigmeId, setEnigmeId] = useState<string | null>(null);
+  const [parcoursId, setParcoursId] = useState<string | null>(null);
+  const [modaleMdp, setModaleMdp] = useState(false);
 
   const { data: gameStatus } = useQuery({
     queryKey: ['gameStatus'],
@@ -50,6 +59,24 @@ const GamePanels: React.FC = () => {
 
   const hasAccess = !!user?.teamId && !!team?.hasPaid;
   const gameStarted = gameStatus?.isStarted ?? false;
+
+  // Mêmes clés que les panneaux : React Query sert le cache, aucune requête
+  // supplémentaire n'est émise.
+  const { data: enigmas = [] } = useQuery({
+    queryKey: hasAccess ? ['enigmas-with-progress'] : ['enigmas-preview'],
+    queryFn: hasAccess ? getEnigmasWithProgress : getEnigmasPreview,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+  const { data: parcours = [] } = useQuery({
+    queryKey: hasAccess ? ['parcours-with-access'] : ['parcours-preview'],
+    queryFn: hasAccess ? getParcoursWithAccess : getParcoursPreview,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  const choisirEnigme = (e: Enigma) => { setEnigmeId(e.id); setSection('enigmes'); };
+  const choisirParcours = (p: Parcours) => { setParcoursId(p.id); setSection('parcours'); };
 
   if (loading) {
     return (
@@ -137,6 +164,17 @@ const GamePanels: React.FC = () => {
           </nav>
 
           <CompteMenu />
+          <MenuMobile
+            section={section}
+            enigmas={enigmas}
+            parcours={parcours}
+            enigmeId={enigmeId}
+            parcoursId={parcoursId}
+            onChoisirEnigme={choisirEnigme}
+            onChoisirParcours={choisirParcours}
+            onAllerTroupe={() => setSection('equipe')}
+            onMotDePasse={() => setModaleMdp(true)}
+          />
         </div>
       </header>
 
@@ -145,17 +183,33 @@ const GamePanels: React.FC = () => {
             relance pas les requêtes, et l'énigme ouverte est retrouvée telle
             qu'on l'avait laissée. */}
         <div data-testid="nav-panel-enigmas" className="section" hidden={section !== 'enigmes'}>
-          <EnigmasPanel isExpanded={true} isCompact={false} onExpand={() => setSection('enigmes')} />
+          <EnigmasPanel
+            isExpanded={true}
+            isCompact={false}
+            onExpand={() => setSection('enigmes')}
+            selectionId={enigmeId}
+            onSelectionner={choisirEnigme}
+          />
         </div>
 
         <div data-testid="nav-panel-parcours" className="section" hidden={section !== 'parcours'}>
-          <ParcoursPanel isExpanded={true} isCompact={false} onExpand={() => setSection('parcours')} />
+          <ParcoursPanel
+            isExpanded={true}
+            isCompact={false}
+            onExpand={() => setSection('parcours')}
+            selectionId={parcoursId}
+            onSelectionner={choisirParcours}
+          />
         </div>
 
         <div data-testid="nav-panel-stats" className="section" hidden={section !== 'equipe'}>
           <StatsPanel isCompact={false} hideStats={!hasAccess} />
         </div>
       </main>
+
+      {/* Ouverte depuis le tiroir du téléphone ; sur grand écran c'est
+          CompteMenu qui porte la sienne. */}
+      <ModaleMotDePasse ouverte={modaleMdp} onFermer={() => setModaleMdp(false)} />
     </div>
   );
 };

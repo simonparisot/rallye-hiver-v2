@@ -81,10 +81,10 @@ test.describe('Demande d\'indice', () => {
     const bouton = page.getByTestId('hint-request-button');
     await expect(bouton).toBeEnabled();
 
-    // L'avertissement est lisible avant toute action irréversible. Aucun chiffre
-    // n'y figure : rien n'est facturé pendant l'essai, et annoncer un montant qui
-    // changera vaudrait moins que prévenir sans en donner.
-    await expect(page.getByTestId('hint-cost-warning')).toContainText('coûter des points');
+    // Le coût est annoncé avant toute action irréversible, et il dit le vrai :
+    // le texte est tiré de nextHintCost, que l'API met à zéro tant que le
+    // barème dort (backend/src/utils/hintCost.ts).
+    await expect(page.getByTestId('hint-cost-warning')).toContainText(/ne coûte aucun point|un quart des points/);
 
     await bouton.click();
     await expect(page.getByTestId('hint-confirm')).toBeVisible();
@@ -97,14 +97,17 @@ test.describe('Demande d\'indice', () => {
     await expect(page.getByTestId('hint-request-button')).toBeVisible();
   });
 
-  test('la zone annonce le risque sans chiffrer le coût', async ({ page }) => {
+  test('le coût annoncé est celui que le serveur applique', async ({ page }) => {
     await ouvrirSouffleur(page, enigme!.enigmaNumber);
 
-    const avertissement = page.getByTestId('hint-cost-warning');
-    await expect(avertissement).toBeVisible();
-    // Aucun montant : le barème n'est pas fixé, et un chiffre faux serait pire
-    // que pas de chiffre du tout.
-    await expect(avertissement).not.toContainText(/\d+\s*point/);
+    const intro = page.getByTestId('hint-cost-warning');
+    await expect(intro).toBeVisible();
+    // Un chiffre n'a le droit d'apparaître que si le serveur en prélève un.
+    // Tant que le barème dort, la fenêtre doit dire que l'indice est gratuit.
+    const texte = (await intro.textContent()) ?? '';
+    const chiffre = /\d+\s*points?/.test(texte);
+    const gratuit = /ne coûte aucun point/.test(texte);
+    expect(chiffre !== gratuit).toBe(true);
   });
 
   test('changer d\'énigme referme la zone et vide le champ', async ({ page }) => {

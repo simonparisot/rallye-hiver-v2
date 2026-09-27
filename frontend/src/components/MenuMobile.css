@@ -1,0 +1,223 @@
+/* ---------------------------------------------------------------------------
+   Le menu du téléphone
+
+   N'existe qu'en petit écran : sur grand écran la barre d'onglets et la liste
+   latérale restent, elles y tiennent sans gêner l'énoncé.
+
+   Tout passe par les variables du thème.
+   --------------------------------------------------------------------------- */
+
+.menu-burger { display: none; }
+
+@media (max-width: 860px) {
+
+  .menu-burger {
+    display: grid;
+    align-content: center;
+    gap: 5px;
+    width: 42px;
+    height: 42px;
+    flex: none;
+    margin-left: auto;
+    padding: 0 9px;
+    cursor: pointer;
+    background: var(--theatre-scene);
+    border: var(--border-width-thick) var(--border-style) var(--theatre-salle);
+    border-radius: 10px;
+  }
+  .menu-burger span {
+    display: block;
+    height: 2.5px;
+    border-radius: 2px;
+    background: var(--theatre-salle);
+  }
+  .menu-burger span:nth-child(2) { background: var(--theatre-tragedie); }
+  .menu-burger:focus-visible { outline: 3px solid var(--theatre-tragedie); outline-offset: 2px; }
+
+  /* --- Le tiroir --- */
+  .menu-voile {
+    position: fixed;
+    inset: 0;
+    z-index: 95;
+    background: rgba(23, 38, 63, .45);
+    display: flex;
+    justify-content: flex-end;
+  }
+  .menu-tiroir {
+    width: min(360px, 92vw);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--theatre-programme);
+    border-left: var(--border-width-thick) var(--border-style) var(--theatre-salle);
+  }
+
+  .menu-tete {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 16px;
+    background: var(--theatre-tragedie-sombre);
+    border-bottom: var(--border-width-thick) var(--border-style) var(--theatre-salle);
+  }
+  .menu-titre {
+    font-family: var(--font-display);
+    font-size: var(--display-taille-mini, 22px);
+    text-transform: uppercase;
+    letter-spacing: .01em;
+    color: #fff;
+  }
+  .menu-fermer {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .2);
+    color: #fff;
+    font-size: 21px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .menu-corps { flex: 1; overflow-y: auto; padding: 10px 12px 28px; }
+
+  .menu-section { margin-bottom: 10px; }
+
+  /* --- En-tête de section, dépliable --- */
+  .menu-entete {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 13px;
+    cursor: pointer;
+    background: var(--theatre-scene);
+    border: var(--border-width-medium) var(--border-style) var(--theatre-filet);
+    border-radius: 11px;
+    font-family: var(--font-body);
+    text-align: left;
+    color: var(--theatre-salle);
+  }
+  .menu-entete:hover { background: var(--theatre-programme-2); }
+  .menu-entete:focus-visible { outline: 3px solid var(--theatre-tragedie); outline-offset: 2px; }
+  /* La section dont le contenu est à l'écran porte le filet vermillon. */
+  .menu-entete-actif {
+    border-color: var(--theatre-tragedie);
+    box-shadow: var(--ombre-affiche);
+  }
+  .menu-entete-titre {
+    flex: 1;
+    font-family: var(--font-display);
+    font-size: 19px;
+    text-transform: uppercase;
+    letter-spacing: .01em;
+  }
+  .menu-compte {
+    flex: none;
+    font-size: 11px;
+    font-weight: var(--font-weight-fort, 700);
+    letter-spacing: .08em;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--theatre-programme-2);
+    color: var(--theatre-coulisse);
+  }
+  .menu-chevron { width: 17px; height: 17px; flex: none; transition: transform .18s; }
+  .menu-chevron-ouvert { transform: rotate(180deg); }
+
+  /* --- La liste d'une section --- */
+  .menu-liste { list-style: none; margin: 6px 0 0; padding: 0 0 0 6px; }
+  .menu-ligne {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    padding: 10px 11px;
+    cursor: pointer;
+    background: none;
+    border: 0;
+    border-left: 2px solid var(--theatre-filet);
+    border-radius: 0 8px 8px 0;
+    font-family: var(--font-body);
+    font-size: 14.5px;
+    color: var(--theatre-salle);
+    text-align: left;
+  }
+  .menu-ligne:hover { background: var(--theatre-programme-2); }
+  .menu-ligne:focus-visible { outline: 2px solid var(--theatre-tragedie); outline-offset: -2px; }
+  /* Ce qui est à l'écran, marqué dans le menu. */
+  .menu-ligne[aria-current='true'] {
+    background: var(--theatre-scene);
+    border-left-color: var(--theatre-tragedie);
+    font-weight: var(--font-weight-fort, 700);
+    box-shadow: var(--ombre-affiche);
+  }
+  .menu-ligne-faite { color: var(--theatre-coulisse); }
+  .menu-numero {
+    flex: none;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 5px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--etat-vierge-fond);
+    color: var(--etat-vierge-texte);
+    font-size: 12px;
+    font-weight: var(--font-weight-fort, 700);
+  }
+  .menu-ligne-faite .menu-numero {
+    background: var(--etat-resolu-fond);
+    color: var(--etat-resolu-texte);
+  }
+  .menu-libelle {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .menu-coche { flex: none; color: var(--theatre-fait); font-weight: var(--font-weight-fort, 700); }
+
+  /* --- Le compte, en pied de tiroir --- */
+  .menu-section-compte {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--theatre-filet);
+  }
+  .menu-identite { margin: 0 0 8px; padding: 0 13px; }
+  .menu-nom { display: block; font-size: 14px; font-weight: var(--font-weight-fort, 700); color: var(--theatre-salle); }
+  .menu-mail {
+    display: block;
+    font-size: 12px;
+    color: var(--theatre-coulisse);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .menu-entree {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 11px 13px;
+    cursor: pointer;
+    background: none;
+    border: 0;
+    border-radius: 9px;
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--theatre-salle);
+    text-align: left;
+  }
+  .menu-entree:hover { background: var(--theatre-programme-2); }
+  .menu-entree:focus-visible { outline: 2px solid var(--theatre-tragedie); outline-offset: -2px; }
+  .menu-entree svg { width: 17px; height: 17px; flex: none; }
+  .menu-sortie { color: var(--theatre-tragedie-texte); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-chevron { transition: none; }
+}

@@ -94,26 +94,6 @@
 .onglet.actif { color: var(--theatre-salle); border-bottom-color: var(--theatre-tragedie); }
 .onglet:focus-visible { outline: 2px solid var(--theatre-tragedie); outline-offset: 2px; }
 
-.avancement {
-  margin-left: 14px;
-  padding: 7px 15px;
-  border: 1.5px solid var(--theatre-filet);
-  background: var(--theatre-scene);
-  border-radius: 999px;
-  font-size: 13.5px;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  white-space: nowrap;
-  max-width: 260px;
-}
-.avancement .nom-equipe {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--theatre-coulisse);
-}
-.avancement b { color: var(--theatre-tragedie-texte); font-variant-numeric: tabular-nums; }
 
 /* --- Contenu --- */
 /* Le padding haut dégage le lambrequin, qui déborde de la barre. */
@@ -255,8 +235,39 @@
   background: var(--theatre-scene);
 }
 
-/* --- Téléphone : la navigation reste atteignable --- */
+/* ---------------------------------------------------------------------------
+   Téléphone : toute la navigation passe dans le tiroir
+
+   La page empilait une barre d'onglets, une liste d'énigmes et l'énoncé de
+   celle qu'on avait choisie : trois niveaux dans une colonne de 390 pixels, où
+   lire un énoncé demandait de faire défiler la liste entière. Les deux
+   premiers niveaux rejoignent le menu ; l'écran ne porte plus que le contenu.
+   --------------------------------------------------------------------------- */
 @media (max-width: 860px) {
+  /* Les onglets et l'icône de compte sont dans le tiroir. */
+  .sections,
+  .compte { display: none; }
+
+  /* Les listes aussi : on change d'énigme par le menu. */
+  .section .enigma-list-full,
+  .section .parcours-list-full { display: none; }
+  .section .enigma-expanded-view,
+  .section .parcours-expanded-view {
+    display: block;
+  }
+
+  /* L'énoncé occupe la page, sans cadre qui la rétrécisse encore. */
+  .section .enigma-viewer,
+  .section .parcours-viewer {
+    margin: 0 -14px;
+    border-radius: 0;
+  }
+  /* Rien de choisi : une invitation, pas un grand cadre vide. */
+  .section .enigma-viewer:has(.enigma-placeholder),
+  .section .parcours-viewer:has(.parcours-placeholder) {
+    margin: 0;
+  }
+
   .barre-contenu {
     flex-wrap: wrap;
     min-height: auto;
@@ -272,21 +283,9 @@
     font-size: 12.5px;
   }
   .avancement .nom-equipe { display: none; }
-  .sections {
-    order: 3;
-    margin-left: 0;
-    width: 100%;
-    gap: 0;
-    border-top: 1px solid var(--theatre-filet);
-    padding-top: 2px;
-  }
-  .onglet {
-    flex: 1;
-    padding: 11px 4px;
-    font-size: 14px;
-    text-align: center;
-  }
   .section-contenu { padding: 28px 14px 70px; }
+  /* Le titre de section reste : c'est le seul repère hors du menu. */
+  .section h2 { font-size: 30px; }
   .accueil-grille { grid-template-columns: 1fr; padding: 30px 14px 70px; gap: 16px; }
   .feuille { padding: 22px 18px; }
 }
