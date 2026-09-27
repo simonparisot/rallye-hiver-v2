@@ -137,8 +137,6 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
 
   const indicesObtenus = data?.hints || [];
   const indicesRestants = data?.remainingHints ?? 0;
-  const coutProchain = data?.nextHintCost ?? 0;
-  const pointsEnigme = data?.enigmaPoints ?? 0;
   const longueur = avancement.trim().length;
   const texteValide = longueur >= LONGUEUR_MIN && longueur <= LONGUEUR_MAX;
 
@@ -222,27 +220,18 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
 
           <div className="souffleur-corps">
             {/* Ce que coûte un indice et ce qu'il apporte, avant tout le reste.
-                Le montant vient de l'API : le barème dort côté serveur
-                (backend/src/utils/hintCost.ts), nextHintCost vaut donc 0
-                aujourd'hui. Le jour où il sera rebranché, cette phrase
-                annoncera le quart sans qu'on y revienne. */}
+                Le quart est écrit en dur : le barème dort encore côté serveur
+                (backend/src/utils/hintCost.ts, nextHintCost vaut 0), mais
+                c'est la règle annoncée aux équipes et elle sera rebranchée. */}
             <div className="souffleur-intro" data-testid="hint-cost-warning">
               <p>
                 <b>Bloqué sur cette énigme ?</b> Décrivez où vous en êtes : un indice choisi
                 pour votre situation s'affichera ici, en quelques secondes.
               </p>
-              {coutProchain > 0 ? (
-                <p>
-                  Chaque indice coûte <b>un quart des points de l'énigme</b>
-                  {pointsEnigme > 0 ? ` (${coutProchain} points sur ${pointsEnigme})` : ''}.
-                  C'est toujours plus rentable que de rester bloqué et de n'en marquer aucun.
-                </p>
-              ) : (
-                <p>
-                  Pour cette édition, demander un indice <b>ne coûte aucun point</b> à votre
-                  équipe.
-                </p>
-              )}
+              <p>
+                Chaque indice coûte <b>un quart des points de l'énigme</b>. C'est toujours
+                plus rentable que de rester bloqué et de n'en marquer aucun.
+              </p>
             </div>
 
             {/* Les indices déjà donnés, rappelés avant d'en demander un autre. */}

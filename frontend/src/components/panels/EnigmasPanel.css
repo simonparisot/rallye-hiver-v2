@@ -124,18 +124,19 @@
   display: grid;
   grid-template-columns: 350px 1fr;
   gap: 20px;
-  height: 100%;
+  /* Les deux colonnes partent du haut et font chacune leur hauteur : la
+     grille n'est plus calée sur l'écran, donc plus rien n'a besoin de
+     défiler à l'intérieur. */
+  align-items: start;
 }
 
 .enigma-list-full {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  overflow-y: auto;
-  /* overflow-y: auto force overflow-x à auto : la liste rogne donc aussi sur
-     les côtés. Les cartes portent une ombre décalée de 5 px et se soulèvent de
-     2 px au survol ; sans cette réserve, le bord droit et le bas passent à la
-     coupe dès qu'une barre de défilement s'affiche. */
+  /* La liste ne défile plus pour elle-même : elle s'allonge et la page suit.
+     Le retrait reste, pour l'ombre décalée des cartes et leur soulèvement de
+     2 px au survol. */
   padding: 3px 12px 10px 3px;
 }
 
@@ -256,19 +257,14 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100%;
 }
 
 .enigma-pdf-container {
   flex: 1 1 auto;
   width: 100%;
-  /* Une hauteur bornée : sans elle le conteneur s'étirerait à la taille de la
-     page, qui fait maintenant toute la largeur et déborde donc en hauteur.
-     C'est ce qui reste de l'écran sous l'en-tête et la barre d'action ; le
-     reste de l'énoncé se lit en faisant défiler. */
-  height: calc(100vh - 265px);
-  min-height: 320px;
-  overflow: hidden;
+  /* Aucune hauteur imposée : le conteneur fait la hauteur de l'énoncé affiché
+     en pleine largeur. Le borner obligeait à faire défiler à l'intérieur,
+     alors que la page défile déjà. */
 }
 
 .enigma-solved-message {
@@ -509,16 +505,12 @@
   border-color: var(--etat-resolu-fond);
 }
 
-.enigma-number.pastille-tentee {
+/* À faire : un cercle vermillon sur fond clair. Fait : un disque vert plein.
+   Deux allures franches, lisibles d'un coup d'œil sur la colonne entière. */
+.enigma-number.pastille-a-faire {
   background: var(--etat-tente-fond);
-  color: var(--etat-tente-trait);
+  color: var(--etat-tente-texte);
   border: 2px solid var(--etat-tente-trait);
-}
-
-.enigma-number.pastille-vierge {
-  background: var(--etat-vierge-fond);
-  color: var(--etat-vierge-texte);
-  border-color: var(--etat-vierge-fond);
 }
 
 .enigma-etat {
@@ -533,7 +525,6 @@
 }
 
 .enigma-etat.etat-resolue { color: var(--etat-resolu-libelle); }
-.enigma-etat.etat-tentee { color: var(--etat-tente-trait); }
 
 /* Sur la liste étroite du mode déployé, le libellé passerait à la ligne. */
 .enigma-list-full .enigma-etat {

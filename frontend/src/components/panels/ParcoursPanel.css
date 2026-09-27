@@ -129,18 +129,19 @@
   display: grid;
   grid-template-columns: 350px 1fr;
   gap: 20px;
-  height: 100%;
+  /* Les deux colonnes partent du haut et font chacune leur hauteur : la
+     grille n'est plus calée sur l'écran, donc plus rien n'a besoin de
+     défiler à l'intérieur. */
+  align-items: start;
 }
 
 .parcours-list-full {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  overflow-y: auto;
-  /* overflow-y: auto force overflow-x à auto : la liste rogne donc aussi sur
-     les côtés. Les cartes portent une ombre décalée de 5 px et se soulèvent de
-     2 px au survol ; sans cette réserve, le bord droit et le bas passent à la
-     coupe dès qu'une barre de défilement s'affiche. */
+  /* La liste ne défile plus pour elle-même : elle s'allonge et la page suit.
+     Le retrait reste, pour l'ombre décalée des cartes et leur soulèvement de
+     2 px au survol. */
   padding: 3px 12px 10px 3px;
 }
 
@@ -293,7 +294,6 @@
 }
 
 .parcours-details {
-  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 15px;
@@ -418,13 +418,9 @@
 .parcours-pdf-container {
   flex: 1 1 auto;
   width: 100%;
-  /* Une hauteur bornée : sans elle le conteneur s'étirerait à la taille de la
-     page, qui fait maintenant toute la largeur et déborde donc en hauteur.
-     C'est ce qui reste de l'écran sous l'en-tête et la barre d'action ; le
-     reste de l'énoncé se lit en faisant défiler. */
-  height: calc(100vh - 265px);
-  min-height: 320px;
-  overflow: hidden;
+  /* Aucune hauteur imposée : le conteneur fait la hauteur de l'énoncé affiché
+     en pleine largeur. Le borner obligeait à faire défiler à l'intérieur,
+     alors que la page défile déjà. */
 }
 
 .status-badge {

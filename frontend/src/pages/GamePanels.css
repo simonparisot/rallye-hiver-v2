@@ -93,6 +93,14 @@
 .onglet:hover { color: var(--theatre-salle); }
 .onglet.actif { color: var(--theatre-salle); border-bottom-color: var(--theatre-tragedie); }
 .onglet:focus-visible { outline: 2px solid var(--theatre-tragedie); outline-offset: 2px; }
+/* Sans équipe, il n'y a rien à voir derrière : l'onglet le montre plutôt que
+   d'ouvrir une section vide. */
+.onglet-verrouille {
+  color: var(--theatre-coulisse-pale);
+  cursor: not-allowed;
+  opacity: .55;
+}
+.onglet-verrouille:hover { color: var(--theatre-coulisse-pale); }
 
 
 /* --- Contenu --- */
@@ -405,7 +413,6 @@
 .section .discord-icon { opacity: .82; }
 
 .section .team-section-panel,
-.section .no-team-message,
 .section .team-header {
   background: var(--theatre-scene);
   border: 2px solid var(--theatre-salle);
@@ -413,11 +420,44 @@
   box-shadow: var(--ombre-affiche);
   color: var(--theatre-salle);
 }
+
+/* L'accueil de qui n'a pas encore d'équipe portait le même cadre, mais sans
+   marge intérieure : l'encart, les deux formulaires et la liste des équipes
+   venaient toucher le trait. Plutôt que d'ajouter du rembourrage à une carte
+   qui en contient trois autres, le cadre disparaît — les blocs se posent sur
+   le papier, comme les énigmes et les parcours ailleurs sur le site. */
+.section .no-team-message {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  color: var(--theatre-salle);
+}
+.section .create-team-inline,
+.section .teams-section-inline {
+  margin: 0;
+  background: var(--theatre-scene);
+  border: 2px solid var(--theatre-salle);
+  border-radius: 12px;
+  box-shadow: var(--ombre-affiche);
+  padding: 18px 20px 20px;
+}
+.section .no-team-message .logout-section { padding-top: 4px; border-top: 0; }
 .section .team-header .team-name,
 .section .team-header h2,
 .section .team-header h3 { color: var(--theatre-salle); }
 
 .section .logout-section { border-top-color: var(--theatre-filet); }
+
+/* Un bouton éteint gardait le gris par défaut du navigateur — la seule teinte
+   hors palette de l'écran, et la plus voyante. */
+.section .btn:disabled,
+.section .btn-primary:disabled {
+  background: var(--theatre-scene);
+  border: var(--border-width-medium) dashed var(--theatre-filet);
+  color: var(--theatre-coulisse-pale);
+  box-shadow: none;
+  cursor: not-allowed;
+}
 .section .btn-logout {
   background: var(--theatre-scene);
   border: 1.5px solid var(--theatre-filet);
@@ -460,8 +500,7 @@
    --------------------------------------------------------------------------- */
 .section .team-members,
 .section .info-box,
-.section .pending-requests,
-.section .team-info-inline {
+.section .pending-requests {
   background: var(--theatre-scene);
   border: 2px solid var(--theatre-salle);
   border-radius: 12px;
@@ -470,11 +509,17 @@
 }
 
 .section .info-box {
+  margin: 0;
+  padding: 14px 18px;
   background: var(--theatre-programme-2);
   border: 1.5px solid var(--theatre-filet);
   border-left: 4px solid var(--theatre-dorure);
+  border-radius: 0 10px 10px 0;
   box-shadow: none;
-  color: var(--theatre-coulisse);
+  color: var(--theatre-salle);
+  /* Centré, ce paragraphe de trois lignes se lisait comme une affiche ; à
+     gauche, il se lit comme la consigne qu'il est. */
+  text-align: left;
 }
 
 .section .team-members h4,

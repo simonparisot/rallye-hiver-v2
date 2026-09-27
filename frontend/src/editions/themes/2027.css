@@ -113,6 +113,10 @@
   --etat-resolu-libelle: var(--theatre-fait);
   --etat-tente-fond: var(--theatre-scene);
   --etat-tente-trait: var(--theatre-tragedie);
+  /* Le vermillon d'affiche ne fait que 4,13:1 sur blanc : il tient comme trait
+     mais pas comme texte. Le chiffre de la pastille prend donc la variante
+     sombre, 5,42:1. Même règle que les boutons pleins, en tête de ce fichier. */
+  --etat-tente-texte: var(--theatre-tragedie-texte);
   --etat-vierge-fond: var(--theatre-programme-2);
   --etat-vierge-texte: var(--theatre-coulisse);
 

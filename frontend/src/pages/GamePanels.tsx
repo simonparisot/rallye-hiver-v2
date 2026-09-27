@@ -27,9 +27,12 @@ import { edition } from '../editions';
  */
 type Section = 'enigmes' | 'parcours' | 'equipe';
 
-const SECTIONS: { id: Section; libelle: string }[] = [
-  { id: 'enigmes', libelle: 'Énigmes' },
-  { id: 'parcours', libelle: 'Parcours' },
+// « réservé » : la section n'a de contenu qu'une fois l'équipe rejointe et
+// l'inscription réglée. Avant cela l'onglet reste visible — il dit ce qui
+// attend — mais il est inerte.
+const SECTIONS: { id: Section; libelle: string; reserve?: boolean }[] = [
+  { id: 'enigmes', libelle: 'Énigmes', reserve: true },
+  { id: 'parcours', libelle: 'Parcours', reserve: true },
   { id: 'equipe', libelle: 'Ma troupe' },
 ];
 
@@ -163,22 +166,28 @@ const GamePanels: React.FC = () => {
           </span>
 
           <nav className="sections" aria-label="Sections du rallye">
-            {SECTIONS.map((s) => (
-              <button
-                key={s.id}
-                data-testid={`nav-vers-${s.id}`}
-                className={`onglet ${section === s.id ? 'actif' : ''}`}
-                aria-current={section === s.id}
-                onClick={() => setSection(s.id)}
-              >
-                {s.libelle}
-              </button>
-            ))}
+            {SECTIONS.map((s) => {
+              const verrouille = !!s.reserve && !hasAccess;
+              return (
+                <button
+                  key={s.id}
+                  data-testid={`nav-vers-${s.id}`}
+                  className={`onglet ${section === s.id ? 'actif' : ''} ${verrouille ? 'onglet-verrouille' : ''}`}
+                  aria-current={section === s.id}
+                  disabled={verrouille}
+                  title={verrouille ? 'Rejoignez une troupe pour y accéder' : undefined}
+                  onClick={() => setSection(s.id)}
+                >
+                  {s.libelle}
+                </button>
+              );
+            })}
           </nav>
 
           <CompteMenu />
           <MenuMobile
             section={section}
+            acces={hasAccess}
             enigmas={enigmas}
             parcours={parcours}
             enigmeId={enigmeId}

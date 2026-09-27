@@ -36,6 +36,8 @@
   --etat-resolu-libelle: #8A6D08;
   --etat-tente-fond: #FFFFFF;
   --etat-tente-trait: var(--color-primary-red);
+  /* Le crimson de 2026 passe déjà sur blanc (4,99:1) : rien à assombrir. */
+  --etat-tente-texte: var(--color-primary-red);
   --etat-vierge-fond: #E9ECEF;
   --etat-vierge-texte: #666;
 

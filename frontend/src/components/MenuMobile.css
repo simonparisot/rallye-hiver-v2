@@ -102,6 +102,15 @@
     color: var(--theatre-salle);
   }
   .menu-entete:hover { background: var(--theatre-programme-2); }
+  /* Sans équipe, la section n'a pas de contenu : elle le dit au lieu de
+     s'ouvrir sur le vide. */
+  .menu-entete-verrouille {
+    color: var(--theatre-coulisse-pale);
+    cursor: not-allowed;
+    opacity: .6;
+  }
+  .menu-entete-verrouille:hover { background: var(--theatre-scene); }
+  .menu-entete-verrouille .menu-chevron { visibility: hidden; }
   .menu-entete:focus-visible { outline: 3px solid var(--theatre-tragedie); outline-offset: 2px; }
   /* La section dont le contenu est à l'écran porte le filet vermillon. */
   .menu-entete-actif {
@@ -169,9 +178,18 @@
     font-size: 12px;
     font-weight: var(--font-weight-fort, 700);
   }
+  /* Même langage que la liste des énigmes : cercle vermillon tant que ce n'est
+     pas résolu, disque vert une fois fait. Les parcours gardent leur pastille
+     pleine, ils n'ont jamais eu d'état intermédiaire à dire. */
+  .menu-numero-a-faire {
+    background: var(--etat-tente-fond);
+    color: var(--etat-tente-texte);
+    border: 2px solid var(--etat-tente-trait);
+  }
   .menu-ligne-faite .menu-numero {
     background: var(--etat-resolu-fond);
     color: var(--etat-resolu-texte);
+    border: 0;
   }
   .menu-libelle {
     flex: 1;

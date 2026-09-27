@@ -1,10 +1,12 @@
 /* PDF Viewer Container */
+/* Pas de hauteur imposée, pas de découpe : le lecteur fait la hauteur de la
+   page qu'il affiche. C'est la fenêtre du navigateur qui défile, une fois.
+   Avec une boîte bornée on se retrouvait à faire défiler le conteneur DANS la
+   page — deux ascenseurs imbriqués pour lire un énoncé. */
 .pdf-viewer-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
   background: #fff;
-  overflow: hidden;
 }
 
 /* Simple navigation at bottom */
@@ -55,16 +57,11 @@
 }
 
 /* PDF Document Wrapper */
-/* La page occupe toute la largeur du conteneur ; ce qui dépasse en hauteur
-   défile ici. D'où l'alignement en haut : centrer une page plus haute que la
-   boîte en cacherait le début, qu'aucun défilement ne ramène.
-   scrollbar-gutter évite l'oscillation — la barre de défilement rétrécit la
-   boîte, ce qui rétrécit la page, ce qui peut faire disparaître la barre. */
+/* La page occupe toute la largeur du conteneur, et le conteneur prend la
+   hauteur qui en découle : rien n'est coupé, rien ne défile ici. */
 .pdf-document-wrapper {
   flex: 1 1 auto;
-  min-height: 0;
-  overflow: auto;
-  scrollbar-gutter: stable;
+  overflow: visible;
   background: #fff;
   display: flex;
   justify-content: center;
@@ -202,10 +199,6 @@
 
   .pdf-document-wrapper {
     padding: 0 4px;
-    /* Pas de gouttière ici : sur tactile la barre de défilement se superpose et
-       ne prend aucune place. La réserver retirait 10 px à droite de la page,
-       et la marge devenait 4 px d'un côté, 15 de l'autre. */
-    scrollbar-gutter: auto;
   }
 
   .pdf-simple-nav {
@@ -224,21 +217,4 @@
   }
 }
 
-/* Scrollbar styling */
-.pdf-document-wrapper::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-.pdf-document-wrapper::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-.pdf-document-wrapper::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 5px;
-}
-
-.pdf-document-wrapper::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
+/* Plus de barre de défilement à habiller : le lecteur ne défile plus. */

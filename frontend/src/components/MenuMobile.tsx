@@ -22,6 +22,8 @@ export type SectionCourante = 'enigmes' | 'parcours' | 'equipe';
 
 interface MenuMobileProps {
   section: SectionCourante;
+  /** Faux tant que l'équipe n'est pas rejointe et l'inscription réglée. */
+  acces: boolean;
   enigmas: Enigma[];
   parcours: Parcours[];
   enigmeId: string | null;
@@ -33,17 +35,16 @@ interface MenuMobileProps {
 }
 
 const MenuMobile: React.FC<MenuMobileProps> = ({
-  section, enigmas, parcours, enigmeId, parcoursId,
+  section, acces, enigmas, parcours, enigmeId, parcoursId,
   onChoisirEnigme, onChoisirParcours, onAllerTroupe, onMotDePasse,
 }) => {
   const { user, logout } = useAuth();
   const [ouvert, setOuvert] = useState(false);
-  // La section en cours est dépliée d'emblée : on vient le plus souvent pour
-  // changer d'énigme quand on lit une énigme.
-  const [deplie, setDeplie] = useState<Record<string, boolean>>({
-    enigmes: section === 'enigmes',
-    parcours: section === 'parcours',
-  });
+  // Tout est replié à l'ouverture. Déplier la section en cours mettait vingt
+  // lignes sous les yeux avant qu'on ait rien demandé, et repoussait « Ma
+  // troupe » et le compte hors de l'écran. C'est à qui ouvre le menu de dire
+  // ce qu'il cherche.
+  const [deplie, setDeplie] = useState<Record<string, boolean>>({});
 
   // Le tiroir prend tout l'écran : laisser la page défiler dessous donnerait
   // l'impression que le menu glisse.
@@ -105,16 +106,19 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
               <section className="menu-section">
                 <button
                   type="button"
-                  className={`menu-entete ${section === 'enigmes' ? 'menu-entete-actif' : ''}`}
-                  aria-expanded={!!deplie.enigmes}
+                  className={`menu-entete ${section === 'enigmes' ? 'menu-entete-actif' : ''} ${!acces ? 'menu-entete-verrouille' : ''}`}
+                  aria-expanded={acces && !!deplie.enigmes}
                   data-testid="menu-section-enigmes"
+                  disabled={!acces}
                   onClick={() => basculer('enigmes')}
                 >
                   <span className="menu-entete-titre">Énigmes</span>
-                  <span className="menu-compte">{resolues}/{enigmas.length}</span>
+                  {acces
+                    ? <span className="menu-compte">{resolues}/{enigmas.length}</span>
+                    : <span className="menu-compte">Troupe requise</span>}
                   <Chevron ouvert={!!deplie.enigmes} />
                 </button>
-                {deplie.enigmes && (
+                {acces && deplie.enigmes && (
                   <ul className="menu-liste">
                     {enigmas.map((e) => (
                       <li key={e.id}>
@@ -124,7 +128,7 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
                           aria-current={section === 'enigmes' && e.id === enigmeId}
                           onClick={() => choisirEnigme(e)}
                         >
-                          <span className="menu-numero">{e.order}</span>
+                          <span className={`menu-numero ${e.isSolved ? '' : 'menu-numero-a-faire'}`}>{e.order}</span>
                           <span className="menu-libelle">{e.title}</span>
                           {e.isSolved && <span className="menu-coche" aria-label="résolue">✓</span>}
                         </button>
@@ -138,16 +142,19 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
               <section className="menu-section">
                 <button
                   type="button"
-                  className={`menu-entete ${section === 'parcours' ? 'menu-entete-actif' : ''}`}
-                  aria-expanded={!!deplie.parcours}
+                  className={`menu-entete ${section === 'parcours' ? 'menu-entete-actif' : ''} ${!acces ? 'menu-entete-verrouille' : ''}`}
+                  aria-expanded={acces && !!deplie.parcours}
                   data-testid="menu-section-parcours"
+                  disabled={!acces}
                   onClick={() => basculer('parcours')}
                 >
                   <span className="menu-entete-titre">Parcours</span>
-                  <span className="menu-compte">{realises}/{parcours.length}</span>
+                  {acces
+                    ? <span className="menu-compte">{realises}/{parcours.length}</span>
+                    : <span className="menu-compte">Troupe requise</span>}
                   <Chevron ouvert={!!deplie.parcours} />
                 </button>
-                {deplie.parcours && (
+                {acces && deplie.parcours && (
                   <ul className="menu-liste">
                     {parcours.map((p, i) => (
                       <li key={p.id}>

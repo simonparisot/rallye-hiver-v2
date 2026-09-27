@@ -81,10 +81,8 @@ test.describe('Demande d\'indice', () => {
     const bouton = page.getByTestId('hint-request-button');
     await expect(bouton).toBeEnabled();
 
-    // Le coût est annoncé avant toute action irréversible, et il dit le vrai :
-    // le texte est tiré de nextHintCost, que l'API met à zéro tant que le
-    // barème dort (backend/src/utils/hintCost.ts).
-    await expect(page.getByTestId('hint-cost-warning')).toContainText(/ne coûte aucun point|un quart des points/);
+    // Le barème est annoncé avant toute action irréversible.
+    await expect(page.getByTestId('hint-cost-warning')).toContainText('un quart des points');
 
     await bouton.click();
     await expect(page.getByTestId('hint-confirm')).toBeVisible();
@@ -97,17 +95,16 @@ test.describe('Demande d\'indice', () => {
     await expect(page.getByTestId('hint-request-button')).toBeVisible();
   });
 
-  test('le coût annoncé est celui que le serveur applique', async ({ page }) => {
+  test('le barème annoncé est le quart, sans chiffre inventé', async ({ page }) => {
     await ouvrirSouffleur(page, enigme!.enigmaNumber);
 
     const intro = page.getByTestId('hint-cost-warning');
-    await expect(intro).toBeVisible();
-    // Un chiffre n'a le droit d'apparaître que si le serveur en prélève un.
-    // Tant que le barème dort, la fenêtre doit dire que l'indice est gratuit.
-    const texte = (await intro.textContent()) ?? '';
-    const chiffre = /\d+\s*points?/.test(texte);
-    const gratuit = /ne coûte aucun point/.test(texte);
-    expect(chiffre !== gratuit).toBe(true);
+    await expect(intro).toContainText('un quart des points');
+    // La règle est écrite en dur : c'est celle annoncée aux équipes, et elle
+    // vaut même si le serveur ne prélève encore rien (nextHintCost = 0,
+    // backend/src/utils/hintCost.ts). En revanche la fenêtre ne doit avancer
+    // aucun montant chiffré, qui lui serait faux.
+    expect((await intro.textContent()) ?? '').not.toMatch(/\d+\s*points?/);
   });
 
   test('changer d\'énigme referme la zone et vide le champ', async ({ page }) => {
