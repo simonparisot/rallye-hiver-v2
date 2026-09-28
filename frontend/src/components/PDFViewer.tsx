@@ -12,15 +12,19 @@ interface PDFViewerProps {
   title?: string;
 }
 
-// Detect Safari browser (including iOS Safari)
-const isSafari = () => {
-  const ua = navigator.userAgent.toLowerCase();
-  return (
-    ua.indexOf('safari') !== -1 &&
-    ua.indexOf('chrome') === -1 &&
-    ua.indexOf('android') === -1
-  );
-};
+/*
+ * Le lecteur est le même partout.
+ *
+ * Il ne l'était pas : un test d'agent utilisateur renvoyait Safari — donc tout
+ * iPhone, Chrome iOS compris, dont l'agent contient « Safari » sans contenir
+ * « Chrome » — vers une <iframe> et la visionneuse PDF du système. Celle-ci
+ * affiche la page à sa taille naturelle : sur un écran de 390 px, un A4 de
+ * 595 pt oblige à défiler de côté, et aucun des calculs de largeur de ce
+ * fichier ne s'y appliquait.
+ *
+ * L'iframe reste, mais en secours : on y bascule si le document échoue
+ * vraiment à s'ouvrir, pas parce qu'on a deviné le navigateur.
+ */
 
 const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, title }) => {
   // Largeur utile de la boîte, suivie en continu : la page doit s'y réinscrire
@@ -46,7 +50,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, title }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const isMountedRef = useRef<boolean>(true);
-  const useSafariMode = useRef<boolean>(isSafari());
 
   // Track if component is mounted to prevent state updates after unmount
   useEffect(() => {
@@ -88,37 +91,24 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, title }) => {
     setPageNumber((prev) => Math.min(prev + 1, numPages));
   };
 
-  if (error && !useSafariMode.current) {
-    return (
-      <div className="pdf-viewer-error">
-        <p>{error}</p>
-        <p className="error-url">{pdfUrl}</p>
-      </div>
-    );
-  }
-
-  // Safari Mode: Use native iframe for better compatibility
-  if (useSafariMode.current) {
+  // Repli : le document n'a pas pu être ouvert par le lecteur. Plutôt qu'un
+  // message d'erreur seul, on confie l'énoncé au navigateur, qui sait au moins
+  // l'afficher — et on propose de l'ouvrir en grand.
+  if (error) {
     return (
       <div className="pdf-viewer-container">
         <div className="pdf-safari-viewer">
           <iframe
             src={pdfUrl}
-            title={title || 'PDF Viewer'}
+            title={title || "Énoncé de l'énigme"}
             className="pdf-iframe"
-            style={{
-              width: '100%',
-              height: '100%',
-              border: 'none',
-              minHeight: '600px',
-            }}
           />
           <div className="pdf-safari-hint">
             <p>
-              Vous pouvez également{' '}
+              L'affichage intégré n'a pas fonctionné. Vous pouvez{' '}
               <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="pdf-download-link">
-                ouvrir le PDF dans un nouvel onglet
-              </a>
+                ouvrir l'énoncé dans un nouvel onglet
+              </a>.
             </p>
           </div>
         </div>
@@ -126,7 +116,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, title }) => {
     );
   }
 
-  // Standard Mode: Use react-pdf for Chrome/Firefox/Edge
   // La page occupe toute la largeur disponible. Elle débordera souvent en
   // hauteur — un A4 large de 800 px en fait 1130 de haut — et c'est la boîte
   // qui défile : mieux vaut un énoncé lisible qu'un énoncé entier et minuscule.

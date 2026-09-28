@@ -142,10 +142,11 @@
   width: 100%;
 }
 
+/* Repli seulement : la hauteur vient du style en ligne retiré, elle est ici. */
 .pdf-iframe {
   flex: 1;
   width: 100%;
-  min-height: 600px;
+  min-height: 70vh;
   border: none;
 }
 
