@@ -154,20 +154,38 @@ const AdminParcours: React.FC = () => {
     <div data-testid="admin-parcours-page" className="admin-parcours">
       <div className="admin-page-header">
         <div>
-          <h1>Gestion des parcours</h1>
-          <p className="admin-page-subtitle">Créer, modifier et gérer les parcours du jeu</p>
+          {/* Même règle que pour les énigmes : le formulaire remplace la
+              liste, il ne s'empile pas dessus. */}
+          {showForm ? (
+            <>
+              <button data-testid="admin-parcours-back"
+                type="button"
+                className="btn btn-secondary btn-small admin-retour"
+                onClick={resetForm}
+              >
+                ← Retour à la liste des parcours
+              </button>
+              <h1>{editingParcours ? `Modifier « ${editingParcours.title} »` : 'Nouveau parcours'}</h1>
+            </>
+          ) : (
+            <>
+              <h1>Gestion des parcours</h1>
+              <p className="admin-page-subtitle">Créer, modifier et gérer les parcours du jeu</p>
+            </>
+          )}
         </div>
-        <button data-testid="admin-parcours-new-button"
-          className="btn btn-primary"
-          onClick={() => setShowForm(!showForm)}
-        >
-          {showForm ? 'Annuler' : '+ Nouveau parcours'}
-        </button>
+        {!showForm && (
+          <button data-testid="admin-parcours-new-button"
+            className="btn btn-primary"
+            onClick={() => { setEditingParcours(null); setShowForm(true); }}
+          >
+            + Nouveau parcours
+          </button>
+        )}
       </div>
 
       {showForm && (
         <div className="parcours-form-container card">
-          <h2>{editingParcours ? 'Modifier le parcours' : 'Ajouter un nouveau parcours'}</h2>
           <form data-testid="admin-parcours-form" onSubmit={handleSubmit} className="parcours-form">
             <div className="form-group">
               <label>Titre du parcours *</label>
@@ -227,7 +245,14 @@ const AdminParcours: React.FC = () => {
               <button data-testid="admin-parcours-cancel" type="button" className="btn btn-secondary" onClick={resetForm}>
                 Annuler
               </button>
-              {editingParcours && (
+            </div>
+
+            {editingParcours && (
+              <div className="form-zone-danger">
+                <div>
+                  <strong>Supprimer ce parcours</strong>
+                  <p>Son énoncé et les accès des équipes disparaissent. Sans retour.</p>
+                </div>
                 <button data-testid="admin-parcours-delete"
                   type="button"
                   className="btn btn-danger"
@@ -239,14 +264,15 @@ const AdminParcours: React.FC = () => {
                   }}
                   disabled={deleteMutation.isPending}
                 >
-                  Supprimer
+                  🗑️ Supprimer le parcours
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </form>
         </div>
       )}
 
+      {!showForm && (
       <div className="parcours-list">
         <DragDropContext onDragEnd={handleDragEnd}>
           <table data-testid="admin-parcours-table" className="admin-table">
@@ -256,7 +282,6 @@ const AdminParcours: React.FC = () => {
                 <th style={{ width: '50px' }}>#</th>
                 <th>Titre</th>
                 <th style={{ width: '200px' }}>Stats</th>
-                <th style={{ width: '80px' }}>PDF</th>
                 <th style={{ width: '100px' }}></th>
               </tr>
             </thead>
@@ -278,7 +303,7 @@ const AdminParcours: React.FC = () => {
                           <td {...provided.dragHandleProps} className="drag-handle">
                             ⋮⋮
                           </td>
-                          <td className="parcours-number">#{parcours.parcoursNumber}</td>
+                          <td className="admin-row-number">#{parcours.parcoursNumber}</td>
                           <td>
                             <div className="parcours-title">
                               {parcours.title}
@@ -290,15 +315,6 @@ const AdminParcours: React.FC = () => {
                               <span>{parcours.teamsUnlocked} équipe{parcours.teamsUnlocked > 1 ? 's' : ''} l'{parcours.teamsUnlocked > 1 ? 'ont' : 'a'} déverrouillé</span>
                             ) : (
                               <span className="no-stats">Pas encore déverrouillé</span>
-                            )}
-                          </td>
-                          <td>
-                            {parcours.pdfUrl ? (
-                              <a href={parcours.pdfUrl} target="_blank" rel="noopener noreferrer" className="pdf-link">
-                                📄 PDF
-                              </a>
-                            ) : (
-                              <span className="no-pdf">-</span>
                             )}
                           </td>
                           <td className="actions">
@@ -323,6 +339,7 @@ const AdminParcours: React.FC = () => {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };

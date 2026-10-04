@@ -22,3 +22,64 @@
     opacity: 0.5;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Éléments communs aux listes et formulaires d'administration
+   --------------------------------------------------------------------------- */
+
+/* Le numéro de ligne, dans les tableaux d'énigmes et de parcours.
+   Il portait la classe .enigma-number, qui est aussi celle de la pastille du
+   site joueur : la règle du joueur posait un disque encre sous un chiffre
+   encre, illisible. Une classe propre à l'administration coupe court — c'est
+   une cellule de tableau, pas une pastille. */
+.admin-row-number {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  vertical-align: middle;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Le retour à la liste, au-dessus du titre de l'écran de modification. */
+.admin-retour {
+  margin-bottom: 10px;
+}
+
+/* Enregistrer et renoncer. Ces boutons n'avaient aucune règle : ils se
+   touchaient. */
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 24px;
+}
+
+/* Supprimer, à l'écart. Séparé par un filet et un fond, pour qu'on ne l'atteigne
+   pas en visant « Mettre à jour ». */
+.form-zone-danger {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 28px;
+  padding: 16px 18px;
+  border: 1px solid var(--danger-color, #C4342B);
+  border-radius: 10px;
+  background: rgba(196, 52, 43, .05);
+}
+.form-zone-danger strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 14.5px;
+}
+.form-zone-danger p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-secondary, #5A6372);
+  max-width: 60ch;
+}

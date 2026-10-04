@@ -224,20 +224,39 @@ const AdminEnigmas: React.FC = () => {
     <div data-testid="admin-enigmas-page" className="admin-enigmas">
       <div className="admin-page-header">
         <div>
-          <h1>Gestion des énigmes</h1>
-          <p className="admin-page-subtitle">Créer, modifier et gérer les énigmes du jeu</p>
+          {/* Le formulaire remplace la liste au lieu de s'ouvrir au-dessus
+              d'elle : voir les vingt énigmes défiler sous celle qu'on est en
+              train de modifier ne disait pas où l'on se trouvait. */}
+          {showForm ? (
+            <>
+              <button data-testid="admin-enigmas-back"
+                type="button"
+                className="btn btn-secondary btn-small admin-retour"
+                onClick={resetForm}
+              >
+                ← Retour à la liste des énigmes
+              </button>
+              <h1>{editingEnigma ? `Modifier « ${editingEnigma.title} »` : 'Nouvelle énigme'}</h1>
+            </>
+          ) : (
+            <>
+              <h1>Gestion des énigmes</h1>
+              <p className="admin-page-subtitle">Créer, modifier et gérer les énigmes du jeu</p>
+            </>
+          )}
         </div>
-        <button data-testid="admin-enigmas-new-button"
-          className="btn btn-primary"
-          onClick={() => setShowForm(!showForm)}
-        >
-          {showForm ? 'Annuler' : '+ Nouvelle énigme'}
-        </button>
+        {!showForm && (
+          <button data-testid="admin-enigmas-new-button"
+            className="btn btn-primary"
+            onClick={() => { setEditingEnigma(null); setShowForm(true); }}
+          >
+            + Nouvelle énigme
+          </button>
+        )}
       </div>
 
       {showForm && (
         <div className="enigma-form-container card">
-          <h2>{editingEnigma ? 'Modifier l\'énigme' : 'Créer une nouvelle énigme'}</h2>
           <form data-testid="admin-enigmas-form" onSubmit={handleSubmit} className="enigma-form">
             <div className="form-row">
               <div className="form-group">
@@ -254,17 +273,28 @@ const AdminEnigmas: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="enigma-password">Mot de passe (solution) *</label>
+                <label htmlFor="enigma-password">
+                  Mot de passe (solution){editingEnigma ? '' : ' *'}
+                </label>
                 <input data-testid="admin-enigmas-password-input"
                   id="enigma-password"
                   type="text"
                   value={formData.correctPassword}
                   onChange={(e) => setFormData({ ...formData, correctPassword: e.target.value.toUpperCase() })}
-                  required
-                  placeholder="Ex: PARIS1889"
+                  /* Le champ n'est jamais pré-rempli, et il n'est obligatoire
+                     qu'à la création : le laisser obligatoire en modification
+                     forçait à ressaisir le mot de passe pour corriger un
+                     titre, alors que l'envoi sait déjà l'omettre quand il est
+                     vide. */
+                  required={!editingEnigma}
+                  placeholder={editingEnigma ? 'Laisser vide pour ne pas le changer' : 'Ex: PARIS1889'}
                   style={{ fontFamily: 'monospace', textTransform: 'uppercase' }}
                 />
-                <small className="form-help">Le mot de passe sera converti en majuscules</small>
+                <small className="form-help">
+                  {editingEnigma
+                    ? 'Vide : le mot de passe actuel est conservé. Sinon il sera remplacé.'
+                    : 'Le mot de passe sera converti en majuscules'}
+                </small>
               </div>
             </div>
 
@@ -413,6 +443,9 @@ const AdminEnigmas: React.FC = () => {
               </div>
             )}
 
+            {/* Enregistrer et renoncer vont ensemble ; supprimer n'a rien à
+                faire à côté d'eux — c'est une autre intention, et un clic de
+                travers ne se rattrape pas. Il descend donc sous un filet. */}
             <div className="form-actions">
               <button data-testid="admin-enigmas-submit" type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || uploadingPdf}>
                 {editingEnigma ? '💾 Mettre à jour' : '✨ Créer l\'énigme'}
@@ -420,7 +453,14 @@ const AdminEnigmas: React.FC = () => {
               <button data-testid="admin-enigmas-cancel" type="button" className="btn btn-secondary" onClick={resetForm}>
                 Annuler
               </button>
-              {editingEnigma && (
+            </div>
+
+            {editingEnigma && (
+              <div className="form-zone-danger">
+                <div>
+                  <strong>Supprimer cette énigme</strong>
+                  <p>Son énoncé, ses indices et la progression des équipes dessus disparaissent. Sans retour.</p>
+                </div>
                 <button data-testid="admin-enigmas-delete"
                   type="button"
                   className="btn btn-danger"
@@ -434,8 +474,8 @@ const AdminEnigmas: React.FC = () => {
                 >
                   🗑️ Supprimer l'énigme
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             {(createMutation.isError || updateMutation.isError) && (
               <div data-testid="admin-enigmas-form-error" className="form-error">
@@ -446,6 +486,7 @@ const AdminEnigmas: React.FC = () => {
         </div>
       )}
 
+      {!showForm && (
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="enigmas-list">
           <table data-testid="admin-enigmas-table" className="admin-table">
@@ -455,7 +496,6 @@ const AdminEnigmas: React.FC = () => {
                 <th style={{ width: '50px' }}>#</th>
                 <th>Titre</th>
                 <th style={{ width: '150px' }}>Stats</th>
-                <th style={{ width: '80px' }}>PDF</th>
                 <th style={{ width: '60px' }}>Indices</th>
                 <th style={{ width: '100px' }}></th>
               </tr>
@@ -474,7 +514,7 @@ const AdminEnigmas: React.FC = () => {
                           <td {...provided.dragHandleProps} className="drag-handle">
                             ⋮⋮
                           </td>
-                          <td className="enigma-number">#{enigma.enigmaNumber}</td>
+                          <td className="admin-row-number">#{enigma.enigmaNumber}</td>
                           <td>
                             <div className="enigma-title">
                               {enigma.title}
@@ -486,20 +526,6 @@ const AdminEnigmas: React.FC = () => {
                               <span>{enigma.teamsSolved} équipe{enigma.teamsSolved > 1 ? 's' : ''} l'ont résolue</span>
                             ) : (
                               <span className="no-stats">Pas encore résolue</span>
-                            )}
-                          </td>
-                          <td>
-                            {enigma.pdfUrl ? (
-                              <a
-                                href={enigma.pdfUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="pdf-link"
-                              >
-                                📄 PDF
-                              </a>
-                            ) : (
-                              <span className="no-pdf">-</span>
                             )}
                           </td>
                           <td>
@@ -536,6 +562,7 @@ const AdminEnigmas: React.FC = () => {
           )}
         </div>
       </DragDropContext>
+      )}
     </div>
   );
 };
