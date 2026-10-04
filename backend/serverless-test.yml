@@ -735,6 +735,17 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
+  adminResetTeamHints:
+    handler: src/functions/admin/teams/resetHints.handler
+    events:
+      - http:
+          path: /admin/teams/{teamId}/hints/reset
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
   adminGetTeamProgress:
     handler: src/functions/admin/teams/getProgress.handler
     events:

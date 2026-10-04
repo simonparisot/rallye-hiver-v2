@@ -196,6 +196,42 @@
   color: var(--text-secondary);
 }
 
+
+/* ---------------------------------------------------------------------------
+   Actions sur une équipe
+
+   En pied de carte, séparées du reste par un filet : ce sont des gestes
+   d'organisation, pas des chiffres à lire. La confirmation s'ouvre sur place
+   et nomme l'équipe, pour qu'on ne réinitialise pas la carte d'à côté.
+   --------------------------------------------------------------------------- */
+.team-card-actions {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color, #e3ddd0);
+}
+
+.team-action-confirm p {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.team-action-confirm-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.team-action-result {
+  margin: 10px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--success-color, #27694C);
+}
+.team-action-result.echec {
+  color: var(--danger-color, #C4342B);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .teams-grid {

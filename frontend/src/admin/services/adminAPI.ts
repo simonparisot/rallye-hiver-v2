@@ -279,6 +279,20 @@ export const adminTeamsAPI = {
     return response.data;
   },
 
+  /**
+   * Rend à l'équipe les indices qu'elle a déjà reçus : son vivier redevient
+   * entier. Ne touche ni aux réponses tentées, ni aux énigmes résolues.
+   */
+  resetHints: async (teamId: string): Promise<{
+    teamName: string;
+    hintRequestsDeleted: number;
+    progressRowsCleared: number;
+    message: string;
+  }> => {
+    const response = await adminApi.post(`/teams/${teamId}/hints/reset`);
+    return response.data;
+  },
+
   // Get all teams with detailed progress (enigmas + parcours statuses)
   getAllWithProgress: async (): Promise<{
     teams: Array<{

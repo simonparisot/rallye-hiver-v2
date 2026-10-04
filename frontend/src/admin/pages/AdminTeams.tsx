@@ -1,11 +1,36 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminTeamsAPI } from '../services/adminAPI';
 import { TeamMember } from '../../types';
 import './AdminTeams.css';
 
 const AdminTeams: React.FC = () => {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  // Rendre ses indices à une équipe ne se défait pas : on demande confirmation
+  // sur la carte elle-même plutôt que par une boîte du navigateur, qui bloque
+  // la page et ne dit pas de quelle équipe il s'agit.
+  const [aConfirmer, setAConfirmer] = useState<string | null>(null);
+  const [compteRendu, setCompteRendu] = useState<{ teamId: string; texte: string; echec?: boolean } | null>(null);
+  const queryClient = useQueryClient();
+
+  const reinitIndices = useMutation({
+    mutationFn: (teamId: string) => adminTeamsAPI.resetHints(teamId),
+    onSuccess: (r, teamId) => {
+      setAConfirmer(null);
+      setCompteRendu({ teamId, texte: r.message });
+      queryClient.invalidateQueries({ queryKey: ['adminTeams'] });
+      queryClient.invalidateQueries({ queryKey: ['teamProgress', teamId] });
+      queryClient.invalidateQueries({ queryKey: ['adminHintRequests'] });
+    },
+    onError: (err: any, teamId) => {
+      setAConfirmer(null);
+      setCompteRendu({
+        teamId,
+        texte: err?.response?.data?.error || "La réinitialisation n'a pas abouti.",
+        echec: true,
+      });
+    },
+  });
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['adminTeams'],
@@ -144,6 +169,58 @@ const AdminTeams: React.FC = () => {
                   </li>
                 ))}
               </ul>
+            </div>
+
+            {/* Les actions sont dans la carte, qui est elle-même cliquable :
+                sans stopPropagation, réinitialiser replierait la progression. */}
+            <div className="team-card-actions" onClick={(e) => e.stopPropagation()}>
+              {aConfirmer === team.teamId ? (
+                <div className="team-action-confirm" data-testid={`admin-teams-reset-hints-confirm-${team.teamId}`}>
+                  <p>
+                    Rendre à <strong>{team.teamName}</strong> tous les indices déjà reçus ?
+                    Les réponses tentées et les énigmes résolues ne changent pas.
+                  </p>
+                  <div className="team-action-confirm-buttons">
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-small"
+                      data-testid={`admin-teams-reset-hints-go-${team.teamId}`}
+                      disabled={reinitIndices.isPending}
+                      onClick={() => reinitIndices.mutate(team.teamId)}
+                    >
+                      {reinitIndices.isPending ? 'En cours…' : 'Oui, réinitialiser'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-small"
+                      data-testid={`admin-teams-reset-hints-cancel-${team.teamId}`}
+                      disabled={reinitIndices.isPending}
+                      onClick={() => setAConfirmer(null)}
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-small"
+                  data-testid={`admin-teams-reset-hints-${team.teamId}`}
+                  onClick={() => { setCompteRendu(null); setAConfirmer(team.teamId); }}
+                >
+                  Réinitialiser les indices
+                </button>
+              )}
+
+              {compteRendu?.teamId === team.teamId && (
+                <p
+                  className={`team-action-result ${compteRendu.echec ? 'echec' : ''}`}
+                  role="status"
+                  data-testid={`admin-teams-reset-hints-result-${team.teamId}`}
+                >
+                  {compteRendu.texte}
+                </p>
+              )}
             </div>
 
             {selectedTeam === team.teamId && progressData && (
