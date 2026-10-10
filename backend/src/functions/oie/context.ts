@@ -63,7 +63,7 @@ export function narrateEffect(teamName: string, effect: OieMoveEffect): string |
     case 'avance':
       return null; // le deplacement est deja resume par la ligne du lancer
     case 'oie':
-      return `${teamName} tombe sur l'acteur et son oie en case ${effect.at} et rejoue`;
+      return `${teamName} tombe sur l'acteur et son oie en case ${effect.at} et relance les dés`;
     case 'rebond':
       return `${teamName} dépasse la case 63 de ${effect.depassement} et recule en case ${effect.to}`;
     case 'metteur_en_scene':
@@ -71,9 +71,9 @@ export function narrateEffect(teamName: string, effect: OieMoveEffect): string |
     case 'mort':
       return `${teamName} tombe sur la répétition en case ${effect.from} et repart de la case 0`;
     case 'puits':
-      return `${teamName} tombe dans le puits en case ${effect.at}`;
+      return `${teamName} tombe dans le puits en case ${effect.at} et passe trois tours`;
     case 'prison':
-      return `${teamName} est enfermé dans la prison en case ${effect.at}`;
+      return `${teamName} est enfermé dans la prison en case ${effect.at} et passe deux tours`;
     case 'loge':
       return `${teamName} s'attarde dans la loge en case ${effect.at} et passe un tour`;
     case 'souffleur':

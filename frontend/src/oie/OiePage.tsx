@@ -62,7 +62,8 @@ const OiePage: React.FC = () => {
       setMessageReponse(null);
       setResultat(data);
       queryClient.setQueryData(['oie-board'], data);
-      // L'arrivee resout l'intrigue : les listes du jeu doivent le refleter.
+      // Un plateau sans question finale configuree resout encore l'intrigue
+      // des l'arrivee ; sinon c'est la reponse finale qui le fera, plus bas.
       if (data.finished) {
         queryClient.invalidateQueries({ queryKey: ['enigmas-with-progress'] });
         queryClient.invalidateQueries({ queryKey: ['team-stats'] });
@@ -80,6 +81,12 @@ const OiePage: React.FC = () => {
       setErreur(null);
       setMessageReponse({ texte: data.message, correct: data.correct });
       queryClient.setQueryData(['oie-board'], data);
+      // La question finale repondue juste resout l'enigme : les listes du jeu
+      // doivent le refleter, exactement comme un mot de passe trouve.
+      if (data.finished) {
+        queryClient.invalidateQueries({ queryKey: ['enigmas-with-progress'] });
+        queryClient.invalidateQueries({ queryKey: ['team-stats'] });
+      }
     },
     onError: (err: any) => {
       setErreur(err?.response?.data?.error || 'La réponse n\'a pas pu être enregistrée.');
@@ -146,7 +153,8 @@ const OiePage: React.FC = () => {
           <h1 data-testid="oie-titre">{edition.enigmeOie?.titre || "Le jeu de l'oie"}</h1>
           <p className="oie-sous-titre">
             Toutes les équipes jouent sur le même plateau. Répondez à la question de votre case
-            pour retrouver le droit de lancer les dés.
+            pour retrouver le droit de lancer les dés. En case 63, une dernière question décide
+            de l'intrigue.
           </p>
         </div>
         <Link className="oie-bouton-secondaire" to="/" data-testid="oie-retour">Retour au jeu</Link>

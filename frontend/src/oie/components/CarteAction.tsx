@@ -38,7 +38,7 @@ const CarteAction: React.FC<CarteActionProps> = ({
       <section className="oie-carte oie-carte-arrivee" data-testid="oie-carte-action">
         <h2>Rideau</h2>
         <p data-testid="oie-arrivee-message">
-          Votre équipe est arrivée en case 63
+          Votre équipe a répondu à la question finale
           {me.finishRank ? ` en ${me.finishRank}e position` : ''}. L'intrigue est résolue.
         </p>
         <dl className="oie-chiffres">
@@ -61,7 +61,16 @@ const CarteAction: React.FC<CarteActionProps> = ({
       </header>
 
       {me.questionPending && me.question && (
-        <form className="oie-question" onSubmit={soumettre} data-testid="oie-formulaire-reponse">
+        <form
+          className={`oie-question ${me.finalQuestionPending ? 'oie-question-finale' : ''}`}
+          onSubmit={soumettre}
+          data-testid="oie-formulaire-reponse"
+        >
+          {me.finalQuestionPending && (
+            <p className="oie-question-finale-annonce" data-testid="oie-question-finale-annonce">
+              Question finale : votre réponse emporte l'intrigue.
+            </p>
+          )}
           <p className="oie-question-texte" data-testid="oie-question">{me.question}</p>
           <div className="oie-question-saisie">
             <label className="oie-champ-label" htmlFor="oie-reponse">Votre réponse</label>
@@ -118,6 +127,13 @@ const CarteAction: React.FC<CarteActionProps> = ({
       )}
 
       <div className="oie-lancer">
+        {me.bonusRolls > 0 && !me.questionPending && (
+          <p className="oie-relance-due" data-testid="oie-relance-due">
+            L'acteur sur son oie vous doit {me.bonusRolls === 1 ? 'un lancer' : `${me.bonusRolls} lancers`} :
+            relancez les dés, cela ne vous coûte rien.
+          </p>
+        )}
+
         <button
           type="button"
           className="oie-bouton-principal"
@@ -125,12 +141,19 @@ const CarteAction: React.FC<CarteActionProps> = ({
           disabled={!me.canRoll || occupe}
           data-testid="oie-bouton-lancer"
         >
-          {occupe ? 'Les dés roulent...' : 'Lancer les dés'}
+          {occupe
+            ? 'Les dés roulent...'
+            : me.bonusRolls > 0
+              ? 'Relancer les dés'
+              : 'Lancer les dés'}
         </button>
 
         <p className="oie-quota" data-testid="oie-quota">
           {me.rollsRemainingToday} lancer{me.rollsRemainingToday > 1 ? 's' : ''} restant
           {me.rollsRemainingToday > 1 ? 's' : ''} aujourd'hui sur {me.rollsPerDay}
+          {me.bonusRolls > 0
+            ? `, plus ${me.bonusRolls} offert${me.bonusRolls > 1 ? 's' : ''} par l'oie`
+            : ''}
         </p>
 
         {me.rollRefusal && (

@@ -102,12 +102,13 @@ const Plateau: React.FC<PlateauProps> = ({ squares, teams, caseSurlignee }) => {
       </div>
 
       <ul className="oie-legende" data-testid="oie-legende">
-        <li><span className="oie-puce oie-case-oie" /> L'acteur sur son oie : on rejoue</li>
+        <li><span className="oie-puce oie-case-oie" /> L'acteur sur son oie : on relance les dés</li>
         <li><span className="oie-puce oie-case-souffleur" /> Le souffleur : un indice sur demande</li>
         <li><span className="oie-puce oie-case-loge" /> La loge : on passe un tour</li>
-        <li><span className="oie-puce oie-case-puits" /> Le puits : on attend d'être repêché</li>
+        <li><span className="oie-puce oie-case-puits" /> Le puits : trois tours, sauf repêchage</li>
         <li><span className="oie-puce oie-case-prison" /> La prison : deux tours, sauf délivrance</li>
         <li><span className="oie-puce oie-case-mort" /> La répétition : retour à la case 0</li>
+        <li><span className="oie-puce oie-case-arrivee" /> Rideau : la question finale, celle qui fait gagner</li>
       </ul>
     </div>
   );

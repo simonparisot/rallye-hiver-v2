@@ -288,6 +288,25 @@
   line-height: 1.4;
 }
 
+/* La derniere question du plateau : celle dont la reponse emporte l'enigme. */
+.oie-question-finale {
+  padding: 12px;
+  border: 1px solid var(--theatre-dorure-claire);
+  border-radius: 6px;
+}
+
+.oie-question-finale-annonce {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: var(--display-taille-mini, 22px);
+  font-weight: 400;
+  color: var(--theatre-dorure-claire);
+}
+
+.oie-question-finale .oie-question-texte {
+  font-size: 1.12rem;
+}
+
 .oie-question-saisie {
   display: flex;
   flex-wrap: wrap;
@@ -411,6 +430,16 @@
   font-size: 0.88rem;
 }
 
+/* Lancer du par une oie : une bonne nouvelle, pas un blocage. */
+.oie-relance-due {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--theatre-dorure-claire);
+  border-radius: 4px;
+  background: var(--etat-vierge-fond);
+  font-size: 0.88rem;
+}
+
 .oie-attente {
   margin: 0;
   font-size: 0.9rem;
@@ -520,6 +549,13 @@
   font-family: var(--font-display);
   font-size: var(--display-taille-mini, 22px);
   font-weight: 400;
+  color: var(--theatre-dorure-claire);
+}
+
+.oie-resultat-relance {
+  margin: 12px 0 0;
+  font-size: 0.95rem;
+  font-weight: 600;
   color: var(--theatre-dorure-claire);
 }
 

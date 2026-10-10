@@ -571,7 +571,7 @@ interface OieSquare {
   squareNumber: number,      // 0 à 63
   type: 'depart' | 'normale' | 'oie' | 'souffleur'
       | 'loge' | 'puits' | 'prison' | 'mort' | 'arrivee',
-  question?: string,         // absente sur 0, 63, 58 et les cases oie
+  question?: string,         // absente sur 0, 58 et les cases oie ; en 63, la question finale
   acceptedAnswers: string[], // comparées après normalisation
   hint?: string,             // seulement sur une case souffleur
   flavor?: string            // texte d'ambiance, facultatif
@@ -586,6 +586,11 @@ enregistrement, très loin de la limite de 400 Ko.
 `oie` = 9, 18, 27, 36, 45, 54 · `souffleur` = 14, 39, 50, 60 · `loge` = 19 ·
 `puits` = 31 · `prison` = 52 · `mort` = 58.
 
+**Case 63** : sa question est la question finale, dont la réponse (celle de
+l'intrigue) emporte la partie. Un plateau sans question en 63 donne l'intrigue
+à la seule arrivée, comme avant ; le script de seed et la page admin le
+signalent.
+
 ### OieTeamState — table `${service}-oie-team-state`
 
 Un enregistrement par équipe, créé à la volée à la première ouverture du plateau.
@@ -595,8 +600,9 @@ Un enregistrement par équipe, créé à la volée à la première ouverture du 
   teamId: string,               // PK
   position: number,             // 0 à 63
   questionPending: boolean,     // une question attend une réponse
-  inPuits: boolean,             // bloqué en 31 jusqu'à ce qu'une autre équipe y tombe
+  inPuits: boolean,             // purge la peine de la 31, libérable par une autre équipe
   inPrison: boolean,            // purge la peine de la 52, libérable par une autre équipe
+  bonusRolls: number,           // lancers dus par les oies, hors quota (absent = 0)
   nextRollAllowedDay: string,   // "YYYY-MM-DD", Europe/Paris
   rollsUsedToday: number,
   rollsDay: string,             // jour auquel se rapporte le compteur ci-dessus
@@ -604,7 +610,7 @@ Un enregistrement par équipe, créé à la volée à la première ouverture du 
   wrongAnswers: number,
   hintedSquares: number[],      // cases dont l'indice du souffleur a été demandé
   overshootCount: number,       // fois où l'équipe a raté la 63 pile
-  finishedAt?: string,          // ISO 8601, posé à l'arrivée
+  finishedAt?: string,          // ISO 8601, posé à la bonne réponse finale
   finishRank?: number,          // 1 pour la première équipe arrivée
   createdAt: string,
   updatedAt: string,
@@ -619,7 +625,13 @@ version lue, si bien qu'un seul lancer est compté et que le second reçoit un
 
 **Passer un tour** est modélisé par `nextRollAllowedDay` plutôt que par un
 compteur de tours : tomber sur la loge le jour D le porte à D+2, la prison à
-D+3. Libérer une équipe le ramène au jour courant.
+D+3, le puits à D+4. Libérer une équipe (puits ou prison) le ramène au jour
+courant.
+
+**Migration** : aucune. Un état stocké sans `bonusRolls` vaut 0. Une équipe
+restée `inPuits` sous l'ancienne règle (sans échéance) a un
+`nextRollAllowedDay` déjà passé : elle peut relancer dès le déploiement, et son
+prochain lancer remet `inPuits` à faux.
 
 **Le quota du jour** n'est pas remis à zéro par une tâche planifiée : quand
 `rollsDay` n'est plus le jour courant, `rollsUsedToday` est considéré comme nul.

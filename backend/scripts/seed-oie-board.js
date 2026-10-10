@@ -38,8 +38,14 @@ const PUITS_SQUARE = 31;
 const PRISON_SQUARE = 52;
 const MORT_SQUARE = 58;
 
-/** Cases ou une equipe ne s'arrete jamais : elles n'ont pas besoin de question. */
-const SQUARES_WITHOUT_QUESTION = [0, FINISH_SQUARE, MORT_SQUARE, ...OIE_SQUARES];
+/**
+ * Cases ou une equipe ne s'arrete jamais : elles n'ont pas besoin de question.
+ *
+ * La case 63 n'en fait plus partie : elle porte la question finale, celle dont
+ * la reponse emporte l'enigme. Un plateau livre sans elle se gagnerait a la
+ * seule arrivee, ce qui n'est plus l'intention.
+ */
+const SQUARES_WITHOUT_QUESTION = [0, MORT_SQUARE, ...OIE_SQUARES];
 
 function squareType(squareNumber) {
   if (squareNumber === 0) return 'depart';
@@ -148,10 +154,16 @@ async function main() {
   console.log(`Plateau lu : ${filePath}`);
   console.log(`  cases avec question : ${squares.filter((s) => s.question).length}`);
   console.log(`  lancers par jour    : ${rollsPerDay}`);
-  console.log(`  enigmaId            : ${enigmaId || '(non défini, l\'arrivée ne marquera pas l\'énigme résolue)'}`);
+  console.log(`  enigmaId            : ${enigmaId || '(non défini, la question finale ne marquera pas l\'énigme résolue)'}`);
 
-  if (manquantes.length > 0) {
-    console.log(`  ATTENTION, cases sans question : ${manquantes.join(', ')}`);
+  if (manquantes.includes(FINISH_SQUARE)) {
+    console.log('  ATTENTION, la case 63 n\'a pas de question finale.');
+    console.log('  Sans elle, arriver en 63 suffit à emporter l\'énigme sans rien répondre.');
+  }
+
+  const autresManquantes = manquantes.filter((square) => square !== FINISH_SQUARE);
+  if (autresManquantes.length > 0) {
+    console.log(`  ATTENTION, cases sans question : ${autresManquantes.join(', ')}`);
     console.log('  Une équipe qui s\'y arrête pourra relancer sans répondre.');
   }
   if (indicesManquants.length > 0) {
@@ -238,7 +250,8 @@ async function ensureEnigma(client, enigmasTable, { enigmaId, enigmaNumber, titl
     title,
     description:
       "Une des vingt énigmes, jouée sur un plateau de jeu de l'oie partagé par toutes les équipes.",
-    // Ni enonce ni mot de passe : la resolution vient de l'arrivee en case 63.
+    // Ni enonce ni mot de passe : la resolution vient de la question finale du
+    // plateau, en case 63.
     pdfUrl: '',
     correctPassword: '',
     points: 0,

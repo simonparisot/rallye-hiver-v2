@@ -18,6 +18,8 @@ export type OieSquareType =
 
 export type OieTeamStatus =
   | 'question_en_attente'
+  | 'question_finale'
+  | 'relance_oie'
   | 'peut_lancer'
   | 'quota_epuise'
   | 'tour_passe'
@@ -59,7 +61,11 @@ export interface OieMyView {
   flavor?: string;
   status: OieTeamStatus;
   questionPending: boolean;
+  /** La question en attente est celle de la case 63, celle qui fait gagner. */
+  finalQuestionPending: boolean;
   question?: string;
+  /** Lancers dus par les cases oie, qui ne coutent rien au quota du jour. */
+  bonusRolls: number;
   hintAvailable: boolean;
   hintRequested: boolean;
   hint?: string;
@@ -97,7 +103,7 @@ export interface OieBoardResponse {
 
 export type OieMoveEffect =
   | { kind: 'avance'; from: number; to: number }
-  | { kind: 'oie'; at: number; total: number }
+  | { kind: 'oie'; at: number }
   | { kind: 'rebond'; from: number; to: number; depassement: number }
   | { kind: 'metteur_en_scene'; from: number; to: number }
   | { kind: 'mort'; from: number; to: number }
@@ -112,7 +118,14 @@ export interface OieRollResponse extends OieBoardResponse {
   total: number;
   from: number;
   to: number;
+  /** Le pion est en case 63, la question finale reste a jouer. */
+  reachedFinish: boolean;
+  /** La question finale attend : l'enigme n'est pas gagnee pour autant. */
+  awaitsFinalQuestion: boolean;
+  /** L'enigme est emportee, ce qui n'arrive plus qu'a la question finale. */
   finished: boolean;
+  /** Une oie doit un lancer de plus, gratuit. */
+  bonusRoll: boolean;
   effects: OieMoveEffect[];
   /** Phrases deja ecrites en francais, dans l'ordre des effets. */
   journal: string[];
@@ -122,6 +135,8 @@ export interface OieRollResponse extends OieBoardResponse {
 
 export interface OieAnswerResponse extends OieBoardResponse {
   correct: boolean;
+  /** La reponse juste a la question finale vient d'emporter l'enigme. */
+  finished: boolean;
   message: string;
 }
 
@@ -163,6 +178,7 @@ export interface OieAdminTeam {
   inPrison: boolean;
   nextRollAllowedDay: string;
   rollsRemainingToday: number;
+  bonusRolls: number;
   totalRolls: number;
   wrongAnswers: number;
   hintsUsed: number;

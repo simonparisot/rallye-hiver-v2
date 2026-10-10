@@ -9,6 +9,7 @@
 
 import {
   addDays,
+  bonusRolls,
   canRoll,
   daysBetween,
   FINISH_SQUARE,
@@ -16,8 +17,7 @@ import {
   isAnswerCorrect,
   normalizeAnswer,
   parisDay,
-  PREMIER_NEUF_5_4,
-  PREMIER_NEUF_6_3,
+  PUITS_SKIPPED_DAYS,
   resolveMove,
   rollDice,
   rollRefusal,
@@ -73,34 +73,55 @@ describe('Deplacement simple', () => {
 });
 
 describe('L\'acteur sur son oie', () => {
-  test('rejoue du meme total sans consommer de lancer', () => {
-    // 5 + 4 = 9 depuis la case 9 : on arrive en 18, oie aussi, donc on continue.
+  test('on s\'arrete sur l\'oie et on gagne le droit de relancer', () => {
+    // 4 depuis la case 5 : on arrive en 9, et c'est tout. Le relancer viendra
+    // dans une autre requete, avec de nouveaux des.
     const move = resolveMove(5, 4, 0);
-    expect(move.position).toBe(13);
+    expect(move.position).toBe(9);
+    expect(move.bonusRoll).toBe(true);
     expect(move.effects).toEqual([
       { kind: 'avance', from: 5, to: 9 },
-      { kind: 'oie', at: 9, total: 4 },
-      { kind: 'avance', from: 9, to: 13 },
+      { kind: 'oie', at: 9 },
     ]);
   });
 
-  test('enchaine les cases oie tant qu\'elles se suivent', () => {
-    // Depuis 1 avec un total de 8 : 9, puis 17. Une seule oie traversee.
-    const move = resolveMove(1, 8, 0);
-    expect(move.position).toBe(17);
-    expect(move.effects.filter((effect) => effect.kind === 'oie')).toHaveLength(1);
+  test('le meme total n\'est plus rejoue', () => {
+    // L'ancienne regle menait en 13 d'un trait. Desormais on s'arrete en 9.
+    expect(resolveMove(5, 4, 0).position).toBe(9);
+    expect(resolveMove(1, 8, 0).position).toBe(9);
   });
 
-  test('enchaine plusieurs oies d\'affilee', () => {
-    // Depuis 45 avec un total de 9 : 54, puis 63 pile. Deux cases oie possibles
-    // sur le trajet, la seconde etant l'arrivee.
-    const move = resolveMove(45, 9, 0);
-    expect(move.position).toBe(FINISH_SQUARE);
-    expect(move.finished).toBe(true);
-    expect(move.effects.filter((effect) => effect.kind === 'oie')).toHaveLength(1);
+  test('un neuf depuis la case 0 ne gagne plus la partie', () => {
+    /**
+     * C'etait le trou de la regle traditionnelle : en rejouant le meme total,
+     * 0 enchainait 9, 18, 27, 36, 45, 54 puis 63, une fois sur neuf. On
+     * s'arrete maintenant en 9, ce qui rend inutiles les destinations
+     * arbitraires du premier neuf (26 et 53) : elles ont ete supprimees.
+     */
+    const move = resolveMove(0, 9, 0);
+    expect(move.position).toBe(9);
+    expect(move.finished).toBe(false);
+    expect(move.bonusRoll).toBe(true);
   });
 
-  test('l\'enchainement se termine toujours', () => {
+  test('aucune case oie ne mene plus a un enchainement', () => {
+    [9, 18, 27, 36, 45, 54].forEach((oie) => {
+      const move = resolveMove(oie - 2, 2, 0);
+      expect(move.position).toBe(oie);
+      expect(move.bonusRoll).toBe(true);
+      expect(move.finished).toBe(false);
+    });
+  });
+
+  test('reculer sur une oie en donne aussi le relancer', () => {
+    // 50 + 17 est impossible aux des, mais 54 est atteignable par rebond :
+    // 60 + 12 = 72, neuf de trop, retour en 54.
+    const move = resolveMove(60, 12, 0);
+    expect(move.position).toBe(54);
+    expect(move.bonusRoll).toBe(true);
+  });
+
+  test('un lancer reste toujours sur le plateau', () => {
     for (let total = 2; total <= 12; total += 1) {
       for (let from = 0; from < FINISH_SQUARE; from += 1) {
         const move = resolveMove(from, total, 0);
@@ -108,44 +129,6 @@ describe('L\'acteur sur son oie', () => {
         expect(move.position).toBeLessThanOrEqual(FINISH_SQUARE);
       }
     }
-  });
-});
-
-describe('Exception du premier neuf', () => {
-  /**
-   * Sans elle, un 9 depuis la case 0 enchaine 9, 18, 27, 36, 45, 54, 63 et
-   * gagne la partie du premier coup. Le cas s'est produit au premier essai sur
-   * le bac a sable : des 4 et 5, arrivee immediate en 63.
-   */
-  test('un 6 et un 3 mene en case 26, sans enchainement', () => {
-    const move = resolveMove(0, 9, 0, [6, 3]);
-    expect(move.position).toBe(PREMIER_NEUF_6_3);
-    expect(move.finished).toBe(false);
-    expect(move.effects.some((effect) => effect.kind === 'oie')).toBe(false);
-  });
-
-  test('un 3 et un 6 mene aussi en case 26', () => {
-    expect(resolveMove(0, 9, 0, [3, 6]).position).toBe(PREMIER_NEUF_6_3);
-  });
-
-  test('un 5 et un 4 mene en case 53', () => {
-    expect(resolveMove(0, 9, 0, [5, 4]).position).toBe(PREMIER_NEUF_5_4);
-    expect(resolveMove(0, 9, 0, [4, 5]).position).toBe(PREMIER_NEUF_5_4);
-  });
-
-  test('l\'exception est attachee a la case 0, pas au nombre de lancers', () => {
-    // Revenir en case 0 par la mort ne doit pas rouvrir le raccourci.
-    expect(resolveMove(0, 9, 0, [4, 5]).finished).toBe(false);
-  });
-
-  test('elle ne vaut que pour un total de neuf', () => {
-    expect(resolveMove(0, 8, 0, [4, 4]).position).toBe(8);
-    expect(resolveMove(0, 10, 0, [5, 5]).position).toBe(10);
-  });
-
-  test('ailleurs qu\'en case 0, un neuf se joue normalement', () => {
-    const move = resolveMove(4, 9, 0, [4, 5]);
-    expect(move.position).toBe(13);
   });
 });
 
@@ -157,11 +140,14 @@ describe('Cases speciales', () => {
     expect(move.inPrison).toBe(false);
   });
 
-  test('le puits retient l\'equipe', () => {
+  test('le puits fait passer trois tours', () => {
+    // Il retenait sans echeance, ce qui condamnait une equipe quand personne
+    // ne venait tomber en 31. Il fonctionne maintenant comme la prison.
     const move = resolveMove(28, 3, 0);
     expect(move.position).toBe(31);
     expect(move.inPuits).toBe(true);
-    expect(move.skippedDays).toBe(0);
+    expect(move.skippedDays).toBe(PUITS_SKIPPED_DAYS);
+    expect(move.skippedDays).toBe(3);
   });
 
   test('la prison fait passer deux tours', () => {
@@ -318,10 +304,22 @@ describe('Ce qui empeche de lancer', () => {
     expect(rollRefusal(attente, TODAY, 1)).toMatch(/question/i);
   });
 
-  test('le puits bloque le lancer meme avec du quota', () => {
-    const puits = state({ inPuits: true });
+  test('le puits retient trois jours, puis rend la main tout seul', () => {
+    // Puits le 15 : nextRollAllowedDay = 19, donc rien avant, mais plus rien
+    // non plus a attendre de la charite des autres equipes apres.
+    const puits = state({ inPuits: true, nextRollAllowedDay: addDays(TODAY, 4) });
     expect(canRoll(puits, TODAY, 5)).toBe(false);
     expect(teamStatus(puits, TODAY, 5)).toBe('dans_le_puits');
+    expect(canRoll(puits, addDays(TODAY, 3), 1)).toBe(false);
+    expect(canRoll(puits, addDays(TODAY, 4), 1)).toBe(true);
+    expect(rollRefusal(puits, TODAY, 1)).toMatch(/puits/i);
+    expect(rollRefusal(puits, TODAY, 1)).toMatch(/repêche/i);
+  });
+
+  test('le puits retient un jour de plus que la prison', () => {
+    const puits = resolveMove(28, 3, 0);
+    const prison = resolveMove(48, 4, 0);
+    expect(puits.skippedDays).toBe(prison.skippedDays + 1);
   });
 
   test('une equipe qui passe un tour attend le jour dit', () => {
@@ -355,5 +353,71 @@ describe('Ce qui empeche de lancer', () => {
   test('la question passe avant le quota dans le message de refus', () => {
     const bloque = state({ questionPending: true, rollsUsedToday: 1, rollsDay: TODAY });
     expect(rollRefusal(bloque, TODAY, 1)).toMatch(/question/i);
+  });
+});
+
+describe('Le lancer du a une oie', () => {
+  test('une equipe neuve n\'en a aucun', () => {
+    expect(bonusRolls(state())).toBe(0);
+    expect(teamStatus(state(), TODAY, 1)).toBe('peut_lancer');
+  });
+
+  test('il passe outre le quota du jour', () => {
+    const duParOie = state({ bonusRolls: 1, rollsUsedToday: 1, rollsDay: TODAY });
+    expect(canRoll(duParOie, TODAY, 1)).toBe(true);
+    expect(teamStatus(duParOie, TODAY, 1)).toBe('relance_oie');
+    expect(rollsRemaining(duParOie, TODAY, 1)).toBe(0);
+  });
+
+  test('il passe outre une penalite en cours', () => {
+    // Cas de principe : on ne peut pas etre sur une oie et puni en meme temps,
+    // mais un lancer deja gagne ne doit jamais etre reprenable.
+    const duParOie = state({ bonusRolls: 1, nextRollAllowedDay: addDays(TODAY, 3) });
+    expect(canRoll(duParOie, TODAY, 1)).toBe(true);
+  });
+
+  test('la question de la case passe quand meme avant', () => {
+    const duParOie = state({ bonusRolls: 1, questionPending: true });
+    expect(canRoll(duParOie, TODAY, 1)).toBe(false);
+    expect(teamStatus(duParOie, TODAY, 1)).toBe('question_en_attente');
+  });
+
+  test('une valeur negative stockee ne rend pas de lancer', () => {
+    expect(bonusRolls(state({ bonusRolls: -3 }))).toBe(0);
+    expect(canRoll(state({ bonusRolls: -3, rollsUsedToday: 1, rollsDay: TODAY }), TODAY, 1)).toBe(false);
+  });
+});
+
+describe('La question finale de la case 63', () => {
+  test('arriver en 63 n\'est plus gagner', () => {
+    const en63 = state({ position: FINISH_SQUARE, questionPending: true });
+    expect(en63.finishedAt).toBeUndefined();
+    expect(teamStatus(en63, TODAY, 1)).toBe('question_finale');
+    expect(canRoll(en63, TODAY, 1)).toBe(false);
+    expect(rollRefusal(en63, TODAY, 1)).toMatch(/finale/i);
+  });
+
+  test('une question ordinaire ailleurs reste une question ordinaire', () => {
+    const ailleurs = state({ position: 31, questionPending: true });
+    expect(teamStatus(ailleurs, TODAY, 1)).toBe('question_en_attente');
+    expect(rollRefusal(ailleurs, TODAY, 1)).not.toMatch(/finale/i);
+  });
+
+  test('la reponse donnee, l\'equipe a gagne et ne joue plus', () => {
+    const gagnante = state({
+      position: FINISH_SQUARE,
+      questionPending: false,
+      finishedAt: NOW,
+      finishRank: 1,
+    });
+    expect(teamStatus(gagnante, TODAY, 1)).toBe('arrivee');
+    expect(rollRefusal(gagnante, TODAY, 1)).toMatch(/remporté/i);
+  });
+
+  test('un lancer du par une oie ne survit pas a l\'arrivee', () => {
+    // roll.ts remet le compteur a zero en 63 : la verification porte ici sur
+    // le fait qu'une equipe gagnante ne lance plus, quoi qu'on lui doive.
+    const gagnante = state({ position: FINISH_SQUARE, bonusRolls: 1, finishedAt: NOW });
+    expect(canRoll(gagnante, TODAY, 1)).toBe(false);
   });
 });

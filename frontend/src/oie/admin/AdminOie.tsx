@@ -17,17 +17,20 @@ import './AdminOie.css';
 const LIBELLES_TYPE: Record<string, string> = {
   depart: 'Départ',
   normale: 'Ordinaire',
-  oie: "L'oie (on rejoue)",
+  oie: "L'oie (on relance les dés)",
   souffleur: 'Souffleur (indice)',
   loge: 'La loge (passer un tour)',
-  puits: 'Le puits',
+  puits: 'Le puits (3 tours)',
   prison: 'La prison (2 tours)',
   mort: 'La répétition (retour à 0)',
-  arrivee: 'Arrivée',
+  arrivee: 'Arrivée (question finale)',
 };
 
-/** Cases ou une equipe ne s'arrete jamais : elles n'ont pas besoin de question. */
-const SANS_QUESTION = [0, 63, 58, 9, 18, 27, 36, 45, 54];
+/**
+ * Cases ou une equipe ne s'arrete jamais : elles n'ont pas besoin de question.
+ * La case 63 n'en fait plus partie, elle porte la question finale.
+ */
+const SANS_QUESTION = [0, 58, 9, 18, 27, 36, 45, 54];
 
 const AdminOie: React.FC = () => {
   const queryClient = useQueryClient();
@@ -170,6 +173,11 @@ const AdminOie: React.FC = () => {
       (!square.question || square.acceptedAnswers.length === 0)
   );
 
+  // La case 63 merite son propre avertissement : il ne s'agit pas d'une case
+  // qu'on pourra traverser sans repondre, mais de l'enigme donnee pour rien.
+  const sansQuestionFinale = manquantes.some((square) => square.squareNumber === 63);
+  const autresManquantes = manquantes.filter((square) => square.squareNumber !== 63);
+
   return (
     <div className="admin-oie" data-testid="admin-oie-page">
       <div className="admin-page-header">
@@ -259,8 +267,8 @@ const AdminOie: React.FC = () => {
             data-testid="admin-oie-enigma-id"
           />
           <p className="admin-oie-aide">
-            Sans lui, l'arrivée en case 63 ne marque aucune intrigue comme résolue et le
-            classement ne compte rien.
+            Sans lui, la réponse à la question finale ne marque aucune intrigue comme résolue
+            et le classement ne compte rien.
           </p>
         </div>
 
@@ -268,9 +276,15 @@ const AdminOie: React.FC = () => {
           <span className="admin-oie-compteur" data-testid="admin-oie-compteur">
             {squares.filter((square) => square.question).length} cases avec question
           </span>
-          {manquantes.length > 0 && (
+          {sansQuestionFinale && (
+            <p className="admin-oie-aide admin-oie-aide-alerte" data-testid="admin-oie-sans-finale">
+              La case 63 n'a pas de question finale. Sans elle, arriver en 63 emporte l'intrigue
+              sans que personne n'ait à répondre.
+            </p>
+          )}
+          {autresManquantes.length > 0 && (
             <p className="admin-oie-aide admin-oie-aide-alerte" data-testid="admin-oie-manquantes">
-              Cases sans question : {manquantes.map((square) => square.squareNumber).join(', ')}.
+              Cases sans question : {autresManquantes.map((square) => square.squareNumber).join(', ')}.
               Une équipe qui s'y arrête pourra relancer sans répondre.
             </p>
           )}

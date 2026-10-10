@@ -1,7 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
-import { initialTeamState, parisDay, rollsRemaining, teamStatus } from '../rules';
+import { bonusRolls, initialTeamState, parisDay, rollsRemaining, teamStatus } from '../rules';
 import { getAllTeamStates, getBoard, getTeamState, logEvent, putTeamState } from '../store';
 import { getTeamNames } from '../view';
 
@@ -32,6 +32,7 @@ export const listHandler = async (event: APIGatewayProxyEvent): Promise<APIGatew
         inPrison: state.inPrison,
         nextRollAllowedDay: state.nextRollAllowedDay,
         rollsRemainingToday: rollsRemaining(state, today, board.rollsPerDay),
+        bonusRolls: bonusRolls(state),
         totalRolls: state.totalRolls,
         wrongAnswers: state.wrongAnswers,
         hintsUsed: (state.hintedSquares || []).length,
