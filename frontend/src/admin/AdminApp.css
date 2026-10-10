@@ -27,7 +27,7 @@
    Éléments communs aux listes et formulaires d'administration
    --------------------------------------------------------------------------- */
 
-/* Le numéro de ligne, dans les tableaux d'énigmes et de parcours.
+/* Le numéro de ligne, dans les tableaux d'intrigues et de tournées.
    Il portait la classe .enigma-number, qui est aussi celle de la pastille du
    site joueur : la règle du joueur posait un disque encre sous un chiffre
    encre, illisible. Une classe propre à l'administration coupe court — c'est

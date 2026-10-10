@@ -217,15 +217,15 @@ const AdminEnigmas: React.FC = () => {
     }
   };
 
-  if (isLoading) return <div data-testid="admin-enigmas-loading" className="loading">Chargement des énigmes...</div>;
-  if (error) return <div data-testid="admin-enigmas-error" className="error">Échec du chargement des énigmes</div>;
+  if (isLoading) return <div data-testid="admin-enigmas-loading" className="loading">Chargement des intrigues...</div>;
+  if (error) return <div data-testid="admin-enigmas-error" className="error">Échec du chargement des intrigues</div>;
 
   return (
     <div data-testid="admin-enigmas-page" className="admin-enigmas">
       <div className="admin-page-header">
         <div>
           {/* Le formulaire remplace la liste au lieu de s'ouvrir au-dessus
-              d'elle : voir les vingt énigmes défiler sous celle qu'on est en
+              d'elle : voir les vingt intrigues défiler sous celle qu'on est en
               train de modifier ne disait pas où l'on se trouvait. */}
           {showForm ? (
             <>
@@ -234,14 +234,14 @@ const AdminEnigmas: React.FC = () => {
                 className="btn btn-secondary btn-small admin-retour"
                 onClick={resetForm}
               >
-                ← Retour à la liste des énigmes
+                ← Retour à la liste des intrigues
               </button>
-              <h1>{editingEnigma ? `Modifier « ${editingEnigma.title} »` : 'Nouvelle énigme'}</h1>
+              <h1>{editingEnigma ? `Modifier « ${editingEnigma.title} »` : 'Nouvelle intrigue'}</h1>
             </>
           ) : (
             <>
-              <h1>Gestion des énigmes</h1>
-              <p className="admin-page-subtitle">Créer, modifier et gérer les énigmes du jeu</p>
+              <h1>Gestion des intrigues</h1>
+              <p className="admin-page-subtitle">Créer, modifier et gérer les intrigues du jeu</p>
             </>
           )}
         </div>
@@ -250,7 +250,7 @@ const AdminEnigmas: React.FC = () => {
             className="btn btn-primary"
             onClick={() => { setEditingEnigma(null); setShowForm(true); }}
           >
-            + Nouvelle énigme
+            + Nouvelle intrigue
           </button>
         )}
       </div>
@@ -260,7 +260,7 @@ const AdminEnigmas: React.FC = () => {
           <form data-testid="admin-enigmas-form" onSubmit={handleSubmit} className="enigma-form">
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="enigma-title">Nom de l'énigme *</label>
+                <label htmlFor="enigma-title">Nom de l'intrigue *</label>
                 <input data-testid="admin-enigmas-title-input"
                   id="enigma-title"
                   type="text"
@@ -300,7 +300,7 @@ const AdminEnigmas: React.FC = () => {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="enigma-pdf">Fichier PDF de l'énigme *</label>
+                <label htmlFor="enigma-pdf">Fichier PDF de l'intrigue *</label>
                 <div className="pdf-upload-container">
                   <input data-testid="admin-enigmas-pdf-input"
                     id="enigma-pdf-file"
@@ -353,7 +353,7 @@ const AdminEnigmas: React.FC = () => {
                 <div className="hints-editor" data-testid="admin-enigmas-hints-editor">
                   {indices.length === 0 && (
                     <p className="hints-empty" data-testid="admin-enigmas-hints-empty">
-                      Aucun indice. Sans indice, les équipes ne peuvent pas en demander sur cette énigme.
+                      Aucun indice. Sans indice, les équipes ne peuvent pas en demander sur cette intrigue.
                     </p>
                   )}
                   {indices.map((indice, index) => (
@@ -433,13 +433,13 @@ const AdminEnigmas: React.FC = () => {
                     {formData.isActive ? '✓ Publiée' : '✗ Non publiée'}
                   </span>
                 </div>
-                <small className="form-help">Les énigmes non publiées ne sont pas visibles aux joueurs</small>
+                <small className="form-help">Les intrigues non publiées ne sont pas visibles aux joueurs</small>
               </div>
             </div>
 
             {editingEnigma && (
               <div className="form-note">
-                <strong>Note:</strong> Le numéro de l'énigme (#{formData.enigmaNumber}) est géré automatiquement via le glisser-déposer.
+                <strong>Note:</strong> Le numéro de l'intrigue (#{formData.enigmaNumber}) est géré automatiquement via le glisser-déposer.
               </div>
             )}
 
@@ -448,7 +448,7 @@ const AdminEnigmas: React.FC = () => {
                 travers ne se rattrape pas. Il descend donc sous un filet. */}
             <div className="form-actions">
               <button data-testid="admin-enigmas-submit" type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || uploadingPdf}>
-                {editingEnigma ? '💾 Mettre à jour' : '✨ Créer l\'énigme'}
+                {editingEnigma ? '💾 Mettre à jour' : '✨ Créer l\'intrigue'}
               </button>
               <button data-testid="admin-enigmas-cancel" type="button" className="btn btn-secondary" onClick={resetForm}>
                 Annuler
@@ -458,7 +458,7 @@ const AdminEnigmas: React.FC = () => {
             {editingEnigma && (
               <div className="form-zone-danger">
                 <div>
-                  <strong>Supprimer cette énigme</strong>
+                  <strong>Supprimer cette intrigue</strong>
                   <p>Son énoncé, ses indices et la progression des équipes dessus disparaissent. Sans retour.</p>
                 </div>
                 <button data-testid="admin-enigmas-delete"
@@ -472,7 +472,7 @@ const AdminEnigmas: React.FC = () => {
                   }}
                   disabled={deleteMutation.isPending}
                 >
-                  🗑️ Supprimer l'énigme
+                  🗑️ Supprimer l'intrigue
                 </button>
               </div>
             )}
@@ -557,7 +557,7 @@ const AdminEnigmas: React.FC = () => {
 
           {orderedEnigmas.length === 0 && (
             <div data-testid="admin-enigmas-empty" className="empty-state">
-              <p>Aucune énigme créée pour le moment. Cliquez sur "Nouvelle énigme" pour commencer.</p>
+              <p>Aucune intrigue créée pour le moment. Cliquez sur "Nouvelle intrigue" pour commencer.</p>
             </div>
           )}
         </div>

@@ -48,7 +48,7 @@ const AdminAttempts: React.FC = () => {
       <div className="attempts-controls card">
         <div className="filter-controls">
           <div className="filter-group">
-            <label>Énigme</label>
+            <label>Intrigue</label>
             <select data-testid="admin-attempts-enigma-filter"
               value={filters.enigmaId || 'all'}
               onChange={(e) => {
@@ -58,12 +58,12 @@ const AdminAttempts: React.FC = () => {
                 });
               }}
             >
-              <option value="all">Toutes les énigmes</option>
+              <option value="all">Toutes les intrigues</option>
               {enigmasData?.enigmas
                 ?.sort((a, b) => a.enigmaNumber - b.enigmaNumber)
                 .map((enigma) => (
                   <option key={enigma.enigmaId} value={enigma.enigmaId}>
-                    Énigme #{enigma.enigmaNumber} - {enigma.title}
+                    Intrigue #{enigma.enigmaNumber} - {enigma.title}
                   </option>
                 ))}
             </select>
@@ -128,7 +128,7 @@ const AdminAttempts: React.FC = () => {
             <tr>
               <th>Date/Heure</th>
               <th>Équipe</th>
-              <th>Énigme</th>
+              <th>Intrigue</th>
               <th>Mot de passe</th>
               <th>Statut</th>
               <th>Utilisateur</th>

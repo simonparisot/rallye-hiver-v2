@@ -47,7 +47,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parcours-with-access'] });
       queryClient.invalidateQueries({ queryKey: ['team-stats'] });
-      setCompletionMessage('✅ Parcours déclaré comme réalisé !');
+      setCompletionMessage('✅ Tournée déclarée comme réalisée !');
       setTimeout(() => setCompletionMessage(''), 4000);
     },
     onError: (error: any) => {
@@ -80,7 +80,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
     }
   };
 
-  // Le message de confirmation appartient au parcours affiché.
+  // Le message de confirmation appartient à la tournée affichée.
   useEffect(() => setCompletionMessage(''), [idSelectionne]);
 
   const handleMarkCompleted = () => {
@@ -108,10 +108,10 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
     return (
       <div className={`parcours-panel ${isCompact ? 'panel-compact' : ''}`} data-testid="parcours-panel">
         <div className="panel-header">
-          <h2>Parcours</h2>
+          <h2>Tournées</h2>
         </div>
         <div className="panel-content">
-          <div className="loading-state" data-testid="parcours-loading">Chargement des parcours...</div>
+          <div className="loading-state" data-testid="parcours-loading">Chargement des tournées...</div>
         </div>
       </div>
     );
@@ -121,10 +121,10 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
     return (
       <div className={`parcours-panel ${isCompact ? 'panel-compact' : ''}`} data-testid="parcours-panel">
         <div className="panel-header">
-          <h2>Parcours</h2>
+          <h2>Tournées</h2>
         </div>
         <div className="panel-content">
-          <div className="error-state" data-testid="parcours-error">Erreur lors du chargement des parcours. Veuillez réessayer.</div>
+          <div className="error-state" data-testid="parcours-error">Erreur lors du chargement des tournées. Veuillez réessayer.</div>
         </div>
       </div>
     );
@@ -133,12 +133,12 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
   return (
     <div className={`parcours-panel ${isCompact ? 'panel-compact' : ''}`} data-testid="parcours-panel">
       <div className="panel-header">
-        <h2>Parcours</h2>
+        <h2>Tournées</h2>
       </div>
       <div className="panel-content">
         {!hasAccess && (
           <div className="access-blocked-message" data-testid="parcours-access-blocked">
-            Pour accéder aux parcours, rejoignez ou créez une équipe depuis « Ma troupe », puis réglez les frais d'inscription.
+            Pour accéder aux tournées, rejoignez ou créez une équipe depuis « Ma troupe », puis réglez les frais d'inscription.
           </div>
         )}
         {!isExpanded ? (
@@ -153,7 +153,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
               >
                 <span className="parcours-number">{index + 1}</span>
                 <span className="parcours-title-compact">{parcours.title}</span>
-                {parcours.isCompleted && <span className="completed-badge-small" data-testid={`parcours-completed-badge-${parcours.order}`}>Réalisé</span>}
+                {parcours.isCompleted && <span className="completed-badge-small" data-testid={`parcours-completed-badge-${parcours.order}`}>Réalisée</span>}
               </div>
             ))}
           </div>
@@ -190,7 +190,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                   </div>
                   {parcours.isCompleted && (
                     <div className="parcours-meta">
-                      <span className="completed-badge" data-testid={`parcours-completed-badge-${parcours.order}`}>Réalisé</span>
+                      <span className="completed-badge" data-testid={`parcours-completed-badge-${parcours.order}`}>Réalisée</span>
                     </div>
                   )}
                 </div>
@@ -205,7 +205,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                         {selectedParcours.isCompleted ? (
                           <div className="parcours-completed-container">
                             <div className="parcours-completed-badge" data-testid="parcours-completed-banner">
-                              ✅ Parcours réalisé
+                              ✅ Tournée réalisée
                               {selectedParcours.completedAt && (
                                 <span className="completed-date">
                                   {' '}le {new Date(selectedParcours.completedAt).toLocaleDateString('fr-FR')}
@@ -217,7 +217,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                               className="btn-unmark-completed"
                               onClick={handleUnmarkCompleted}
                               disabled={unmarkCompletedMutation.isPending}
-                              title="Annuler le marquage comme réalisé"
+                              title="Annuler le marquage comme réalisée"
                             >
                               {unmarkCompletedMutation.isPending ? 'Annulation...' : 'Annuler'}
                             </button>
@@ -229,7 +229,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                             onClick={handleMarkCompleted}
                             disabled={markCompletedMutation.isPending}
                           >
-                            {markCompletedMutation.isPending ? 'Marquage...' : 'Marquer comme réalisé'}
+                            {markCompletedMutation.isPending ? 'Marquage...' : 'Marquer comme réalisée'}
                           </button>
                         )}
                         {completionMessage && (
@@ -247,13 +247,13 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                   ) : (
                     <div className="parcours-pdf-placeholder" data-testid="parcours-pdf-placeholder">
                       <p>PDF non disponible</p>
-                      <p className="pdf-note">Le PDF de ce parcours n'est pas encore disponible</p>
+                      <p className="pdf-note">Le PDF de cette tournée n'est pas encore disponible</p>
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="parcours-placeholder" data-testid="parcours-placeholder">
-                  <p>Sélectionnez un parcours pour afficher son énoncé</p>
+                  <p>Sélectionnez une tournée pour afficher son énoncé</p>
                 </div>
               )}
             </div>

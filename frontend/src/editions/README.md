@@ -2,7 +2,7 @@
 
 Le Rallye d'Hiver change de thème chaque année. Ce dossier contient tout ce qui
 appartient à une édition et rien d'autre : l'habillage, le calendrier, les
-textes. Le contenu des énigmes vit en base ; le code des composants ne connaît
+textes. Le contenu des intrigues vit en base ; le code des composants ne connaît
 aucune édition en particulier.
 
 Jusqu'à l'édition 2026, ces éléments étaient écrits en dur dans les composants.
@@ -22,7 +22,7 @@ l'ajout d'une édition ne demande plus de toucher au cœur de l'application.
 
 **Une constante, lue partout.** `index.ts` exporte `edition`, l'édition active.
 Les composants qui affichent quelque chose de propre à l'année (mise en page,
-panneaux d'information, liste des énigmes, plateau du jeu de l'oie, espace
+panneaux d'information, liste des intrigues, plateau du jeu de l'oie, espace
 admin) l'importent et lisent `edition.label`, `edition.copy.intro`,
 `edition.theme.logo`, etc. Aucun composant ne compare l'année : il lit un champ.
 
@@ -71,7 +71,7 @@ aujourd'hui : elle est à ajouter le jour où l'archive doit être redéployée.
 Le champ optionnel `enigmeOie` est le modèle à suivre pour un essai limité à une
 année : c'est le seul point d'entrée du jeu de l'oie dans l'application. Une
 édition qui ne le déclare pas n'a ni la route `/oie`, ni l'entrée
-d'administration, ni le lien depuis la liste des énigmes, et n'importe rien de
+d'administration, ni le lien depuis la liste des intrigues, et n'importe rien de
 `src/oie/`. Retirer le champ suffit à faire disparaître la fonctionnalité ; la
 conserver dans une édition suivante suffit à la reconduire.
 

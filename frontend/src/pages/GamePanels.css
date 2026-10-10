@@ -3,7 +3,7 @@
 
    Une section à la fois sur toute la largeur, la navigation en tête. Remplace
    les trois panneaux dépliants, qui obligeaient à choisir entre voir la liste
-   et lire une énigme, et réduisaient les panneaux fermés à 4 % de largeur.
+   et lire une intrigue, et réduisaient les panneaux fermés à 4 % de largeur.
 
    Le décor est un mur d'affichage et non plus une salle plongée dans le noir :
    la photo de scène voilée pesait 890 ko, assombrissait tout le contenu posé
@@ -146,7 +146,7 @@
    posé sur une ombre nette.
 
    La hiérarchie est volontairement inversée par rapport à l'usage : ce qui est
-   résolu s'efface, ce qui reste à faire ressort. À mi-saison, douze énigmes sur
+   résolu s'efface, ce qui reste à faire ressort. À mi-saison, douze intrigues sur
    vingt sont résolues ; les mettre en avant reviendrait à noyer les huit qui
    demandent encore du travail. */
 .section .enigma-panel,
@@ -246,7 +246,7 @@
 /* ---------------------------------------------------------------------------
    Téléphone : toute la navigation passe dans le tiroir
 
-   La page empilait une barre d'onglets, une liste d'énigmes et l'énoncé de
+   La page empilait une barre d'onglets, une liste d'intrigues et l'énoncé de
    celle qu'on avait choisie : trois niveaux dans une colonne de 390 pixels, où
    lire un énoncé demandait de faire défiler la liste entière. Les deux
    premiers niveaux rejoignent le menu ; l'écran ne porte plus que le contenu.
@@ -256,7 +256,7 @@
   .sections,
   .compte { display: none; }
 
-  /* Les listes aussi : on change d'énigme par le menu. */
+  /* Les listes aussi : on change d'intrigue par le menu. */
   .section .enigma-list-full,
   .section .parcours-list-full { display: none; }
   .section .enigma-expanded-view,
@@ -305,7 +305,7 @@
 /* ---------------------------------------------------------------------------
    Le vide n'a pas à occuper la moitié de l'écran
 
-   Tant qu'aucune énigme n'est choisie, la zone de lecture affichait un grand
+   Tant qu'aucune intrigue n'est choisie, la zone de lecture affichait un grand
    rectangle blanc — la moitié de la page pour une phrase d'invite. Elle devient
    une invitation discrète, posée sur la scène.
    --------------------------------------------------------------------------- */
@@ -425,7 +425,7 @@
    marge intérieure : l'encart, les deux formulaires et la liste des équipes
    venaient toucher le trait. Plutôt que d'ajouter du rembourrage à une carte
    qui en contient trois autres, le cadre disparaît — les blocs se posent sur
-   le papier, comme les énigmes et les parcours ailleurs sur le site. */
+   le papier, comme les intrigues et les tournées ailleurs sur le site. */
 .section .no-team-message {
   display: flex;
   flex-direction: column;
@@ -468,8 +468,8 @@
 /* ---------------------------------------------------------------------------
    La barre de réponse et l'indice
 
-   Placés en tête de l'énigme : l'énoncé est un PDF long, souvent déjà lu, et
-   ce que l'on vient faire en rouvrant une énigme, c'est répondre.
+   Placés en tête de l'intrigue : l'énoncé est un PDF long, souvent déjà lu, et
+   ce que l'on vient faire en rouvrant une intrigue, c'est répondre.
 
    La demande d'indice se tient entre les deux, à la place du bandeau qu'elle
    remplace ; son habillage vit dans HintRequestSection.css.

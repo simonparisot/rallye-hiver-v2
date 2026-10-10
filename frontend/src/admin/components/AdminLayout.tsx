@@ -42,7 +42,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             className={`admin-nav-item ${isActive('/enigmas') ? 'active' : ''}`}
           >
             <span className="nav-icon">🧩</span>
-            <span>Énigmes</span>
+            <span>Intrigues</span>
           </Link>
 
           <Link data-testid="admin-nav-parcours"
@@ -50,7 +50,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             className={`admin-nav-item ${isActive('/parcours') ? 'active' : ''}`}
           >
             <span className="nav-icon">🗺️</span>
-            <span>Parcours</span>
+            <span>Tournées</span>
           </Link>
 
           <Link data-testid="admin-nav-teams"

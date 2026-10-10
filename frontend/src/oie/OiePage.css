@@ -330,7 +330,7 @@
 }
 
 /* Répondre puis lancer sont les deux gestes du jeu : ils prennent le rouge du
-   rideau, comme « Tester » sur les énigmes classiques. */
+   rideau, comme « Tester » sur les intrigues classiques. */
 .oie-question-saisie button {
   background: var(--theatre-tragedie);
   border-color: var(--theatre-tragedie-sombre);

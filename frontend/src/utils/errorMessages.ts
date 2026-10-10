@@ -29,11 +29,11 @@ const errorTranslations: Record<string, string> = {
 
   // Game errors
   'Game has not started': 'Le jeu n\'a pas encore commencé',
-  'Enigma not found': 'Énigme introuvable',
-  'Parcours not found': 'Parcours introuvable',
+  'Enigma not found': 'Intrigue introuvable',
+  'Parcours not found': 'Tournée introuvable',
   'Invalid answer': 'Réponse incorrecte',
-  'Enigma already solved': 'Cette énigme a déjà été résolue',
-  'Parcours already completed': 'Ce parcours a déjà été complété',
+  'Enigma already solved': 'Cette intrigue a déjà été résolue',
+  'Parcours already completed': 'Cette tournée a déjà été complétée',
 
   // Payment errors
   'Payment failed': 'Le paiement a échoué',

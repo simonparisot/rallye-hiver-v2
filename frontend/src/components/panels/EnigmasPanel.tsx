@@ -16,7 +16,7 @@ interface EnigmasPanelProps {
   isCompact: boolean;
   onExpand: () => void;
   /**
-   * Énigme affichée, quand la sélection est pilotée de l'extérieur — c'est le
+   * Intrigue affichée, quand la sélection est pilotée de l'extérieur — c'est le
    * cas sur téléphone, où la liste vit dans le menu et non dans le panneau.
    * Absent, le panneau gère sa sélection lui-même, comme sur grand écran.
    */
@@ -25,16 +25,16 @@ interface EnigmasPanelProps {
 }
 
 /**
- * État d'une énigme du point de vue du participant.
+ * État d'une intrigue du point de vue du participant.
  *
- * Rien ne distinguait jusqu'ici une énigme résolue d'une énigme jamais ouverte :
+ * Rien ne distinguait jusqu'ici une intrigue résolue d'une intrigue jamais ouverte :
  * les vingt cartes étaient identiques, et retrouver où l'on en était supposait
  * de toutes les parcourir.
  */
 type EtatEnigme = 'resolue' | 'a-faire';
 
-// Deux états, pas trois. La pastille distinguait aussi les énigmes commencées
-// des énigmes jamais ouvertes : une nuance que personne ne pouvait deviner et
+// Deux états, pas trois. La pastille distinguait aussi les intrigues commencées
+// des intrigues jamais ouvertes : une nuance que personne ne pouvait deviner et
 // qui mettait trois couleurs sur une liste de vingt lignes. Reste ce qui
 // compte, et qui se lit sans légende : à faire, ou fait.
 function etatDe(enigma: { isSolved: boolean }): EtatEnigme {
@@ -52,8 +52,8 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  // Édition 2027 : une des vingt énigmes se joue sur un plateau de jeu de l'oie
-  // partagé. Elle reste une énigme ordinaire dans cette liste, mais son entrée
+  // Édition 2027 : une des vingt intrigues se joue sur un plateau de jeu de l'oie
+  // partagé. Elle reste une intrigue ordinaire dans cette liste, mais son entrée
   // mène au plateau au lieu d'ouvrir un PDF et un champ de mot de passe.
   const enigmeOie = edition.enigmeOie;
   const estEnigmeOie = (enigmaId: string) =>
@@ -98,7 +98,7 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
   });
 
   const handleEnigmaSelect = (enigma: Enigma) => {
-    // L'énigme du jeu de l'oie n'a ni énoncé PDF ni mot de passe : elle se joue
+    // L'intrigue du jeu de l'oie n'a ni énoncé PDF ni mot de passe : elle se joue
     // sur son plateau.
     if (estEnigmeOie(enigma.id) && enigmeOie) {
       navigate(enigmeOie.route);
@@ -112,7 +112,7 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
     }
   };
 
-  // Le champ et le message de tentative appartiennent à l'énigme affichée :
+  // Le champ et le message de tentative appartiennent à l'intrigue affichée :
   // ils se vident quand elle change, d'où que vienne le changement.
   useEffect(() => {
     setPassword('');
@@ -133,7 +133,7 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
       setAttemptMessage(result.message);
       setAttemptSuccess(result.success);
 
-        // Le champ est vidé quand la réponse est la bonne : l'énigme est close,
+        // Le champ est vidé quand la réponse est la bonne : l'intrigue est close,
         // réafficher le mot de passe trouvé n'apporte rien.
       if (result.success) {
         setPassword('');
@@ -157,10 +157,10 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
     return (
       <div className={`enigmas-panel ${isCompact ? 'panel-compact' : ''}`} data-testid="enigma-panel">
         <div className="panel-header">
-          <h2>Énigmes</h2>
+          <h2>Intrigues</h2>
         </div>
         <div className="panel-content">
-          <div className="loading-state" data-testid="enigma-loading">Chargement des énigmes...</div>
+          <div className="loading-state" data-testid="enigma-loading">Chargement des intrigues...</div>
         </div>
       </div>
     );
@@ -170,10 +170,10 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
     return (
       <div className={`enigmas-panel ${isCompact ? 'panel-compact' : ''}`} data-testid="enigma-panel">
         <div className="panel-header">
-          <h2>Énigmes</h2>
+          <h2>Intrigues</h2>
         </div>
         <div className="panel-content">
-          <div className="error-state" data-testid="enigma-error">Erreur lors du chargement des énigmes. Veuillez réessayer.</div>
+          <div className="error-state" data-testid="enigma-error">Erreur lors du chargement des intrigues. Veuillez réessayer.</div>
         </div>
       </div>
     );
@@ -182,12 +182,12 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
   return (
     <div className={`enigmas-panel ${isCompact ? 'panel-compact' : ''}`} data-testid="enigma-panel">
       <div className="panel-header">
-        <h2>Énigmes</h2>
+        <h2>Intrigues</h2>
       </div>
       <div className="panel-content">
         {!hasAccess && (
           <div className="access-blocked-message" data-testid="enigma-access-blocked">
-            Pour accéder aux énigmes, rejoignez ou créez une équipe depuis « Ma troupe », puis réglez les frais d'inscription.
+            Pour accéder aux intrigues, rejoignez ou créez une équipe depuis « Ma troupe », puis réglez les frais d'inscription.
           </div>
         )}
         {!isExpanded ? (
@@ -264,12 +264,12 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                 <div className="enigma-details" data-testid="enigma-details">
                   {selectedEnigma.isSolved && (
                     <div className="enigma-solved-banner" data-testid="enigma-solved-banner">
-                      ✅ Énigme déjà résolue
+                      ✅ Intrigue déjà résolue
                     </div>
                   )}
                   {/* La barre de réponse et l'indice précèdent l'énoncé :
                       celui-ci est un PDF long, souvent déjà lu, et ce que
-                      l'on vient faire en rouvrant une énigme, c'est répondre. */}
+                      l'on vient faire en rouvrant une intrigue, c'est répondre. */}
                   <form className="password-form password-form-compact" data-testid="enigma-password-form" onSubmit={handlePasswordSubmit}>
                     <input
                       type="text"
@@ -304,13 +304,13 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                   ) : (
                     <div className="enigma-pdf-placeholder" data-testid="enigma-pdf-placeholder">
                       <p>PDF non disponible</p>
-                      <p className="pdf-note">Le PDF de cette enigme n'est pas encore disponible</p>
+                      <p className="pdf-note">Le PDF de cette intrigue n'est pas encore disponible</p>
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="enigma-placeholder" data-testid="enigma-placeholder">
-                  <p>Sélectionnez une énigme pour afficher son énoncé</p>
+                  <p>Sélectionnez une intrigue pour afficher son énoncé</p>
                 </div>
               )}
             </div>

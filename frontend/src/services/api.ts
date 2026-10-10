@@ -299,7 +299,7 @@ export const progressAPI = {
 
 // Hints API (Game)
 export const hintsAPI = {
-  /** Indices deja obtenus par l'equipe sur cette enigme, et cout du prochain. */
+  /** Indices deja obtenus par l'equipe sur cette intrigue, et cout du prochain. */
   listHints: async (enigmaId: string): Promise<HintsListResponse> => {
     const response = await api.get(`/hints/${enigmaId}`);
     return response.data;

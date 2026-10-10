@@ -100,7 +100,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, title }) => {
         <div className="pdf-safari-viewer">
           <iframe
             src={pdfUrl}
-            title={title || "Énoncé de l'énigme"}
+            title={title || "Énoncé de l'intrigue"}
             className="pdf-iframe"
           />
           <div className="pdf-safari-hint">

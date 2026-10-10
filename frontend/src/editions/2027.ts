@@ -33,7 +33,7 @@ export const edition2027: Edition = {
     intro: "Vous êtes sur le site de l'édition 2027 du Rallye d'Hiver, qui lèvera le rideau au solstice d'hiver, le lundi 21 décembre 2026 à 21 h 50, et le baissera à l'équinoxe de printemps, le samedi 20 mars 2027 à 21 h 24.",
     duration: 'du 21 décembre 2026 au 20 mars 2027',
   },
-  // Essai isolé de 2027 : une des vingt énigmes se joue sur un plateau de jeu
+  // Essai isolé de 2027 : une des vingt intrigues se joue sur un plateau de jeu
   // de l'oie partagé. Retirer ce champ suffit à faire disparaître le plateau,
   // sa route, son entrée d'administration et son lien dans la liste.
   enigmeOie: {

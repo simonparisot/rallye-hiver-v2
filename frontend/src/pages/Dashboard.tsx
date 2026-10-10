@@ -102,7 +102,7 @@ const Dashboard: React.FC = () => {
               Voir mon équipe
             </Link>
             <Link data-testid="nav-content-link" to="/content" className="btn btn-secondary">
-              Accéder aux énigmes
+              Accéder aux intrigues
             </Link>
             <button data-testid="dashboard-download-button"
               onClick={handleDownloadAllContent}

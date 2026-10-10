@@ -1,7 +1,7 @@
 /**
  * Ce qui appartient à une édition, et rien d'autre.
  *
- * Le contenu des énigmes vit en base ; ce fichier ne décrit que l'habillage et
+ * Le contenu des intrigues vit en base ; ce fichier ne décrit que l'habillage et
  * le calendrier — ce qui change chaque année et n'a aucune raison d'être écrit
  * en dur dans les composants, comme ce fut le cas jusqu'à l'édition 2026.
  */
@@ -39,25 +39,25 @@ export interface Edition {
   };
 
   /**
-   * Énigme jouée sur un plateau de jeu de l'oie partagé — essai de 2027.
+   * Intrigue jouée sur un plateau de jeu de l'oie partagé — essai de 2027.
    *
-   * C'est le seul point d'entrée de cette énigme dans l'application : sans ce
+   * C'est le seul point d'entrée de cette intrigue dans l'application : sans ce
    * champ, ni la route du plateau, ni l'entrée d'administration, ni le lien
-   * depuis la liste des énigmes n'existent. Une édition qui ne le déclare pas
+   * depuis la liste des intrigues n'existent. Une édition qui ne le déclare pas
    * ignore tout de `src/oie/`.
    */
   enigmeOie?: EnigmeOie;
 }
 
-/** Configuration de l'énigme jouée sur un plateau de jeu de l'oie partagé. */
+/** Configuration de l'intrigue jouée sur un plateau de jeu de l'oie partagé. */
 export interface EnigmeOie {
   /**
-   * Identifiant de l'énigme ordinaire créée par l'admin pour le jeu de l'oie.
+   * Identifiant de l'intrigue ordinaire créée par l'admin pour le jeu de l'oie.
    * Quand il est renseigné, l'entrée correspondante de la liste mène au plateau
    * au lieu d'ouvrir un PDF et un champ de mot de passe.
    *
    * Il est lu dans l'environnement de build pour ne pas avoir à recompiler
-   * quand l'énigme est recréée ; le plateau reste jouable sans lui, seul le
+   * quand l'intrigue est recréée ; le plateau reste jouable sans lui, seul le
    * lien depuis la liste disparaît.
    */
   enigmaId: string;

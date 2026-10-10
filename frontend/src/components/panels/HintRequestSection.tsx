@@ -5,7 +5,7 @@ import { hintsAPI } from '../../services/api';
 import './HintRequestSection.css';
 
 /**
- * Demander un indice sur une énigme.
+ * Demander un indice sur une intrigue.
  *
  * « Souffleur » reste le nom du mécanisme dans le code, mais il a quitté
  * l'interface : hors du théâtre, le mot ne dit rien de ce que fait le bouton.
@@ -13,7 +13,7 @@ import './HintRequestSection.css';
  * Au repos, tout tient en un point d'interrogation posé dans la barre de
  * réponse, à côté de « Valider ma réponse ». Rien d'autre : ni consigne, ni
  * avertissement, ni les indices déjà obtenus. Ce qu'on vient faire en ouvrant
- * une énigme, c'est lire l'énoncé et répondre ; l'indice est un recours.
+ * une intrigue, c'est lire l'énoncé et répondre ; l'indice est un recours.
  *
  * Tout le reste vit dans une fenêtre qui voile la page, dans cet ordre : ce que
  * coûte un indice et ce qu'il apporte, les indices déjà reçus, puis la demande.
@@ -33,7 +33,7 @@ const PERIODE_ATTENTE_MS = 3000;
 
 /**
  * Au-delà, on cesse d'interroger et on le dit. La demande n'est pas perdue pour
- * autant : elle reste en attente, et rouvrir l'énigme relance l'interrogation.
+ * autant : elle reste en attente, et rouvrir l'intrigue relance l'interrogation.
  */
 const PATIENCE_MAX_MS = 3 * 60 * 1000;
 
@@ -80,8 +80,8 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
 
   const enAttente = !!data?.pendingRequest;
 
-  // Changer d'énigme remet la zone à zéro : sans cela, le texte saisi pour une
-  // énigme se retrouverait proposé pour la suivante.
+  // Changer d'intrigue remet la zone à zéro : sans cela, le texte saisi pour une
+  // intrigue se retrouverait proposé pour la suivante.
   useEffect(() => {
     setOuvert(false);
     setAvancement('');
@@ -94,7 +94,7 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
   }, [enigma.id]);
 
   // Une demande laissée en plan ne rouvre pas la fenêtre de force — surgir
-  // devant quelqu'un qui vient lire une énigme serait pire que le silence.
+  // devant quelqu'un qui vient lire une intrigue serait pire que le silence.
   // C'est la pastille du bouton qui bat pour le dire.
 
   // Compteur de patience, démarré à la première attente observée.
@@ -138,7 +138,7 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
   const indicesObtenus = data?.hints || [];
   const indicesRestants = data?.remainingHints ?? 0;
 
-  // Combien d'indices cette énigme porte, quoi que l'équipe ait déjà reçu.
+  // Combien d'indices cette intrigue porte, quoi que l'équipe ait déjà reçu.
   // Le serveur le dit depuis peu ; tant qu'un déploiement plus ancien répond,
   // la somme « obtenus + restants » donne la même chose, à ceci près qu'elle
   // vaut zéro pendant le tout premier chargement — d'où l'attente ci-dessous.
@@ -183,7 +183,7 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
       ? `Indices (${indicesObtenus.length} obtenu${indicesObtenus.length > 1 ? 's' : ''}, ${indicesRestants} restant${indicesRestants > 1 ? 's' : ''})`
       : `Demander un indice (${indicesRestants} disponible${indicesRestants > 1 ? 's' : ''})`;
 
-  // Rien à proposer si l'énigme n'a pas d'indice écrit : le bouton ouvrirait
+  // Rien à proposer si l'intrigue n'a pas d'indice écrit : le bouton ouvrirait
   // une fenêtre vide, et la demande échouerait côté serveur. On attend d'abord
   // la réponse — afficher le bouton puis le retirer serait pire que l'attente.
   if (!data || nombreIndices === 0) return null;
@@ -236,11 +236,11 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
                 c'est la règle annoncée aux équipes et elle sera rebranchée. */}
             <div className="souffleur-intro" data-testid="hint-cost-warning">
               <p>
-                <b>Bloqué sur cette énigme ?</b> Décrivez où vous en êtes : un indice choisi
+                <b>Bloqué sur cette intrigue ?</b> Décrivez où vous en êtes : un indice choisi
                 pour votre situation s'affichera ici, en quelques secondes.
               </p>
               <p>
-                Chaque indice coûte <b>un quart des points de l'énigme</b>. C'est toujours
+                Chaque indice coûte <b>un quart des points de l'intrigue</b>. C'est toujours
                 plus rentable que de rester bloqué et de n'en marquer aucun.
               </p>
             </div>
@@ -285,7 +285,7 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
 
             {enAttente && tropLong && (
               <p className="souffleur-alerte" data-testid="hint-slow" role="status">
-                L'indice tarde à arriver. Votre demande n'est pas perdue : revenez sur cette énigme
+                L'indice tarde à arriver. Votre demande n'est pas perdue : revenez sur cette intrigue
                 dans quelques minutes pour le retrouver.
               </p>
             )}
@@ -380,7 +380,7 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
             )}
 
             {epuise && !enAttente && (
-              <p className="souffleur-aide">Tous les indices de cette énigme ont été donnés.</p>
+              <p className="souffleur-aide">Tous les indices de cette intrigue ont été donnés.</p>
             )}
 
             {messageErreur && (

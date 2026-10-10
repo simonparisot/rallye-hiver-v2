@@ -281,7 +281,7 @@ export const adminTeamsAPI = {
 
   /**
    * Rend à l'équipe les indices qu'elle a déjà reçus : son vivier redevient
-   * entier. Ne touche ni aux réponses tentées, ni aux énigmes résolues.
+   * entier. Ne touche ni aux réponses tentées, ni aux intrigues résolues.
    */
   resetHints: async (teamId: string): Promise<{
     teamName: string;

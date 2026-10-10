@@ -32,7 +32,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Link to="/team/browse">Équipes</Link>
             )}
             <Link to="/game">Jeu</Link>
-            <Link to="/content">Énigmes</Link>
+            <Link to="/content">Intrigues</Link>
             <button onClick={handleLogout} className="btn-logout">
               Déconnexion
             </button>

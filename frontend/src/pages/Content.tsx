@@ -26,7 +26,7 @@ const Content: React.FC = () => {
     );
   }
 
-  if (enigmaLoading) return <div data-testid="content-loading" className="loading">Chargement des énigmes...</div>;
+  if (enigmaLoading) return <div data-testid="content-loading" className="loading">Chargement des intrigues...</div>;
 
   return (
     <div data-testid="content-page" className="content">
@@ -36,7 +36,7 @@ const Content: React.FC = () => {
       <div className="enigmas">
         <div className="info-message">
           <h2>🎮 Le jeu a été déplacé!</h2>
-          <p>Rendez-vous dans l'onglet "Jeu" pour accéder aux énigmes et parcours.</p>
+          <p>Rendez-vous dans l'onglet "Jeu" pour accéder aux intrigues et tournées.</p>
           <a data-testid="content-game-link" href="/game" className="btn btn-primary">Accéder au jeu</a>
         </div>
       </div>

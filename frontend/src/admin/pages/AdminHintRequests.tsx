@@ -8,7 +8,7 @@ import './AdminHintRequests.css';
  *
  * C'est l'outil avec lequel l'organisateur juge si l'essai est concluant :
  * il doit pouvoir lire, sans troncature, ce que l'équipe a écrit et ce qui lui
- * a été répondu, et croiser cela par énigme et par équipe.
+ * a été répondu, et croiser cela par intrigue et par équipe.
  */
 /** Libellé lisible d'un statut. `processing` n'intéresse que le worker. */
 function libelleStatut(statut: string): string {
@@ -38,7 +38,7 @@ const AdminHintRequests: React.FC = () => {
   });
 
   // Listes de référence pour les filtres : les demandes seules ne suffisent pas,
-  // une énigme sans demande doit rester sélectionnable.
+  // une intrigue sans demande doit rester sélectionnable.
   const { data: enigmesData } = useQuery({
     queryKey: ['adminEnigmas'],
     queryFn: adminEnigmasAPI.listAll,
@@ -118,7 +118,7 @@ const AdminHintRequests: React.FC = () => {
             </div>
             <div className="stat-item">
               <div className="stat-value">{stats.uniqueEnigmas}</div>
-              <div className="stat-label">Énigmes concernées</div>
+              <div className="stat-label">Intrigues concernées</div>
             </div>
             <div className="stat-item">
               <div className="stat-value">{stats.failed}</div>
@@ -130,14 +130,14 @@ const AdminHintRequests: React.FC = () => {
 
       <div className="hint-filters card" data-testid="admin-hints-filters">
         <div className="hint-filter">
-          <label htmlFor="filtre-enigme">Énigme</label>
+          <label htmlFor="filtre-enigme">Intrigue</label>
           <select
             id="filtre-enigme"
             data-testid="admin-hints-filter-enigma"
             value={filtreEnigme}
             onChange={(e) => changerFiltre(() => setFiltreEnigme(e.target.value))}
           >
-            <option value="">Toutes les énigmes</option>
+            <option value="">Toutes les intrigues</option>
             {enigmes.map((e) => (
               <option key={e.enigmaId} value={e.enigmaId}>
                 #{e.enigmaNumber} {e.title}
@@ -295,7 +295,7 @@ const AdminHintRequests: React.FC = () => {
                         )}
                       </p>
                       <p className="hint-request-ids">
-                        demande {d.requestId} · équipe {d.teamId} · énigme {d.enigmaId}
+                        demande {d.requestId} · équipe {d.teamId} · intrigue {d.enigmaId}
                       </p>
                     </div>
                   )}

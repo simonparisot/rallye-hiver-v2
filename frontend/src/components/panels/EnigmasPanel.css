@@ -432,7 +432,7 @@
   }
 
   /* Sur téléphone, la liste défilait à l'intérieur d'une fenêtre de 300 px :
-     quatre énigmes visibles sur vingt, un défilement imbriqué dans celui de la
+     quatre intrigues visibles sur vingt, un défilement imbriqué dans celui de la
      page, et un grand cadre vide en dessous tant que rien n'était choisi. La
      liste suit maintenant le défilement de la page. */
   .enigma-list-full {
@@ -492,10 +492,10 @@
 }
 
 /* ---------------------------------------------------------------------------
-   États d'une énigme — refonte 2027
+   États d'une intrigue — refonte 2027
 
    Les vingt cartes étaient rigoureusement identiques : rien ne distinguait une
-   énigme résolue d'une énigme jamais ouverte, et retrouver où l'on en était
+   intrigue résolue d'une intrigue jamais ouverte, et retrouver où l'on en était
    supposait de parcourir toute la liste. L'état se lit désormais à la pastille
    comme au libellé — la couleur seule ne suffit pas.
    --------------------------------------------------------------------------- */
@@ -571,11 +571,11 @@
 }
 
 /* ---------------------------------------------------------------------------
-   L'énigme jouée sur le plateau du jeu de l'oie
+   L'intrigue jouée sur le plateau du jeu de l'oie
 
    Elle figure dans la liste comme les dix-neuf autres, mais son entrée ne mène
    ni à un énoncé PDF ni à un champ de mot de passe. Le participant doit le
-   savoir avant de cliquer, sans quoi l'écart avec les autres énigmes passe
+   savoir avant de cliquer, sans quoi l'écart avec les autres intrigues passe
    pour un défaut.
    --------------------------------------------------------------------------- */
 .enigma-oie-badge {

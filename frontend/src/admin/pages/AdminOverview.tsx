@@ -180,10 +180,10 @@ const AdminOverview: React.FC = () => {
                 <th className="members-col">👥</th>
                 <th className="payment-col">💰</th>
                 <th className="enigmas-col" colSpan={20}>
-                  <div className="header-label">Énigmes (1-20)</div>
+                  <div className="header-label">Intrigues (1-20)</div>
                 </th>
                 <th className="parcours-col" colSpan={10}>
-                  <div className="header-label">Parcours (1-10)</div>
+                  <div className="header-label">Tournées (1-10)</div>
                 </th>
               </tr>
             </thead>
@@ -213,14 +213,14 @@ const AdminOverview: React.FC = () => {
                   {/* Enigmas status boxes (20) */}
                   {Array.from({ length: 20 }).map((_, index) => {
                     const enigmaNumber = teamsWithProgress?.metadata?.enigmaNumbers?.[index] || index + 1;
-                    const enigmaTitle = teamsWithProgress?.metadata?.enigmaTitles?.[index] || `Énigme ${index + 1}`;
+                    const enigmaTitle = teamsWithProgress?.metadata?.enigmaTitles?.[index] || `Intrigue ${index + 1}`;
                     const isSolved = team.enigmaStatuses[index];
 
                     return (
                       <td key={`enigma-${index}`} className="status-cell">
                         <div
                           className={`status-box ${isSolved ? 'solved' : 'unsolved'}`}
-                          title={`Énigme #${enigmaNumber}: ${enigmaTitle}${isSolved ? ' ✓ Résolue' : ''}`}
+                          title={`Intrigue #${enigmaNumber}: ${enigmaTitle}${isSolved ? ' ✓ Résolue' : ''}`}
                         >
                           {isSolved && <span className="check">✓</span>}
                         </div>
@@ -231,14 +231,14 @@ const AdminOverview: React.FC = () => {
                   {/* Parcours status boxes (10) */}
                   {Array.from({ length: 10 }).map((_, index) => {
                     const parcoursNumber = teamsWithProgress?.metadata?.parcoursNumbers?.[index] || index + 1;
-                    const parcoursTitle = teamsWithProgress?.metadata?.parcoursTitles?.[index] || `Parcours ${index + 1}`;
+                    const parcoursTitle = teamsWithProgress?.metadata?.parcoursTitles?.[index] || `Tournée ${index + 1}`;
                     const isCompleted = team.parcoursStatuses[index];
 
                     return (
                       <td key={`parcours-${index}`} className="status-cell">
                         <div
                           className={`status-box ${isCompleted ? 'solved' : 'unsolved'}`}
-                          title={`Parcours #${parcoursNumber}: ${parcoursTitle}${isCompleted ? ' ✓ Complété' : ''}`}
+                          title={`Tournée #${parcoursNumber}: ${parcoursTitle}${isCompleted ? ' ✓ Complétée' : ''}`}
                         >
                           {isCompleted && <span className="check">✓</span>}
                         </div>

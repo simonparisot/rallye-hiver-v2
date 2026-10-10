@@ -21,19 +21,19 @@ const EditionInfoPanel: React.FC<EditionInfoPanelProps> = ({ isExpanded, isCompa
         ) : (
           <div className="info-expanded">
             <section className="info-section">
-              <h3>Les Énigmes</h3>
+              <h3>Les Intrigues</h3>
               <p>
-                Le Rallye comprend environ <strong>20 énigmes</strong> à résoudre principalement depuis chez vous. Chaque énigme donne un mot de passe, que vous pouvez soumettre sur ce site pour vérifier si vous avez résolu l'énigme. Les énigmes sont de niveau de difficulté variable, mais ne nécessite aucun connaissance pointue. Seulement de la logique, de l'observation, de la communication (au sein de votre équipe) et une bonne dose de "<i>Et si j'essayais ça ...</i>".
+                Le Rallye comprend environ <strong>20 intrigues</strong> à résoudre principalement depuis chez vous. Chaque intrigue donne un mot de passe, que vous pouvez soumettre sur ce site pour vérifier si vous avez résolu l'intrigue. Les intrigues sont de niveau de difficulté variable, mais ne nécessite aucun connaissance pointue. Seulement de la logique, de l'observation, de la communication (au sein de votre équipe) et une bonne dose de "<i>Et si j'essayais ça ...</i>".
               </p>
             </section>
 
             <section className="info-section">
-              <h3>Les Parcours</h3>
+              <h3>Les Tournées</h3>
               <p>
                 "<i>Un esprit sain dans un corps sain</i>". Pour arriver au bout de ce Rallye, il ne vous suffira pas de faire marcher votre intellect, mais également vos jambes ! Une dizaine de lieux sont à visiter, tous situés dans Paris ou en proximité. Ils sont sélectionnés pour leur intérêt, leur rapport certain avec le thème du Rallye et peuvent être en extérieur (parc, quartier,...) ou en intérieur (musée, monument, ..).
               </p>
               <p>
-                Chaque lieu se visite suivant un <b>Parcours</b> que vous pouvez télécharger et imprimer depuis ce site. Ce parcours vous donnera le nom du lieu à visiter, guidera votre marche et sera semé de questions. De quoi vous assurer une visite originale et pleinement active du lieu en question, tout en maintenant la compétition !
+                Chaque lieu se visite suivant une <b>Tournée</b> que vous pouvez télécharger et imprimer depuis ce site. Cette tournée vous donnera le nom du lieu à visiter, guidera votre marche et sera semé de questions. De quoi vous assurer une visite originale et pleinement active du lieu en question, tout en maintenant la compétition !
               </p>
             </section>
 
@@ -54,7 +54,7 @@ const EditionInfoPanel: React.FC<EditionInfoPanelProps> = ({ isExpanded, isCompa
             <section className="info-section">
               <h3>Déroulement</h3>
               <p>
-                Vous disposez de <strong>3 mois</strong> ({edition.copy.duration}) pour résoudre les énigmes et faire les parcours à votre rythme. Parfait pour occuper les longues soirées d'hiver et les weekends brumeux !
+                Vous disposez de <strong>3 mois</strong> ({edition.copy.duration}) pour résoudre les intrigues et faire les tournées à votre rythme. Parfait pour occuper les longues soirées d'hiver et les weekends brumeux !
               </p>
             </section>
           </div>

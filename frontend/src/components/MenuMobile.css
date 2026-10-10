@@ -178,8 +178,8 @@
     font-size: 12px;
     font-weight: var(--font-weight-fort, 700);
   }
-  /* Même langage que la liste des énigmes : cercle vermillon tant que ce n'est
-     pas résolu, disque vert une fois fait. Les parcours gardent leur pastille
+  /* Même langage que la liste des intrigues : cercle vermillon tant que ce n'est
+     pas résolu, disque vert une fois fait. Les tournées gardent leur pastille
      pleine, ils n'ont jamais eu d'état intermédiaire à dire. */
   .menu-numero-a-faire {
     background: var(--etat-tente-fond);

@@ -20,7 +20,7 @@ import { edition } from '../editions';
 /**
  * Les trois panneaux dépliants sont remplacés par une navigation par sections.
  *
- * Ils obligeaient à choisir entre voir la liste et lire une énigme, réduisaient
+ * Ils obligeaient à choisir entre voir la liste et lire une intrigue, réduisaient
  * les panneaux fermés à 4 % de largeur — d'où des titres pivotés à la verticale —
  * et tenaient mal sur téléphone. Une barre de navigation et une section à la fois
  * règlent les trois problèmes, sans rien retirer aux fonctions accessibles.
@@ -31,8 +31,8 @@ type Section = 'enigmes' | 'parcours' | 'equipe';
 // l'inscription réglée. Avant cela l'onglet reste visible — il dit ce qui
 // attend — mais il est inerte.
 const SECTIONS: { id: Section; libelle: string; reserve?: boolean }[] = [
-  { id: 'enigmes', libelle: 'Énigmes', reserve: true },
-  { id: 'parcours', libelle: 'Parcours', reserve: true },
+  { id: 'enigmes', libelle: 'Intrigues', reserve: true },
+  { id: 'parcours', libelle: 'Tournées', reserve: true },
   { id: 'equipe', libelle: 'Ma troupe' },
 ];
 
@@ -79,7 +79,7 @@ const GamePanels: React.FC = () => {
   });
 
   /* Sans équipe, rien d'autre n'est jouable : on ouvre sur « Ma troupe ».
-     Un compte fraîchement créé arrivait sur la liste des énigmes, avec pour
+     Un compte fraîchement créé arrivait sur la liste des intrigues, avec pour
      tout accueil une phrase disant de rejoindre une équipe — sans lien ni
      bouton, et, sur téléphone, l'écran qui le permet enfoui dans le menu.
      Le renvoi n'a lieu qu'une fois : ensuite la navigation est à l'équipe. */
@@ -202,7 +202,7 @@ const GamePanels: React.FC = () => {
 
       <main className="section-contenu">
         {/* Les trois sections restent montées : passer de l'une à l'autre ne
-            relance pas les requêtes, et l'énigme ouverte est retrouvée telle
+            relance pas les requêtes, et l'intrigue ouverte est retrouvée telle
             qu'on l'avait laissée. */}
         <div data-testid="nav-panel-enigmas" className="section" hidden={section !== 'enigmes'}>
           <EnigmasPanel

@@ -5,7 +5,7 @@
    plongée dans le noir. La première direction partait de la salle : velours
    sombre, or patiné, photo de scène en fond. Elle se lisait mal de jour, sur
    un téléphone, dehors — c'est-à-dire dans les conditions réelles du rallye,
-   où l'on consulte une énigme entre deux rues.
+   où l'on consulte une intrigue entre deux rues.
 
    Le théâtre est donc porté par la structure plutôt que par l'obscurité :
    le lambrequin festonné en tête de page, la typographie d'affiche, les
@@ -17,7 +17,7 @@
    — le vermillon porte le théâtre (lambrequin, titres, bouton « Tester ») ;
    — le jaune d'affiche signale ce qui reste à faire.
    Le vert est réservé au fait accompli, et il est volontairement discret :
-   à mi-saison, douze énigmes sur vingt sont résolues, et les colorer
+   à mi-saison, douze intrigues sur vingt sont résolues, et les colorer
    franchement reviendrait à peindre la page en vert en noyant les huit qui
    demandent encore du travail. Ce qui est fait s'efface, ce qui reste ressort.
 
@@ -105,7 +105,7 @@
   --success-color: var(--theatre-fait);
   --danger-color: var(--theatre-tragedie);
 
-  /* --- États d'une énigme ou d'un parcours ---
+  /* --- États d'une intrigue ou d'une tournée ---
      Le fait accompli en retrait, le reste à faire en avant. Voir l'en-tête :
      c'est la décision structurante de cette direction. */
   --etat-resolu-fond: var(--theatre-fait-pale);

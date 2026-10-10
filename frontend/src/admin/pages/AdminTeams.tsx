@@ -116,7 +116,7 @@ const AdminTeams: React.FC = () => {
                 <span className="stat-icon">🧩</span>
                 <div>
                   <div className="stat-number">{team.solvedEnigmasCount || 0}</div>
-                  <div className="stat-label">Énigmes résolues</div>
+                  <div className="stat-label">Intrigues résolues</div>
                 </div>
               </div>
 
@@ -124,7 +124,7 @@ const AdminTeams: React.FC = () => {
                 <span className="stat-icon">🗺️</span>
                 <div>
                   <div className="stat-number">{team.unlockedParcoursCount || 0}</div>
-                  <div className="stat-label">Parcours déverrouillés</div>
+                  <div className="stat-label">Tournées déverrouillées</div>
                 </div>
               </div>
 
@@ -178,7 +178,7 @@ const AdminTeams: React.FC = () => {
                 <div className="team-action-confirm" data-testid={`admin-teams-reset-hints-confirm-${team.teamId}`}>
                   <p>
                     Rendre à <strong>{team.teamName}</strong> tous les indices déjà reçus ?
-                    Les réponses tentées et les énigmes résolues ne changent pas.
+                    Les réponses tentées et les intrigues résolues ne changent pas.
                   </p>
                   <div className="team-action-confirm-buttons">
                     <button
@@ -233,7 +233,7 @@ const AdminTeams: React.FC = () => {
                         {progress.solved ? '✓' : '○'}
                       </span>
                       <div className="progress-info">
-                        <div className="progress-enigma">Énigme #{progress.enigmaNumber}</div>
+                        <div className="progress-enigma">Intrigue #{progress.enigmaNumber}</div>
                         <div className="progress-attempts">
                           {progress.attemptCount} tentatives
                           {progress.solvedAt && (

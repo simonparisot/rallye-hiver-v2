@@ -8,7 +8,7 @@ const Landing: React.FC = () => {
     <div className="landing">
       <div className="landing-hero">
         <h1>{edition.label}</h1>
-        <p>Rejoignez l'aventure annuelle d'énigmes !</p>
+        <p>Rejoignez l'aventure annuelle d'intrigues !</p>
         <div className="landing-buttons">
           <Link to="/login" className="btn btn-primary">
             Se connecter
@@ -30,8 +30,8 @@ const Landing: React.FC = () => {
             <p>Un paiement unique par équipe pour accéder au jeu</p>
           </div>
           <div className="info-card">
-            <h3>3. Résolvez les énigmes</h3>
-            <p>Travaillez en équipe pour résoudre toutes les énigmes</p>
+            <h3>3. Résolvez les intrigues</h3>
+            <p>Travaillez en équipe pour résoudre toutes les intrigues</p>
           </div>
         </div>
       </div>

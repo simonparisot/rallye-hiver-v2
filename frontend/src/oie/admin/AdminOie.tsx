@@ -246,7 +246,7 @@ const AdminOie: React.FC = () => {
         </div>
 
         <div className="admin-oie-reglage">
-          <label htmlFor="oie-enigma-id">Identifiant de l'énigme associée</label>
+          <label htmlFor="oie-enigma-id">Identifiant de l'intrigue associée</label>
           <input
             id="oie-enigma-id"
             type="text"
@@ -255,11 +255,11 @@ const AdminOie: React.FC = () => {
               setEnigmaId(event.target.value);
               setModifie(true);
             }}
-            placeholder="enigmaId de l'énigme créée pour le jeu de l'oie"
+            placeholder="enigmaId de l'intrigue créée pour le jeu de l'oie"
             data-testid="admin-oie-enigma-id"
           />
           <p className="admin-oie-aide">
-            Sans lui, l'arrivée en case 63 ne marque aucune énigme comme résolue et le
+            Sans lui, l'arrivée en case 63 ne marque aucune intrigue comme résolue et le
             classement ne compte rien.
           </p>
         </div>

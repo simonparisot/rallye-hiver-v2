@@ -141,12 +141,12 @@ const AdminParcours: React.FC = () => {
     } catch (error) {
       console.error('Failed to reorder parcours:', error);
       queryClient.invalidateQueries({ queryKey: ['adminParcours'] });
-      alert('Échec de la réorganisation des parcours');
+      alert('Échec de la réorganisation des tournées');
     }
   };
 
-  if (isLoading) return <div data-testid="admin-parcours-loading" className="loading">Chargement des parcours...</div>;
-  if (error) return <div data-testid="admin-parcours-error" className="error">Échec du chargement des parcours</div>;
+  if (isLoading) return <div data-testid="admin-parcours-loading" className="loading">Chargement des tournées...</div>;
+  if (error) return <div data-testid="admin-parcours-error" className="error">Échec du chargement des tournées</div>;
 
   const parcoursList = data?.parcours || [];
 
@@ -154,7 +154,7 @@ const AdminParcours: React.FC = () => {
     <div data-testid="admin-parcours-page" className="admin-parcours">
       <div className="admin-page-header">
         <div>
-          {/* Même règle que pour les énigmes : le formulaire remplace la
+          {/* Même règle que pour les intrigues : le formulaire remplace la
               liste, il ne s'empile pas dessus. */}
           {showForm ? (
             <>
@@ -163,14 +163,14 @@ const AdminParcours: React.FC = () => {
                 className="btn btn-secondary btn-small admin-retour"
                 onClick={resetForm}
               >
-                ← Retour à la liste des parcours
+                ← Retour à la liste des tournées
               </button>
-              <h1>{editingParcours ? `Modifier « ${editingParcours.title} »` : 'Nouveau parcours'}</h1>
+              <h1>{editingParcours ? `Modifier « ${editingParcours.title} »` : 'Nouvelle tournée'}</h1>
             </>
           ) : (
             <>
-              <h1>Gestion des parcours</h1>
-              <p className="admin-page-subtitle">Créer, modifier et gérer les parcours du jeu</p>
+              <h1>Gestion des tournées</h1>
+              <p className="admin-page-subtitle">Créer, modifier et gérer les tournées du jeu</p>
             </>
           )}
         </div>
@@ -179,7 +179,7 @@ const AdminParcours: React.FC = () => {
             className="btn btn-primary"
             onClick={() => { setEditingParcours(null); setShowForm(true); }}
           >
-            + Nouveau parcours
+            + Nouvelle tournée
           </button>
         )}
       </div>
@@ -188,13 +188,13 @@ const AdminParcours: React.FC = () => {
         <div className="parcours-form-container card">
           <form data-testid="admin-parcours-form" onSubmit={handleSubmit} className="parcours-form">
             <div className="form-group">
-              <label>Titre du parcours *</label>
+              <label>Titre de la tournée *</label>
               <input data-testid="admin-parcours-title-input"
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 required
-                placeholder="Entrez le titre du parcours"
+                placeholder="Entrez le titre de la tournée"
               />
             </div>
 
@@ -250,7 +250,7 @@ const AdminParcours: React.FC = () => {
             {editingParcours && (
               <div className="form-zone-danger">
                 <div>
-                  <strong>Supprimer ce parcours</strong>
+                  <strong>Supprimer cette tournée</strong>
                   <p>Son énoncé et les accès des équipes disparaissent. Sans retour.</p>
                 </div>
                 <button data-testid="admin-parcours-delete"
@@ -264,7 +264,7 @@ const AdminParcours: React.FC = () => {
                   }}
                   disabled={deleteMutation.isPending}
                 >
-                  🗑️ Supprimer le parcours
+                  🗑️ Supprimer la tournée
                 </button>
               </div>
             )}
@@ -312,7 +312,7 @@ const AdminParcours: React.FC = () => {
                           </td>
                           <td className="parcours-stats">
                             {parcours.teamsUnlocked > 0 ? (
-                              <span>{parcours.teamsUnlocked} équipe{parcours.teamsUnlocked > 1 ? 's' : ''} l'{parcours.teamsUnlocked > 1 ? 'ont' : 'a'} déverrouillé</span>
+                              <span>{parcours.teamsUnlocked} équipe{parcours.teamsUnlocked > 1 ? 's' : ''} l'{parcours.teamsUnlocked > 1 ? 'ont' : 'a'} déverrouillée</span>
                             ) : (
                               <span className="no-stats">Pas encore déverrouillé</span>
                             )}
@@ -335,7 +335,7 @@ const AdminParcours: React.FC = () => {
 
         {parcoursList.length === 0 && (
           <div data-testid="admin-parcours-empty" className="empty-state">
-            <p>Aucun parcours créé pour le moment. Cliquez sur "+ Nouveau parcours" pour commencer.</p>
+            <p>Aucune tournée créée pour le moment. Cliquez sur "+ Nouvelle tournée" pour commencer.</p>
           </div>
         )}
       </div>

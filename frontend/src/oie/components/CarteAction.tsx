@@ -39,7 +39,7 @@ const CarteAction: React.FC<CarteActionProps> = ({
         <h2>Rideau</h2>
         <p data-testid="oie-arrivee-message">
           Votre équipe est arrivée en case 63
-          {me.finishRank ? ` en ${me.finishRank}e position` : ''}. L'énigme est résolue.
+          {me.finishRank ? ` en ${me.finishRank}e position` : ''}. L'intrigue est résolue.
         </p>
         <dl className="oie-chiffres">
           <div><dt>Lancers</dt><dd>{me.totalRolls}</dd></div>

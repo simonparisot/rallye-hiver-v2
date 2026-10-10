@@ -62,7 +62,7 @@ const OiePage: React.FC = () => {
       setMessageReponse(null);
       setResultat(data);
       queryClient.setQueryData(['oie-board'], data);
-      // L'arrivee resout l'enigme : les listes du jeu doivent le refleter.
+      // L'arrivee resout l'intrigue : les listes du jeu doivent le refleter.
       if (data.finished) {
         queryClient.invalidateQueries({ queryKey: ['enigmas-with-progress'] });
         queryClient.invalidateQueries({ queryKey: ['team-stats'] });

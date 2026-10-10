@@ -87,7 +87,7 @@
   width: 30px;
   height: 30px;
   /* Le jaune d'affiche ne porte pas de blanc : 1,58:1. La pastille suit
-     désormais l'état du parcours, comme celle des énigmes. */
+     désormais l'état de la tournée, comme celle des intrigues. */
   background: var(--etat-vierge-fond);
   color: var(--etat-vierge-texte);
   border: var(--border-width-thin) var(--border-style) var(--etat-vierge-fond);
@@ -541,7 +541,7 @@
   }
 
   /* Sur téléphone, la liste défilait à l'intérieur d'une fenêtre de 300 px :
-     quatre énigmes visibles sur vingt, un défilement imbriqué dans celui de la
+     quatre intrigues visibles sur vingt, un défilement imbriqué dans celui de la
      page, et un grand cadre vide en dessous tant que rien n'était choisi. La
      liste suit maintenant le défilement de la page. */
   .parcours-list-full {
@@ -588,7 +588,7 @@
   }
 }
 
-/* Un parcours réalisé : la pastille passe au vert en retrait. */
+/* Une tournée réalisée : la pastille passe au vert en retrait. */
 .parcours-item.completed .parcours-number,
 .parcours-item-compact.completed .parcours-number {
   background: var(--etat-resolu-fond);

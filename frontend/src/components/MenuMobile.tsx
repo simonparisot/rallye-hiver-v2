@@ -8,13 +8,13 @@ import './MenuMobile.css';
  * La navigation du téléphone, rassemblée dans un tiroir.
  *
  * Sur petit écran, la page montrait une barre d'onglets, puis une liste
- * d'énigmes, puis l'énoncé de celle qu'on avait choisie : trois niveaux
+ * d'intrigues, puis l'énoncé de celle qu'on avait choisie : trois niveaux
  * empilés dans une colonne de 390 pixels, où lire un énoncé demandait de
  * faire défiler la liste entière. La liste quitte donc la page pour ce menu,
  * et l'écran principal ne porte plus que ce qu'on est venu lire.
  *
- * Le menu est un tiroir plein écran, avec des sections dépliables : Énigmes et
- * Parcours s'ouvrent sur leur liste complète, Ma troupe et le compte sont des
+ * Le menu est un tiroir plein écran, avec des sections dépliables : Intrigues
+ * et Tournées s'ouvrent sur leur liste complète, Ma troupe et le compte sont des
  * entrées simples. Ce qui est affiché à l'écran est marqué dans le menu.
  */
 
@@ -102,7 +102,7 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
             </header>
 
             <div className="menu-corps">
-              {/* --- Énigmes --- */}
+              {/* --- Intrigues --- */}
               <section className="menu-section">
                 <button
                   type="button"
@@ -112,7 +112,7 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
                   disabled={!acces}
                   onClick={() => basculer('enigmes')}
                 >
-                  <span className="menu-entete-titre">Énigmes</span>
+                  <span className="menu-entete-titre">Intrigues</span>
                   {acces
                     ? <span className="menu-compte">{resolues}/{enigmas.length}</span>
                     : <span className="menu-compte">Troupe requise</span>}
@@ -138,7 +138,7 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
                 )}
               </section>
 
-              {/* --- Parcours --- */}
+              {/* --- Tournées --- */}
               <section className="menu-section">
                 <button
                   type="button"
@@ -148,7 +148,7 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
                   disabled={!acces}
                   onClick={() => basculer('parcours')}
                 >
-                  <span className="menu-entete-titre">Parcours</span>
+                  <span className="menu-entete-titre">Tournées</span>
                   {acces
                     ? <span className="menu-compte">{realises}/{parcours.length}</span>
                     : <span className="menu-compte">Troupe requise</span>}

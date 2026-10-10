@@ -75,7 +75,7 @@ export interface TeamEnigmaProgress {
   attemptCount: number;
   lastAttemptAt?: string;
   firstAttemptAt?: string;
-  hintsRequested?: number; // Nombre d'indices obtenus sur cette enigme
+  hintsRequested?: number; // Nombre d'indices obtenus sur cette intrigue
   lastHintAt?: string;     // Date du dernier indice obtenu
   createdAt: string;
   updatedAt: string;
@@ -152,7 +152,7 @@ export interface Enigma {
   solvedAt?: string;
   attemptCount?: number;
   difficulty?: 'easy' | 'medium' | 'hard';
-  hintsCount?: number;     // Nombre d'indices existants pour cette enigme
+  hintsCount?: number;     // Nombre d'indices existants pour cette intrigue
   hintsRequested?: number; // Nombre d'indices deja obtenus par l'equipe
 }
 
@@ -237,7 +237,7 @@ export interface HintsListResponse {
   hintsRequested: number;
   remainingHints: number;
   /**
-   * Nombre d'indices écrits pour cette énigme, quoi que l'équipe ait déjà reçu.
+   * Nombre d'indices écrits pour cette intrigue, quoi que l'équipe ait déjà reçu.
    * Zéro veut dire qu'il n'y en a aucun : le bouton ne s'affiche pas.
    * Facultatif le temps que le serveur déployé porte le champ.
    */
