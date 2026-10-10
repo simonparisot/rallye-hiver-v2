@@ -143,7 +143,9 @@ On ne s'arrête ni sur la 0 (départ) ni sur la 58 (qui renvoie aussitôt à la 
 Sur une oie on s'arrête, mais seulement pour relancer : pas de question non plus.
 La 63 porte la **question finale**, ajoutée le 2026-10-10 à la demande des
 organisateurs : sa réponse est celle de l'énigme. Il y a **56 questions** à
-écrire, dont celle-là ; celle du plateau d'essai est un emplacement à remplacer.
+écrire, dont celle-là. Celle du plateau d'essai est une devinette dont la
+réponse est « le souffleur » : le seul personnage du plateau qu'aucune autre
+question ne nomme, et celui qui a aidé l'équipe sur quatre cases.
 
 ### 6. Le souffleur est gratuit
 

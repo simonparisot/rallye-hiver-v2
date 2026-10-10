@@ -66,6 +66,6 @@
     { "squareNumber": 60, "question": "Quel auteur a écrit Le Jeu de l'amour et du hasard ?", "acceptedAnswers": ["Marivaux", "Pierre de Marivaux"], "hint": "Son nom a donné un adjectif qui qualifie un dialogue amoureux plein de détours.", "flavor": "Le souffleur souffle un dernier nom." },
     { "squareNumber": 61, "question": "Comment appelle-t-on le moment où les acteurs viennent saluer à la fin ?", "acceptedAnswers": ["le salut", "salut", "les saluts"] },
     { "squareNumber": 62, "question": "Comment appelle-t-on le texte intégral d'une pièce, tel que l'auteur l'a écrit ?", "acceptedAnswers": ["le texte", "texte", "la pièce", "le manuscrit"], "flavor": "Encore un pas, et il faudra tomber pile." },
-    { "squareNumber": 63, "question": "QUESTION FINALE À REMPLACER : c'est elle qui fait gagner l'énigme, sa réponse est la réponse de l'énigme.", "acceptedAnswers": ["réponse à remplacer"], "flavor": "Rideau. La salle attend votre dernier mot." }
+    { "squareNumber": 63, "question": "On ne me voit jamais, et pourtant je ne manque aucune représentation. Tapi sous les planches, au bord de la scène, je ne joue aucun rôle mais je les sais tous par cœur. Quand la mémoire vous a trahis sur ce plateau, c'est moi qui vous ai glissé la réplique. Qui suis-je ?", "acceptedAnswers": ["le souffleur", "souffleur", "la souffleuse", "souffleuse"], "flavor": "Rideau. La salle retient son souffle." }
   ]
 }
