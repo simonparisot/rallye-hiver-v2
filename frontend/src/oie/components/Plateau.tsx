@@ -1,5 +1,6 @@
 import React from 'react';
 import { OieSquareView, OieTeamPawn } from '../types';
+import { illustrationDeCase } from '../illustrations';
 
 interface PlateauProps {
   squares: OieSquareView[];
@@ -61,6 +62,7 @@ const Plateau: React.FC<PlateauProps> = ({ squares, teams, caseSurlignee }) => {
             const pions = parCase.get(square.squareNumber) || [];
             const mienne = pions.some((pion) => pion.isMine);
             const libelle = LIBELLES[square.type];
+            const illustration = illustrationDeCase(square.squareNumber);
 
             return (
               <div
@@ -69,6 +71,7 @@ const Plateau: React.FC<PlateauProps> = ({ squares, teams, caseSurlignee }) => {
                 className={[
                   'oie-case',
                   `oie-case-${square.type}`,
+                  illustration ? 'oie-case-illustree' : '',
                   mienne ? 'oie-case-mienne' : '',
                   caseSurlignee === square.squareNumber ? 'oie-case-surlignee' : '',
                 ]
@@ -77,6 +80,11 @@ const Plateau: React.FC<PlateauProps> = ({ squares, teams, caseSurlignee }) => {
                 title={libelle ? `Case ${square.squareNumber} : ${libelle}` : `Case ${square.squareNumber}`}
                 style={{ gridRow: indexRangee + 1 }}
               >
+                {illustration && (
+                  // Decorative : le numero, le libelle et l'info-bulle portent
+                  // deja tout le sens de la case.
+                  <img className="oie-case-illustration" src={illustration} alt="" loading="lazy" />
+                )}
                 <span className="oie-case-numero">{square.squareNumber}</span>
                 {libelle && <span className="oie-case-libelle">{libelle}</span>}
                 {pions.length > 0 && (

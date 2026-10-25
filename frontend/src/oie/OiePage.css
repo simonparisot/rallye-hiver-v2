@@ -118,6 +118,48 @@
   overflow: hidden;
 }
 
+/* Illustrations des cases. L'image remplit la case ; le numéro et le libellé
+   passent dans une pastille qui hérite du fond de la case, si bien que les
+   contrastes réglés plus bas pour chaque nature de case restent valables, et
+   que la couleur des cases spéciales reste lisible malgré l'image. */
+.oie-case-illustree {
+  min-height: 72px;
+}
+
+.oie-case-illustration {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.oie-case-illustree > :not(.oie-case-illustration) {
+  position: relative;
+  z-index: 1;
+}
+
+.oie-case-illustree .oie-case-numero,
+.oie-case-illustree .oie-case-libelle {
+  align-self: flex-start;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: inherit;
+}
+
+/* Le surlignage de ma case est une ombre intérieure : l'image la couvrirait.
+   Une couche au-dessus de tout la reprend telle quelle. */
+.oie-case-illustree::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  box-shadow: inherit;
+  pointer-events: none;
+}
+
 .oie-case-numero {
   font-family: var(--font-body);
   font-size: 0.82rem;
@@ -645,4 +687,5 @@
   .oie-case-libelle { display: none; }
   .oie-plateau { min-width: 340px; gap: 4px; }
   .oie-case { min-height: 46px; }
+  .oie-case-illustree { min-height: 50px; }
 }
