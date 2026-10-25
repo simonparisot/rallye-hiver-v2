@@ -10,6 +10,15 @@ import { test, expect } from './fixtures.js';
  * réponse répond — et ne lance les dés que si le bouton est réellement
  * disponible, ce qui reste vrai au plus une fois par jour.
  */
+/**
+ * La carte d'action, le classement et le fil vivent dans un panneau masqué par
+ * défaut, ouvert par le bouton « Votre équipe » au-dessus du plateau.
+ */
+async function ouvrirPanneau(page) {
+  await page.getByTestId('oie-bouton-panneau').click();
+  await expect(page.getByTestId('oie-panneau')).toBeVisible();
+}
+
 test.describe('Jeu de l\'oie', () => {
   test('le plateau des 64 cases est affiché', async ({ page }) => {
     await page.goto('/oie');
@@ -36,6 +45,7 @@ test.describe('Jeu de l\'oie', () => {
 
   test('la carte d\'action dit ce qu\'il y a à faire', async ({ page }) => {
     await page.goto('/oie');
+    await ouvrirPanneau(page);
 
     const carte = page.getByTestId('oie-carte-action');
     await expect(carte).toBeVisible();
@@ -57,6 +67,7 @@ test.describe('Jeu de l\'oie', () => {
 
   test('le fil d\'événements et le classement sont affichés', async ({ page }) => {
     await page.goto('/oie');
+    await ouvrirPanneau(page);
 
     await expect(page.getByTestId('oie-classement')).toBeVisible();
     await expect(page.getByTestId('oie-fil-evenements')).toBeVisible();
@@ -64,6 +75,7 @@ test.describe('Jeu de l\'oie', () => {
 
   test('une réponse fausse est refusée sans débloquer le lancer', async ({ page }) => {
     await page.goto('/oie');
+    await ouvrirPanneau(page);
     await expect(page.getByTestId('oie-carte-action')).toBeVisible();
 
     const formulaire = page.getByTestId('oie-formulaire-reponse');
@@ -81,6 +93,7 @@ test.describe('Jeu de l\'oie', () => {
 
   test('un lancer disponible annonce les dés et la case d\'arrivée', async ({ page }) => {
     await page.goto('/oie');
+    await ouvrirPanneau(page);
     await expect(page.getByTestId('oie-carte-action')).toBeVisible();
 
     const bouton = page.getByTestId('oie-bouton-lancer');
@@ -96,6 +109,22 @@ test.describe('Jeu de l\'oie', () => {
     await expect(page.getByTestId('oie-de-1')).toBeVisible();
     await expect(page.getByTestId('oie-de-2')).toBeVisible();
     await expect(page.getByTestId('oie-trajet')).toContainText('case');
+  });
+
+  test('le panneau de l\'équipe est fermé par défaut et se referme avec Échap', async ({ page }) => {
+    await page.goto('/oie');
+    await expect(page.getByTestId('oie-plateau')).toBeVisible();
+
+    // Fermé, le bouton dit quand même ce que l'équipe a à faire.
+    await expect(page.getByTestId('oie-panneau')).toBeHidden();
+    await expect(page.getByTestId('oie-etat-equipe')).not.toBeEmpty();
+
+    await ouvrirPanneau(page);
+    await expect(page.getByTestId('oie-carte-action')).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('oie-panneau')).toBeHidden();
+    await expect(page.getByTestId('oie-bouton-panneau')).toBeFocused();
   });
 
   test('aucune erreur de console pendant la visite du plateau', async ({ page, erreursConsole, requetesEchouees }) => {

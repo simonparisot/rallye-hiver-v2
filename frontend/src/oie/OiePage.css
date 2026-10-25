@@ -65,23 +65,102 @@
 
 /* ==================== Mise en page ==================== */
 
-.oie-grille {
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 1fr);
-  gap: 24px;
+/* Le plateau prend toute la largeur ; la carte de l'équipe, le classement et
+   le fil vivent dans un panneau masqué par défaut, ouvert par-dessus. */
+.oie-scene {
   max-width: 1280px;
   margin: 0 auto;
-  align-items: start;
 }
 
-.oie-colonne-action {
+/* La barre suit le défilement : le bouton du panneau, qui annonce ce que
+   l'équipe a à faire, ne quitte jamais l'écran. */
+.oie-barre {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  background: linear-gradient(var(--theatre-programme) 70%, transparent);
+}
+
+.oie-bouton-panneau {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 16px;
+  border: var(--border-width-thin) var(--border-style) var(--theatre-salle);
+  border-radius: 6px;
+  background: var(--theatre-scene);
+  color: var(--theatre-salle);
+  font: inherit;
+  cursor: pointer;
+  box-shadow: var(--ombre-affiche);
+}
+
+.oie-bouton-panneau-titre {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--theatre-coulisse);
+}
+
+.oie-bouton-panneau-etat {
+  font-weight: 600;
+}
+
+/* Une action attend l'équipe : le bouton prend le rouge des gestes du jeu. */
+.oie-bouton-panneau-a-agir {
+  background: var(--theatre-tragedie);
+  border-color: var(--theatre-tragedie-sombre);
+  color: #fff;
+}
+
+.oie-bouton-panneau-a-agir .oie-bouton-panneau-titre { color: #fff; }
+
+.oie-bouton-panneau:focus-visible,
+.oie-panneau-fermer:focus-visible {
+  outline: 3px solid var(--theatre-dorure);
+  outline-offset: 2px;
+}
+
+/* Le panneau glisse par-dessus la droite du plateau, qui reste visible à
+   gauche : on voit son pion bouger après un lancer. */
+.oie-panneau {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  /* La carte d'action reste sous les yeux pendant qu'on parcourt le plateau :
-     c'est le seul endroit où l'on agit. */
-  position: sticky;
-  top: 16px;
+  width: min(440px, 100vw);
+  padding: 52px 16px 24px;
+  overflow-y: auto;
+  background: var(--theatre-programme);
+  border-left: var(--border-width-thick) var(--border-style) var(--theatre-salle);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.18);
+}
+
+.oie-panneau[hidden] { display: none; }
+
+.oie-panneau-fermer {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: var(--border-width-thin) var(--border-style) var(--theatre-filet);
+  border-radius: 50%;
+  background: var(--theatre-scene);
+  color: var(--theatre-salle);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
 }
 
 /* ==================== Plateau ==================== */
@@ -98,7 +177,7 @@
 .oie-plateau {
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
-  gap: 5px;
+  gap: 8px;
   min-width: 360px;
 }
 
@@ -122,8 +201,16 @@
    passent dans une pastille qui hérite du fond de la case, si bien que les
    contrastes réglés plus bas pour chaque nature de case restent valables, et
    que la couleur des cases spéciales reste lisible malgré l'image. */
+/* Le plateau a toute la largeur : la case garde la proportion des images. */
 .oie-case-illustree {
+  aspect-ratio: 4 / 3;
   min-height: 72px;
+}
+
+@media (min-width: 901px) {
+  .oie-case-illustree .oie-case-numero { font-size: 1rem; }
+  .oie-case-illustree .oie-case-libelle { font-size: 0.68rem; }
+  .oie-case-illustree .oie-pion { font-size: 0.72rem; }
 }
 
 .oie-case-illustration {
@@ -673,8 +760,6 @@
 /* ==================== Téléphone ==================== */
 
 @media (max-width: 900px) {
-  .oie-grille { grid-template-columns: minmax(0, 1fr); }
-  .oie-colonne-action { position: static; }
   .oie-plateau { min-width: 420px; }
   .oie-case { min-height: 54px; }
 }
