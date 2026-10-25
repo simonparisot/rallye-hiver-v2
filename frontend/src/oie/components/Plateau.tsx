@@ -34,12 +34,51 @@ function abreger(nom: string): string {
     .toUpperCase();
 }
 
+const COTE = 8;
+
 /**
- * Plateau en serpentin sur une grille de huit colonnes : la spirale historique
- * n'apporte rien a la lecture sur un ecran, et surtout pas sur un telephone.
- * Les huit rangees se lisent en alternance, de gauche a droite puis de droite
- * a gauche, comme un boustrophedon.
+ * Place des 64 cases sur la grille, en spirale comme le plateau traditionnel :
+ * depart dans le coin en bas a gauche, on longe le bord vers la droite, on
+ * remonte, on repart vers la gauche, on redescend, et ainsi de suite en
+ * s'enroulant vers l'interieur jusqu'a la 63, au centre. Une grille de huit
+ * sur huit contient exactement les 64 cases, de 0 a 63.
  */
+function spirale(cote: number): { ligne: number; colonne: number }[] {
+  const places: { ligne: number; colonne: number }[] = [];
+  const prise = Array.from({ length: cote }, () => Array(cote).fill(false));
+  // Droite, haut, gauche, bas : le sens inverse des aiguilles d'une montre.
+  const directions = [
+    [0, 1],
+    [-1, 0],
+    [0, -1],
+    [1, 0],
+  ];
+  let ligne = cote - 1;
+  let colonne = 0;
+  let sens = 0;
+
+  for (let numero = 0; numero < cote * cote; numero += 1) {
+    places.push({ ligne, colonne });
+    prise[ligne][colonne] = true;
+
+    const [dl, dc] = directions[sens];
+    const suivante = { ligne: ligne + dl, colonne: colonne + dc };
+    const libre =
+      suivante.ligne >= 0 &&
+      suivante.ligne < cote &&
+      suivante.colonne >= 0 &&
+      suivante.colonne < cote &&
+      !prise[suivante.ligne][suivante.colonne];
+    if (!libre) sens = (sens + 1) % 4;
+
+    ligne += directions[sens][0];
+    colonne += directions[sens][1];
+  }
+  return places;
+}
+
+const PLACES = spirale(COTE);
+
 const Plateau: React.FC<PlateauProps> = ({ squares, teams, caseSurlignee }) => {
   const parCase = new Map<number, OieTeamPawn[]>();
   teams.forEach((team) => {
@@ -48,66 +87,59 @@ const Plateau: React.FC<PlateauProps> = ({ squares, teams, caseSurlignee }) => {
     parCase.set(team.position, liste);
   });
 
-  const rangees: OieSquareView[][] = [];
-  for (let index = 0; index < 8; index += 1) {
-    const rangee = squares.slice(index * 8, index * 8 + 8);
-    rangees.push(index % 2 === 1 ? [...rangee].reverse() : rangee);
-  }
-
   return (
     <div className="oie-plateau-cadre">
       <div className="oie-plateau" data-testid="oie-plateau">
-        {rangees.map((rangee, indexRangee) =>
-          rangee.map((square) => {
-            const pions = parCase.get(square.squareNumber) || [];
-            const mienne = pions.some((pion) => pion.isMine);
-            const libelle = LIBELLES[square.type];
-            const illustration = illustrationDeCase(square.squareNumber);
+        {squares.map((square) => {
+          const place = PLACES[square.squareNumber];
+          const pions = parCase.get(square.squareNumber) || [];
+          const mienne = pions.some((pion) => pion.isMine);
+          const libelle = LIBELLES[square.type];
+          const illustration = illustrationDeCase(square.squareNumber);
 
-            return (
-              <div
-                key={square.squareNumber}
-                data-testid={`oie-case-${square.squareNumber}`}
-                className={[
-                  'oie-case',
-                  `oie-case-${square.type}`,
-                  illustration ? 'oie-case-illustree' : '',
-                  mienne ? 'oie-case-mienne' : '',
-                  caseSurlignee === square.squareNumber ? 'oie-case-surlignee' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                title={libelle ? `Case ${square.squareNumber} : ${libelle}` : `Case ${square.squareNumber}`}
-                style={{ gridRow: indexRangee + 1 }}
-              >
-                {illustration && (
-                  // Decorative : le numero, le libelle et l'info-bulle portent
-                  // deja tout le sens de la case.
-                  <img className="oie-case-illustration" src={illustration} alt="" loading="lazy" />
-                )}
-                <span className="oie-case-numero">{square.squareNumber}</span>
-                {libelle && <span className="oie-case-libelle">{libelle}</span>}
-                {pions.length > 0 && (
-                  <span className="oie-case-pions">
-                    {pions.slice(0, 3).map((pion) => (
-                      <span
-                        key={pion.teamId}
-                        className={`oie-pion ${pion.isMine ? 'oie-pion-mien' : ''}`}
-                        title={pion.teamName}
-                        data-testid={`oie-pion-${pion.teamId}`}
-                      >
-                        {abreger(pion.teamName)}
-                      </span>
-                    ))}
-                    {pions.length > 3 && (
-                      <span className="oie-pion oie-pion-reste">+{pions.length - 3}</span>
-                    )}
-                  </span>
-                )}
-              </div>
-            );
-          })
-        )}
+          return (
+            <div
+              key={square.squareNumber}
+              data-testid={`oie-case-${square.squareNumber}`}
+              className={[
+                'oie-case',
+                `oie-case-${square.type}`,
+                illustration ? 'oie-case-illustree' : '',
+                mienne ? 'oie-case-mienne' : '',
+                caseSurlignee === square.squareNumber ? 'oie-case-surlignee' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              title={libelle ? `Case ${square.squareNumber} : ${libelle}` : `Case ${square.squareNumber}`}
+              style={{ gridRow: place.ligne + 1, gridColumn: place.colonne + 1 }}
+            >
+              {illustration && (
+                // Decorative : le numero, le libelle et l'info-bulle portent
+                // deja tout le sens de la case.
+                <img className="oie-case-illustration" src={illustration} alt="" loading="lazy" />
+              )}
+              <span className="oie-case-numero">{square.squareNumber}</span>
+              {libelle && <span className="oie-case-libelle">{libelle}</span>}
+              {pions.length > 0 && (
+                <span className="oie-case-pions">
+                  {pions.slice(0, 3).map((pion) => (
+                    <span
+                      key={pion.teamId}
+                      className={`oie-pion ${pion.isMine ? 'oie-pion-mien' : ''}`}
+                      title={pion.teamName}
+                      data-testid={`oie-pion-${pion.teamId}`}
+                    >
+                      {abreger(pion.teamName)}
+                    </span>
+                  ))}
+                  {pions.length > 3 && (
+                    <span className="oie-pion oie-pion-reste">+{pions.length - 3}</span>
+                  )}
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <ul className="oie-legende" data-testid="oie-legende">
