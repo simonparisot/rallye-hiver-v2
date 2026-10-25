@@ -87,35 +87,6 @@ const PLACES = spirale(COTE);
  */
 const PISTE = (index: number) => index * 2 + 1;
 
-/**
- * Les murs : entre deux cases voisines qui ne se suivent pas, un trait sombre
- * dans le joint. Avec le chemin dore, ils dessinent le couloir de la spirale.
- */
-const NUMERO_EN = new Map(PLACES.map((place, numero) => [`${place.ligne},${place.colonne}`, numero]));
-
-const MURS: { cle: string; horizontal: boolean; gridRow: number; gridColumn: number }[] = [];
-PLACES.forEach((place, numero) => {
-  const droite = NUMERO_EN.get(`${place.ligne},${place.colonne + 1}`);
-  if (droite !== undefined && Math.abs(droite - numero) !== 1) {
-    // Deux cases cote a cote : le mur est un trait vertical.
-    MURS.push({
-      cle: `mur-${numero}-droite`,
-      horizontal: false,
-      gridRow: PISTE(place.ligne),
-      gridColumn: place.colonne * 2 + 2,
-    });
-  }
-  const dessous = NUMERO_EN.get(`${place.ligne + 1},${place.colonne}`);
-  if (dessous !== undefined && Math.abs(dessous - numero) !== 1) {
-    MURS.push({
-      cle: `mur-${numero}-dessous`,
-      horizontal: true,
-      gridRow: place.ligne * 2 + 2,
-      gridColumn: PISTE(place.colonne),
-    });
-  }
-});
-
 const LIENS = PLACES.slice(0, -1).map((place, numero) => {
   const suivante = PLACES[numero + 1];
   const horizontal = place.ligne === suivante.ligne;
@@ -188,14 +159,6 @@ const Plateau: React.FC<PlateauProps> = ({ squares, teams, caseSurlignee }) => {
             </div>
           );
         })}
-        {MURS.map((mur) => (
-          <span
-            key={mur.cle}
-            className={`oie-mur ${mur.horizontal ? 'oie-mur-horizontal' : 'oie-mur-vertical'}`}
-            style={{ gridRow: mur.gridRow, gridColumn: mur.gridColumn }}
-            aria-hidden="true"
-          />
-        ))}
         {LIENS.map((lien) => (
           <span
             key={`lien-${lien.numero}`}

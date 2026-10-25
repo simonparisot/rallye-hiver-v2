@@ -272,25 +272,6 @@
   height: calc(100% + 4px);
 }
 
-/* Les murs : un trait sombre au milieu des joints qui séparent deux cases
-   voisines sans les relier. */
-.oie-mur {
-  align-self: center;
-  justify-self: center;
-  background: var(--theatre-salle);
-  border-radius: 2px;
-}
-
-.oie-mur-vertical {
-  width: 3px;
-  height: 100%;
-}
-
-.oie-mur-horizontal {
-  width: 100%;
-  height: 3px;
-}
-
 .oie-case {
   position: relative;
   display: flex;
