@@ -64,11 +64,12 @@ fois qu'une équipe rate la 63 pile, le metteur en scène la place directement e
 
 Chaque dépassement compte, même un rebond survenu bien avant d'approcher de la
 fin. Aux essais du 2026-10-25, une équipe en 61 a été placée en 63 dès son
-« premier » essai, ce qui a été pris pour un bug. Le code ne laisse qu'une
-explication : deux dépassements antérieurs, des rebonds passés inaperçus (sans
-eux, 61 + 7 recule en 58, la répétition, et renvoie en case 0). À confirmer
-dans le journal du plateau de test. Le fil et la carte de l'équipe affichent
-désormais le compte (« 63 manqué 2 fois sur 3 »).
+« premier » essai, ce qui a été pris pour un bug. Le journal du plateau de test
+l'a confirmé : c'était son troisième dépassement, après deux rebonds dans la
+minute précédente (retour en 59, puis en 61). Même chose pour une équipe venue
+de la 57. Sans ces rebonds, 61 + 7 recule en 58, la répétition, et renvoie en
+case 0. Le fil et la carte de l'équipe affichent désormais le compte (« 63
+manqué 2 fois sur 3 »).
 
 Arriver en 63, pile ou par le metteur en scène, ne gagne rien par soi-même : la
 **question finale** de la case 63 passe en attente. Sa réponse est celle de
