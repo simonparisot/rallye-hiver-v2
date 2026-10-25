@@ -236,12 +236,31 @@ const OiePage: React.FC = () => {
               aria-controls="oie-panneau"
               data-testid="oie-bouton-panneau"
             >
-              <span className="oie-bouton-panneau-titre">Votre équipe</span>
-              <span className="oie-bouton-panneau-etat" data-testid="oie-etat-equipe">
-                {resumeEquipe(plateau.me).texte}
+              <span className="oie-chevron" aria-hidden="true">‹</span>
+              <span className="oie-bouton-panneau-textes">
+                <span className="oie-bouton-panneau-titre">Votre équipe</span>
+                <span className="oie-bouton-panneau-etat" data-testid="oie-etat-equipe">
+                  {resumeEquipe(plateau.me).texte}
+                </span>
               </span>
             </button>
           </div>
+
+          {/* La languette, collée au bord droit de l'écran, dit d'un coup d'œil
+              qu'un panneau se déplie de ce côté-là. */}
+          <button
+            type="button"
+            className={`oie-languette ${resumeEquipe(plateau.me).aAgir ? 'oie-languette-a-agir' : ''}`}
+            onClick={() => setPanneauOuvert(true)}
+            hidden={panneauOuvert}
+            aria-expanded={panneauOuvert}
+            aria-controls="oie-panneau"
+            aria-label={`Ouvrir le panneau de votre équipe : ${resumeEquipe(plateau.me).texte}`}
+            data-testid="oie-languette"
+          >
+            <span className="oie-chevron" aria-hidden="true">‹</span>
+            <span className="oie-languette-texte" aria-hidden="true">Votre équipe</span>
+          </button>
 
           <Plateau
             squares={plateau.board.squares}

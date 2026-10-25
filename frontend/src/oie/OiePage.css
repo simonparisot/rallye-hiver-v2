@@ -87,9 +87,8 @@
 
 .oie-bouton-panneau {
   display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+  align-items: center;
+  gap: 10px;
   padding: 8px 16px;
   border: var(--border-width-thin) var(--border-style) var(--theatre-salle);
   border-radius: 6px;
@@ -98,6 +97,20 @@
   font: inherit;
   cursor: pointer;
   box-shadow: var(--ombre-affiche);
+}
+
+.oie-bouton-panneau-textes {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+/* La flèche dit dans quel sens le panneau se déplie. */
+.oie-chevron {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .oie-bouton-panneau-titre {
@@ -121,7 +134,62 @@
 
 .oie-bouton-panneau-a-agir .oie-bouton-panneau-titre { color: #fff; }
 
+/* Languette sur le bord droit de l'écran : toujours visible, elle montre
+   qu'un panneau se déplie de ce côté. */
+.oie-languette {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px;
+  border: var(--border-width-thin) var(--border-style) var(--theatre-salle);
+  border-right: none;
+  border-radius: 10px 0 0 10px;
+  background: var(--theatre-scene);
+  color: var(--theatre-salle);
+  font: inherit;
+  cursor: pointer;
+  box-shadow: -4px 0 14px rgba(0, 0, 0, 0.18);
+  transform: translateY(-50%);
+  transition: padding-right 0.15s ease;
+}
+
+.oie-languette[hidden] { display: none; }
+
+.oie-languette:hover { padding-right: 14px; }
+
+.oie-languette-texte {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.oie-languette-a-agir {
+  background: var(--theatre-tragedie);
+  border-color: var(--theatre-tragedie-sombre);
+  color: #fff;
+  animation: oie-appel 2.4s ease-in-out infinite;
+}
+
+@keyframes oie-appel {
+  0%, 100% { box-shadow: -4px 0 14px rgba(0, 0, 0, 0.18); }
+  50% { box-shadow: -4px 0 0 6px rgba(200, 40, 40, 0.25); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oie-languette-a-agir { animation: none; }
+  .oie-languette { transition: none; }
+}
+
 .oie-bouton-panneau:focus-visible,
+.oie-languette:focus-visible,
 .oie-panneau-fermer:focus-visible {
   outline: 3px solid var(--theatre-dorure);
   outline-offset: 2px;
