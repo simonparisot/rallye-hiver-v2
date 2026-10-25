@@ -37,6 +37,8 @@ const LOGE_SQUARE = 19;
 const PUITS_SQUARE = 31;
 const PRISON_SQUARE = 52;
 const MORT_SQUARE = 58;
+/** Les ponts : on passe directement en face, sans s'arreter ni repondre. */
+const BRIDGE_SQUARES = [6, 23, 47];
 
 /**
  * Cases ou une equipe ne s'arrete jamais : elles n'ont pas besoin de question.
@@ -45,12 +47,13 @@ const MORT_SQUARE = 58;
  * la reponse emporte l'enigme. Un plateau livre sans elle se gagnerait a la
  * seule arrivee, ce qui n'est plus l'intention.
  */
-const SQUARES_WITHOUT_QUESTION = [0, MORT_SQUARE, ...OIE_SQUARES];
+const SQUARES_WITHOUT_QUESTION = [0, MORT_SQUARE, ...OIE_SQUARES, ...BRIDGE_SQUARES];
 
 function squareType(squareNumber) {
   if (squareNumber === 0) return 'depart';
   if (squareNumber === FINISH_SQUARE) return 'arrivee';
   if (OIE_SQUARES.includes(squareNumber)) return 'oie';
+  if (BRIDGE_SQUARES.includes(squareNumber)) return 'pont';
   if (squareNumber === LOGE_SQUARE) return 'loge';
   if (squareNumber === PUITS_SQUARE) return 'puits';
   if (squareNumber === PRISON_SQUARE) return 'prison';

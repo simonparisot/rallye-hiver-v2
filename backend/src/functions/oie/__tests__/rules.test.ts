@@ -68,8 +68,8 @@ describe('Deplacement simple', () => {
   });
 
   test('une case ordinaire n\'entraine aucun effet special', () => {
-    const move = resolveMove(20, 3, 0);
-    expect(move.position).toBe(23);
+    const move = resolveMove(20, 2, 0);
+    expect(move.position).toBe(22);
     expect(move.inPuits).toBe(false);
     expect(move.inPrison).toBe(false);
     expect(move.skippedDays).toBe(0);
@@ -133,6 +133,48 @@ describe('L\'acteur sur son oie', () => {
         expect(move.position).toBeLessThanOrEqual(FINISH_SQUARE);
       }
     }
+  });
+});
+
+describe('Les ponts', () => {
+  test('les trois ponts sont a leur place', () => {
+    [6, 23, 47].forEach((square) => expect(squareType(square)).toBe('pont'));
+    [12, 30, 53].forEach((square) => expect(squareType(square)).toBe('normale'));
+  });
+
+  test('on traverse directement, sans s\'arreter sur le pont', () => {
+    const move = resolveMove(2, 4, 0);
+    expect(move.position).toBe(12);
+    expect(move.effects).toEqual([
+      { kind: 'avance', from: 2, to: 6 },
+      { kind: 'pont', from: 6, to: 12 },
+    ]);
+  });
+
+  test('chaque pont mene a sa case', () => {
+    expect(resolveMove(20, 3, 0).position).toBe(30);
+    expect(resolveMove(40, 7, 0).position).toBe(53);
+  });
+
+  test('passer par-dessus un pont sans s\'y arreter ne fait rien', () => {
+    expect(resolveMove(4, 5, 0).position).toBe(9); // 6 est traverse, l'oie de 9 s'applique
+    expect(resolveMove(20, 8, 0).position).toBe(28);
+  });
+
+  test('une equipe delogee envoyee sur un pont le traverse aussi', () => {
+    const outcome = resolveDislodge(23);
+    expect(outcome.position).toBe(30);
+    expect(outcome.effects).toContainEqual({ kind: 'pont', from: 23, to: 30 });
+  });
+
+  test('arriver par un pont sur une case occupee deloge l\'occupant vers la case de depart', () => {
+    // L'arrivee reelle est la case d'en face : c'est elle qui compte.
+    const move = resolveMove(2, 4, 0);
+    const states = [
+      { ...initialTeamState('moi', TODAY, NOW), position: 2 },
+      { ...initialTeamState('autre', TODAY, NOW), position: 12 },
+    ];
+    expect(teamsToDislodge(states, 'moi', 2, move.position).map((s) => s.teamId)).toEqual(['autre']);
   });
 });
 

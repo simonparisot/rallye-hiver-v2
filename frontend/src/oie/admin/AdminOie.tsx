@@ -18,6 +18,7 @@ const LIBELLES_TYPE: Record<string, string> = {
   depart: 'Départ',
   normale: 'Ordinaire',
   oie: "L'oie (on relance les dés)",
+  pont: 'Le pont (on passe en face)',
   souffleur: 'Souffleur (indice)',
   loge: 'La loge (passer un tour)',
   puits: 'Le puits (3 tours)',
@@ -30,7 +31,7 @@ const LIBELLES_TYPE: Record<string, string> = {
  * Cases ou une equipe ne s'arrete jamais : elles n'ont pas besoin de question.
  * La case 63 n'en fait plus partie, elle porte la question finale.
  */
-const SANS_QUESTION = [0, 58, 9, 18, 27, 36, 45, 54];
+const SANS_QUESTION = [0, 58, 9, 18, 27, 36, 45, 54, 6, 23, 47];
 
 const AdminOie: React.FC = () => {
   const queryClient = useQueryClient();

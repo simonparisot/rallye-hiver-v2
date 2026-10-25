@@ -69,6 +69,8 @@ export function narrateEffect(teamName: string, effect: OieMoveEffect): string |
       return `${teamName} dépasse la case 63 de ${effect.depassement} et recule en case ${effect.to} (63 manqué ${effect.manques} fois sur ${MAX_OVERSHOOTS})`;
     case 'metteur_en_scene':
       return `Troisième essai manqué : le metteur en scène place ${teamName} directement en case 63`;
+    case 'pont':
+      return `${teamName} emprunte le pont de la case ${effect.from} et passe directement en case ${effect.to}`;
     case 'mort':
       return `${teamName} tombe sur la répétition en case ${effect.from} et repart de la case 0`;
     case 'puits':

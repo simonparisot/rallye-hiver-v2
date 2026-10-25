@@ -12,6 +12,7 @@ interface PlateauProps {
 const LIBELLES: Record<string, string> = {
   depart: 'Lever de rideau',
   oie: "L'oie",
+  pont: 'Le pont',
   souffleur: 'Souffleur',
   loge: 'La loge',
   puits: 'Le puits',
@@ -103,6 +104,7 @@ const Plateau: React.FC<PlateauProps> = ({ squares, teams, caseSurlignee }) => {
 
       <ul className="oie-legende" data-testid="oie-legende">
         <li><span className="oie-puce oie-case-oie" /> L'acteur sur son oie : on relance les dés</li>
+        <li><span className="oie-puce oie-case-pont" /> Le pont : on passe directement en face, de 6 à 12, de 23 à 30, de 47 à 53</li>
         <li><span className="oie-puce oie-case-souffleur" /> Le souffleur : un indice sur demande</li>
         <li><span className="oie-puce oie-case-loge" /> La loge : on passe un tour</li>
         <li><span className="oie-puce oie-case-puits" /> Le puits : trois tours, sauf repêchage</li>

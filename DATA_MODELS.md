@@ -569,9 +569,9 @@ les équipes.
 ```typescript
 interface OieSquare {
   squareNumber: number,      // 0 à 63
-  type: 'depart' | 'normale' | 'oie' | 'souffleur'
+  type: 'depart' | 'normale' | 'oie' | 'pont' | 'souffleur'
       | 'loge' | 'puits' | 'prison' | 'mort' | 'arrivee',
-  question?: string,         // absente sur 0, 58 et les cases oie ; en 63, la question finale
+  question?: string,         // absente sur 0, 58, les oies et les ponts ; en 63, la question finale
   acceptedAnswers: string[], // comparées après normalisation
   hint?: string,             // seulement sur une case souffleur
   flavor?: string            // texte d'ambiance, facultatif
@@ -583,7 +583,7 @@ et le serveur le recalcule à chaque écriture. Les 64 cases tiennent dans un se
 enregistrement, très loin de la limite de 400 Ko.
 
 **Cases spéciales**, fixées par les règles et non par la configuration :
-`oie` = 9, 18, 27, 36, 45, 54 · `souffleur` = 14, 39, 50, 60 · `loge` = 19 ·
+`oie` = 9, 18, 27, 36, 45, 54 · `pont` = 6 (vers 12), 23 (vers 30), 47 (vers 53) · `souffleur` = 14, 39, 50, 60 · `loge` = 19 ·
 `puits` = 31 · `prison` = 52 · `mort` = 58.
 
 **Case 63** : sa question est la question finale, dont la réponse (celle de

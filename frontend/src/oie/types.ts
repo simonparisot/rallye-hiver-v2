@@ -9,6 +9,7 @@ export type OieSquareType =
   | 'depart'
   | 'normale'
   | 'oie'
+  | 'pont'
   | 'souffleur'
   | 'loge'
   | 'puits'
@@ -107,6 +108,7 @@ export type OieMoveEffect =
   | { kind: 'rebond'; from: number; to: number; depassement: number; manques: number }
   | { kind: 'metteur_en_scene'; from: number; to: number }
   | { kind: 'mort'; from: number; to: number }
+  | { kind: 'pont'; from: number; to: number }
   | { kind: 'puits'; at: number }
   | { kind: 'prison'; at: number }
   | { kind: 'loge'; at: number }

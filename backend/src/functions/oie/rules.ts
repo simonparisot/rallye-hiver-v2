@@ -22,6 +22,13 @@ export const OIE_SQUARES = [9, 18, 27, 36, 45, 54];
 /** Le souffleur: these questions come with a hint on request. */
 export const SOUFFLEUR_SQUARES = [14, 39, 50, 60];
 
+/**
+ * Les ponts : on ne s'y arrete pas, on passe directement sur la case d'en
+ * face, sans question sur le pont. C'est la question de la case d'arrivee qui
+ * attend l'equipe.
+ */
+export const BRIDGES: Record<number, number> = { 6: 12, 23: 30, 47: 53 };
+
 export const LOGE_SQUARE = 19;
 export const PUITS_SQUARE = 31;
 export const PRISON_SQUARE = 52;
@@ -51,6 +58,7 @@ export function squareType(squareNumber: number): OieSquareType {
   if (squareNumber === 0) return 'depart';
   if (squareNumber === FINISH_SQUARE) return 'arrivee';
   if (OIE_SQUARES.includes(squareNumber)) return 'oie';
+  if (BRIDGES[squareNumber] !== undefined) return 'pont';
   if (squareNumber === LOGE_SQUARE) return 'loge';
   if (squareNumber === PUITS_SQUARE) return 'puits';
   if (squareNumber === PRISON_SQUARE) return 'prison';
@@ -250,6 +258,17 @@ function applySquare(result: OieMoveResult): void {
       effects.push({ kind: 'mort', from: result.position, to: 0 });
       result.position = 0;
       break;
+
+    case 'pont': {
+      // On traverse sans s'arreter, puis la case d'en face s'applique comme si
+      // on y etait arrive directement. Les trois arrivees (12, 30, 53) sont des
+      // cases ordinaires : l'appel ne peut pas boucler.
+      const from = result.position;
+      result.position = BRIDGES[from];
+      effects.push({ kind: 'pont', from, to: result.position });
+      applySquare(result);
+      break;
+    }
 
     case 'puits':
       effects.push({ kind: 'puits', at: result.position });

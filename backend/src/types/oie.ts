@@ -14,6 +14,7 @@ export type OieSquareType =
   | 'depart' // 0
   | 'normale'
   | 'oie' // 9, 18, 27, 36, 45, 54: l'acteur sur son oie, on relance les des
+  | 'pont' // 6 -> 12, 23 -> 30, 47 -> 53: on passe directement en face, sans question
   | 'souffleur' // 14, 39, 50, 60: la question dispose d'un indice
   | 'loge' // 19: passer un tour
   | 'puits' // 31: passer trois tours, sauf si une autre equipe y tombe et vous deloge
@@ -140,6 +141,7 @@ export type OieMoveEffect =
   | { kind: 'rebond'; from: number; to: number; depassement: number; manques: number }
   | { kind: 'metteur_en_scene'; from: number; to: number }
   | { kind: 'mort'; from: number; to: number }
+  | { kind: 'pont'; from: number; to: number }
   | { kind: 'puits'; at: number }
   | { kind: 'prison'; at: number }
   | { kind: 'loge'; at: number }

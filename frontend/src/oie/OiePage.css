@@ -178,6 +178,14 @@
   color: var(--etat-resolu-texte);
 }
 
+/* Le pont fait avancer aussi : l'or, mais en pointillés, pour qu'on ne le
+   confonde pas avec l'oie. */
+.oie-case-pont {
+  border: 2px dashed var(--theatre-dorure);
+}
+
+.oie-case-pont .oie-case-libelle { color: var(--theatre-dorure-encre); }
+
 .oie-case-souffleur {
   background: var(--color-primary-green);
   border-color: var(--color-primary-green);

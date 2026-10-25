@@ -2293,7 +2293,7 @@ ici, et non plus au lancer, que la partie se gagne. `finished` vaut alors
 }
 ```
 
-`kind` vaut `avance`, `oie`, `rebond`, `metteur_en_scene`, `mort`, `puits`,
+`kind` vaut `avance`, `oie`, `pont`, `rebond`, `metteur_en_scene`, `mort`, `puits`,
 `prison`, `loge`, `souffleur` ou `arrivee`. Un lancer produit **une seule
 avance** (ou un rebond), puis l'effet de la case atteinte : plus aucun
 enchaînement.
@@ -2303,6 +2303,10 @@ enchaînement.
   Le lancer suivant consomme ce bonus au lieu du quota du jour. L'ancienne
   règle (rejouer le même total) et son correctif du premier neuf (6-3 → 26,
   5-4 → 53) sont supprimés. L'effet `oie` ne porte plus de champ `total`.
+- **Pont** (6, 23, 47) : on ne s'y arrête pas, l'équipe passe directement en
+  face (12, 30, 53), dont la question l'attend. `to` est la case d'en face ;
+  l'effet `pont` suit l'`avance`. Une équipe délogée envoyée sur un pont le
+  traverse aussi.
 - **Puits** (31) : trois jours sans lancer (`nextRollAllowedDay` = J+4), levés
   plus tôt si une autre équipe y tombe. Il ne bloque plus sans échéance.
 - **Rebond** : l'effet porte `manques`, le nombre d'essais manqués au 63 celui-ci
@@ -2435,6 +2439,7 @@ L'opération est tracée dans le journal du plateau.
 | 2026-09-12 | GET/PUT /admin/oie/board, GET /admin/oie/teams, POST /admin/oie/teams/{teamId}/reset | Administration du plateau : 63 questions, quota de lancers, état des équipes | Feature | Le quota `rollsPerDay` est modifiable à tout moment, sans déploiement |
 | 2026-10-10 | GET /oie, POST /oie/roll, POST /oie/answer, GET /admin/oie/teams | Règles v2 après les essais des organisateurs : l'oie fait relancer les dés (lancer gratuit, `bonusRolls`), règle du premier neuf supprimée, puits à trois tours, question finale en case 63 | **Breaking** | Effet `oie` sans `total` ; `finished` d'un lancer ne signifie plus « en 63 » mais « intrigue gagnée » (voir `reachedFinish`, `awaitsFinalQuestion`) ; la victoire passe par `POST /oie/answer` ; nouveaux statuts `question_finale` et `relance_oie` |
 | 2026-10-25 | GET /oie, POST /oie/roll | Deuxième série d'essais : règle de la case occupée, fil limité aux mouvements (100 lignes), jour de reprise dans les messages de pénalité, compte des essais manqués au 63 | Feature | Effet `rebond` avec `manques` ; `releases` couvre désormais tous les délogements, pas seulement puits et prison |
+| 2026-10-25 | GET /oie, POST /oie/roll | Les ponts : 6 vers 12, 23 vers 30, 47 vers 53 | Feature | Nouveau type de case `pont` et nouvel effet `pont` ; les cases 6, 23 et 47 ne portent plus de question |
 | 2026-09-12 | POST /hints/{enigmaId}/request, GET /hints/{enigmaId} | Mode `queue` : la demande part en attente (202) et un worker extérieur la traite via `claude -p`, faute de clé d'API pour l'essai. Ajout de `status` et `failureReason` aux demandes. Le coût en points passe à 0 et n'affecte plus `totalPoints` | Feature + Breaking | **Breaking** : `POST /hints/.../request` peut désormais répondre 202 sans indice ; le client doit lire `status` et interroger `GET /hints/{enigmaId}`. `hintsPenalty` disparaît de GET /teams/stats |
 | 2026-09-12 | POST /hints/{enigmaId}/request, GET /hints/{enigmaId}, GET /admin/hints/requests | Nouvelle récupération d'indices : l'équipe décrit son avancement, un modèle choisit l'indice pré-écrit adapté. Remplace POST /hints/{enigmaId}/use et GET /admin/hints/usage, supprimés | Feature + Breaking | **Breaking** : les deux anciens endpoints n'existent plus ; `hintPdfUrl` et `hasHint` disparaissent de l'énigme au profit de `hintsCount`, `hintUsed`/`hintUsedAt` de la progression au profit de `hintsRequested`/`lastHintAt`. La pénalité de points, jusqu'ici annoncée mais jamais appliquée, est désormais déduite de `totalPoints` dans GET /teams/stats |
 | 2026-01-02 | GET /admin/attempts | Fixed pagination bug (Scan → Query) + added stats object + removed legacy count/total fields | Bug Fix + Breaking | **Critical fix**: Now returns ALL attempts (not just 1MB), shows correct success counts; **Breaking**: Removed `count` and `total` root fields - use `stats.totalAttempts` instead; **Frontend must use stats object for all statistics** |

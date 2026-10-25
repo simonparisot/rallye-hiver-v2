@@ -1,5 +1,5 @@
 {
-  "_lisezMoi": "Plateau d'essai du jeu de l'oie, édition 2027 (thème : le théâtre). Questions fictives, à remplacer par les vraies. Format attendu par scripts/seed-oie-board.js et par l'import JSON de la page /admin/oie. La case 0, les cases oie (9, 18, 27, 36, 45, 54) et la case 58 (la mort) n'ont pas de question : on ne s'y arrête jamais, on ne fait qu'y passer. La case 63 porte au contraire LA question finale : arriver en 63 ne gagne rien, c'est sa réponse qui emporte l'énigme, et c'est donc la réponse de l'énigme qu'il faut y mettre. Les cases 14, 39, 50 et 60 sont celles du souffleur : leur champ hint est l'indice. La comparaison des réponses ignore la casse, les accents, les espaces et la ponctuation : « Moliere » et « Molière ! » sont acceptés indifféremment.",
+  "_lisezMoi": "Plateau d'essai du jeu de l'oie, édition 2027 (thème : le théâtre). Questions fictives, à remplacer par les vraies. Format attendu par scripts/seed-oie-board.js et par l'import JSON de la page /admin/oie. La case 0, les cases oie (9, 18, 27, 36, 45, 54), les ponts (6, 23, 47) et la case 58 (la mort) n'ont pas de question : on ne s'y arrête jamais, on ne fait qu'y passer. Un pont envoie directement en face (6 vers 12, 23 vers 30, 47 vers 53), dont la question attend l'équipe. La case 63 porte au contraire LA question finale : arriver en 63 ne gagne rien, c'est sa réponse qui emporte l'énigme, et c'est donc la réponse de l'énigme qu'il faut y mettre. Les cases 14, 39, 50 et 60 sont celles du souffleur : leur champ hint est l'indice. La comparaison des réponses ignore la casse, les accents, les espaces et la ponctuation : « Moliere » et « Molière ! » sont acceptés indifféremment.",
   "rollsPerDay": 1,
   "enigmaId": "",
   "squares": [
@@ -9,7 +9,7 @@
     { "squareNumber": 3, "question": "Comment nomme-t-on le texte qu'un acteur dit seul en scène ?", "acceptedAnswers": ["un monologue", "monologue", "soliloque"] },
     { "squareNumber": 4, "question": "Dans quelle ville se joue la pièce Roméo et Juliette ?", "acceptedAnswers": ["Vérone"] },
     { "squareNumber": 5, "question": "Quel objet le régisseur frappe-t-il pour signaler le début ?", "acceptedAnswers": ["le brigadier", "brigadier", "baton"], "flavor": "Le bois frappe le plancher." },
-    { "squareNumber": 6, "question": "Comment appelle-t-on la grande étoffe rouge qui ferme la scène ?", "acceptedAnswers": ["le rideau", "rideau", "rideau de scène"] },
+    { "squareNumber": 6, "flavor": "Une passerelle enjambe la fosse : on file directement en case 12." },
     { "squareNumber": 7, "question": "Quel dramaturge anglais a écrit Hamlet ?", "acceptedAnswers": ["Shakespeare", "William Shakespeare"] },
     { "squareNumber": 8, "question": "Comment appelle-t-on la pièce où l'acteur se prépare et se maquille ?", "acceptedAnswers": ["la loge", "loge"] },
     { "squareNumber": 9, "flavor": "L'acteur chevauche son oie et repart de plus belle." },
@@ -26,7 +26,7 @@
     { "squareNumber": 20, "question": "Quelle troupe française a été fondée en 1680 ?", "acceptedAnswers": ["la Comédie-Française", "Comédie Française", "le Français"] },
     { "squareNumber": 21, "question": "Comment appelle-t-on la répétition où tout est joué en costume ?", "acceptedAnswers": ["la générale", "générale", "répétition générale"] },
     { "squareNumber": 22, "question": "Quel auteur a écrit En attendant Godot ?", "acceptedAnswers": ["Beckett", "Samuel Beckett"] },
-    { "squareNumber": 23, "question": "Comment appelle-t-on le côté de la scène situé à la gauche du public en regardant la scène?", "acceptedAnswers": ["jardin", "côté jardin", "le jardin"] },
+    { "squareNumber": 23, "flavor": "Le pont des cintres mène tout droit en case 30." },
     { "squareNumber": 24, "question": "Comment appelle-t-on le côté de la scène situé à la droite du public en regardant la scène?", "acceptedAnswers": ["cour", "côté cour", "la cour"] },
     { "squareNumber": 25, "question": "Quel dramaturge a écrit Le Mariage de Figaro ?", "acceptedAnswers": ["Beaumarchais", "Pierre Augustin Caron de Beaumarchais"] },
     { "squareNumber": 26, "question": "Comment appelle-t-on les applaudissements qui font revenir les acteurs saluer ?", "acceptedAnswers": ["un rappel", "rappel", "les rappels"] },
@@ -50,7 +50,7 @@
     { "squareNumber": 44, "question": "Quel personnage de la commedia dell'arte porte un costume à losanges ?", "acceptedAnswers": ["Arlequin"] },
     { "squareNumber": 45, "flavor": "L'acteur chevauche son oie et repart de plus belle." },
     { "squareNumber": 46, "question": "Comment appelle-t-on le fait de jouer sans texte, en inventant ?", "acceptedAnswers": ["l'improvisation", "improvisation", "impro"] },
-    { "squareNumber": 47, "question": "Quel auteur a écrit Huis clos ?", "acceptedAnswers": ["Sartre", "Jean-Paul Sartre"] },
+    { "squareNumber": 47, "flavor": "Un dernier pont au-dessus de la scène : direction la case 53." },
     { "squareNumber": 48, "question": "Comment appelle-t-on la personne qui dirige les acteurs et conçoit le spectacle ?", "acceptedAnswers": ["le metteur en scène", "metteur en scène", "la metteuse en scène"] },
     { "squareNumber": 49, "question": "Comment appelle-t-on les gradins d'un théâtre antique, où prenait place le public ?", "acceptedAnswers": ["le théâtron", "théâtron", "les gradins", "cavea"] },
     { "squareNumber": 50, "question": "Quelle pièce de Molière met en scène un faux dévot chez Orgon ?", "acceptedAnswers": ["Tartuffe", "Le Tartuffe"], "hint": "Le titre est devenu un nom commun pour désigner un hypocrite.", "flavor": "Le souffleur cite un imposteur." },

@@ -48,6 +48,7 @@ sont acceptés indifféremment.
 | Case | Nom | Effet |
 |---|---|---|
 | 9, 18, 27, 36, 45, 54 | L'acteur sur son oie | On s'y arrête, sans question, et on relance les dés : un lancer gratuit, qui ne coûte rien au quota du jour |
+| 6, 23, 47 | Le pont | Pas de question sur le pont : on passe directement en 12, 30 ou 53, dont la question attend l'équipe (ajouté le 2026-10-25) |
 | 14, 39, 50, 60 | Le souffleur | La question dispose d'un indice, que l'équipe peut demander |
 | 19 | La loge | On passe un tour |
 | 31 | Le puits | On passe trois tours, sauf si une autre équipe y tombe et vous en déloge |
@@ -151,7 +152,8 @@ c'est la seule chose que l'équipe puisse faire avancer.
 On ne s'arrête ni sur la 0 (départ) ni sur la 58 (qui renvoie aussitôt à la 0).
 Sur une oie on s'arrête, mais seulement pour relancer : pas de question non plus.
 La 63 porte la **question finale**, ajoutée le 2026-10-10 à la demande des
-organisateurs : sa réponse est celle de l'énigme. Il y a **56 questions** à
+organisateurs : sa réponse est celle de l'énigme. Les trois ponts (6, 23, 47),
+ajoutés le 2026-10-25, n'en portent pas non plus. Il y a **53 questions** à
 écrire, dont celle-là. Celle du plateau d'essai est une devinette dont la
 réponse est « le souffleur » : le seul personnage du plateau qu'aucune autre
 question ne nomme, et celui qui a aidé l'équipe sur quatre cases.

@@ -14,6 +14,7 @@ Les mouvements seraient les suivants :
 - des cases particulières sont celles du jeu de l’oie, adapté au théâtre : 
  -- l’acteur sur son oie toutes les 9 cases : rejouer (précisé le 2026-10-10 : on relance les dés)
  -- la loge 19, le puits 31 (passer 3 tours sauf si quelqu’un y tombe, depuis le 2026-10-10), la prison 52 (passer 2 tours sauf si quelqu’un y tombe), la mort 58 qui ramène au début (la répétition)
+ -- les ponts (ajout du 2026-10-25) : de la 6 à la 12, de la 23 à la 30, de la 47 à la 53 ; pas de question sur le pont, on va directement à la nouvelle case
  -- en case 63, une dernière question, celle de l'énigme : c'est sa réponse qui la fait gagner (ajout du 2026-10-10)
  -- le souffleur (14, 39, 50, 60) qui si vous en avez besoin pourra vous donner un indice
  -- une évolution pour éviter le caractère souvent pénible de la fin, à la troisième fois à « rater le 63 pile » le metteur en scène aide et place le joueur en 63
