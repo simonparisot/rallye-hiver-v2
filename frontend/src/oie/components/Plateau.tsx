@@ -38,22 +38,22 @@ const COTE = 8;
 
 /**
  * Place des 64 cases sur la grille, en spirale comme le plateau traditionnel :
- * depart dans le coin en bas a gauche, on longe le bord vers la droite, on
- * remonte, on repart vers la gauche, on redescend, et ainsi de suite en
+ * depart dans le coin en haut a gauche, on longe le haut vers la droite, on
+ * descend, on repart vers la gauche, on remonte, et ainsi de suite en
  * s'enroulant vers l'interieur jusqu'a la 63, au centre. Une grille de huit
  * sur huit contient exactement les 64 cases, de 0 a 63.
  */
 function spirale(cote: number): { ligne: number; colonne: number }[] {
   const places: { ligne: number; colonne: number }[] = [];
   const prise = Array.from({ length: cote }, () => Array(cote).fill(false));
-  // Droite, haut, gauche, bas : le sens inverse des aiguilles d'une montre.
+  // Droite, bas, gauche, haut : le sens des aiguilles d'une montre.
   const directions = [
     [0, 1],
-    [-1, 0],
-    [0, -1],
     [1, 0],
+    [0, -1],
+    [-1, 0],
   ];
-  let ligne = cote - 1;
+  let ligne = 0;
   let colonne = 0;
   let sens = 0;
 
@@ -78,6 +78,54 @@ function spirale(cote: number): { ligne: number; colonne: number }[] {
 }
 
 const PLACES = spirale(COTE);
+
+/**
+ * La grille alterne pistes de cases et pistes de joints : la case (l, c) est
+ * sur la piste 2l+1, 2c+1, et le joint entre deux cases voisines sur la piste
+ * paire qui les separe. Le chemin de la spirale comble les joints entre deux
+ * cases qui se suivent ; les autres restent vides et font office de murs.
+ */
+const PISTE = (index: number) => index * 2 + 1;
+
+/**
+ * Les murs : entre deux cases voisines qui ne se suivent pas, un trait sombre
+ * dans le joint. Avec le chemin dore, ils dessinent le couloir de la spirale.
+ */
+const NUMERO_EN = new Map(PLACES.map((place, numero) => [`${place.ligne},${place.colonne}`, numero]));
+
+const MURS: { cle: string; horizontal: boolean; gridRow: number; gridColumn: number }[] = [];
+PLACES.forEach((place, numero) => {
+  const droite = NUMERO_EN.get(`${place.ligne},${place.colonne + 1}`);
+  if (droite !== undefined && Math.abs(droite - numero) !== 1) {
+    // Deux cases cote a cote : le mur est un trait vertical.
+    MURS.push({
+      cle: `mur-${numero}-droite`,
+      horizontal: false,
+      gridRow: PISTE(place.ligne),
+      gridColumn: place.colonne * 2 + 2,
+    });
+  }
+  const dessous = NUMERO_EN.get(`${place.ligne + 1},${place.colonne}`);
+  if (dessous !== undefined && Math.abs(dessous - numero) !== 1) {
+    MURS.push({
+      cle: `mur-${numero}-dessous`,
+      horizontal: true,
+      gridRow: place.ligne * 2 + 2,
+      gridColumn: PISTE(place.colonne),
+    });
+  }
+});
+
+const LIENS = PLACES.slice(0, -1).map((place, numero) => {
+  const suivante = PLACES[numero + 1];
+  const horizontal = place.ligne === suivante.ligne;
+  return {
+    numero,
+    horizontal,
+    gridRow: horizontal ? PISTE(place.ligne) : Math.min(place.ligne, suivante.ligne) * 2 + 2,
+    gridColumn: horizontal ? Math.min(place.colonne, suivante.colonne) * 2 + 2 : PISTE(place.colonne),
+  };
+});
 
 const Plateau: React.FC<PlateauProps> = ({ squares, teams, caseSurlignee }) => {
   const parCase = new Map<number, OieTeamPawn[]>();
@@ -111,7 +159,7 @@ const Plateau: React.FC<PlateauProps> = ({ squares, teams, caseSurlignee }) => {
                 .filter(Boolean)
                 .join(' ')}
               title={libelle ? `Case ${square.squareNumber} : ${libelle}` : `Case ${square.squareNumber}`}
-              style={{ gridRow: place.ligne + 1, gridColumn: place.colonne + 1 }}
+              style={{ gridRow: PISTE(place.ligne), gridColumn: PISTE(place.colonne) }}
             >
               {illustration && (
                 // Decorative : le numero, le libelle et l'info-bulle portent
@@ -140,6 +188,22 @@ const Plateau: React.FC<PlateauProps> = ({ squares, teams, caseSurlignee }) => {
             </div>
           );
         })}
+        {MURS.map((mur) => (
+          <span
+            key={mur.cle}
+            className={`oie-mur ${mur.horizontal ? 'oie-mur-horizontal' : 'oie-mur-vertical'}`}
+            style={{ gridRow: mur.gridRow, gridColumn: mur.gridColumn }}
+            aria-hidden="true"
+          />
+        ))}
+        {LIENS.map((lien) => (
+          <span
+            key={`lien-${lien.numero}`}
+            className={`oie-lien ${lien.horizontal ? 'oie-lien-horizontal' : 'oie-lien-vertical'}`}
+            style={{ gridRow: lien.gridRow, gridColumn: lien.gridColumn }}
+            aria-hidden="true"
+          />
+        ))}
       </div>
 
       <ul className="oie-legende" data-testid="oie-legende">

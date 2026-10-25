@@ -242,11 +242,53 @@
   overflow-x: auto;
 }
 
+/* Huit pistes de cases séparées par sept pistes de joints. Les joints entre
+   deux cases qui se suivent portent le chemin de la spirale ; les autres
+   restent vides, comme des murs, pour qu'on lise le sens du parcours. */
 .oie-plateau {
+  --oie-joint: 18px;
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(7, minmax(0, 1fr) var(--oie-joint)) minmax(0, 1fr);
+  grid-template-rows: repeat(7, auto var(--oie-joint)) auto;
   min-width: 360px;
+}
+
+/* Le chemin : une bande dorée qui relie deux cases consécutives par-dessus
+   le joint, et déborde un peu sous chacune pour paraître continue. */
+.oie-lien {
+  align-self: center;
+  justify-self: center;
+  background: var(--theatre-dorure);
+  border-radius: 2px;
+}
+
+.oie-lien-horizontal {
+  width: calc(100% + 4px);
+  height: 46%;
+}
+
+.oie-lien-vertical {
+  width: 46%;
+  height: calc(100% + 4px);
+}
+
+/* Les murs : un trait sombre au milieu des joints qui séparent deux cases
+   voisines sans les relier. */
+.oie-mur {
+  align-self: center;
+  justify-self: center;
+  background: var(--theatre-salle);
+  border-radius: 2px;
+}
+
+.oie-mur-vertical {
+  width: 3px;
+  height: 100%;
+}
+
+.oie-mur-horizontal {
+  width: 100%;
+  height: 3px;
 }
 
 .oie-case {
@@ -828,7 +870,7 @@
 /* ==================== Téléphone ==================== */
 
 @media (max-width: 900px) {
-  .oie-plateau { min-width: 420px; }
+  .oie-plateau { min-width: 420px; --oie-joint: 12px; }
   .oie-case { min-height: 54px; }
 }
 
@@ -838,7 +880,7 @@
   /* Sous cette largeur le libellé ne tient plus : la couleur et l'info-bulle
      portent seules la nature de la case. */
   .oie-case-libelle { display: none; }
-  .oie-plateau { min-width: 340px; gap: 4px; }
+  .oie-plateau { min-width: 340px; --oie-joint: 7px; }
   .oie-case { min-height: 46px; }
   .oie-case-illustree { min-height: 50px; }
 }
