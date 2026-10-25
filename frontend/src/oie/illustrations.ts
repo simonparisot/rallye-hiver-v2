@@ -15,7 +15,7 @@ import loge from './illustrations/loge.jpg';
 import lumieres from './illustrations/lumieres.jpg';
 import maquillage from './illustrations/maquillage.jpg';
 import musique from './illustrations/musique.jpg';
-import offenbachPuccini from './illustrations/offenbach-puccini.jpg';
+import offenbach from './illustrations/offenbach.jpg';
 import oie from './illustrations/oie.jpg';
 import opera from './illustrations/opera.jpg';
 import pont from './illustrations/pont.jpg';
@@ -44,7 +44,7 @@ const PAR_CASE: Record<number, string> = {
   13: musique,
   14: souffleur,
   15: acteur,
-  16: offenbachPuccini,
+  16: offenbach,
   17: opera,
   18: oie,
   19: loge,
@@ -58,10 +58,10 @@ const PAR_CASE: Record<number, string> = {
   27: oie,
   28: acteur,
   29: script,
-  30: offenbachPuccini,
+  30: offenbach,
   31: puits,
   32: script,
-  33: offenbachPuccini,
+  33: offenbach,
   34: acteur,
   35: script,
   36: oie,
@@ -71,7 +71,7 @@ const PAR_CASE: Record<number, string> = {
   40: public_,
   41: musique,
   42: acteur,
-  43: offenbachPuccini,
+  43: offenbach,
   44: maquillage,
   45: oie,
   // Le guide dit « Puccini » : c'est le seul portrait isole fourni.
@@ -86,11 +86,11 @@ const PAR_CASE: Record<number, string> = {
   54: oie,
   55: script,
   56: public_,
-  57: offenbachPuccini,
+  57: offenbach,
   58: repetition,
   59: script,
   60: souffleur,
-  61: offenbachPuccini,
+  61: offenbach,
   62: lumieres,
   // Pas d'image « arrivée » fournie : la troupe qui salue est le rideau final.
   63: troupe,
