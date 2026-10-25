@@ -50,8 +50,8 @@ sont acceptés indifféremment.
 | 9, 18, 27, 36, 45, 54 | L'acteur sur son oie | On s'y arrête, sans question, et on relance les dés : un lancer gratuit, qui ne coûte rien au quota du jour |
 | 14, 39, 50, 60 | Le souffleur | La question dispose d'un indice, que l'équipe peut demander |
 | 19 | La loge | On passe un tour |
-| 31 | Le puits | On passe trois tours, sauf si une autre équipe y tombe |
-| 52 | La prison | On passe deux tours, sauf si une autre équipe y tombe |
+| 31 | Le puits | On passe trois tours, sauf si une autre équipe y tombe et vous en déloge |
+| 52 | La prison | On passe deux tours, sauf si une autre équipe y tombe et vous en déloge |
 | 58 | La répétition | Retour à la case 0 |
 | 63 | Rideau | Arrivée, à atteindre pile ; la question finale y attend |
 
@@ -61,6 +61,14 @@ Il faut tomber pile sur la 63. En cas de dépassement, on recule de l'excédent
 depuis la 63, et les règles de la case d'arrivée s'appliquent. À la **troisième**
 fois qu'une équipe rate la 63 pile, le metteur en scène la place directement en
 63.
+
+Chaque dépassement compte, même un rebond survenu bien avant d'approcher de la
+fin. Aux essais du 2026-10-25, une équipe en 61 a été placée en 63 dès son
+« premier » essai, ce qui a été pris pour un bug. Le code ne laisse qu'une
+explication : deux dépassements antérieurs, des rebonds passés inaperçus (sans
+eux, 61 + 7 recule en 58, la répétition, et renvoie en case 0). À confirmer
+dans le journal du plateau de test. Le fil et la carte de l'équipe affichent
+désormais le compte (« 63 manqué 2 fois sur 3 »).
 
 Arriver en 63, pile ou par le metteur en scène, ne gagne rien par soi-même : la
 **question finale** de la case 63 passe en attente. Sa réponse est celle de
@@ -153,15 +161,34 @@ Un bouton « Demander au souffleur », sans coût ni contrepartie. La demande es
 enregistrée (`hintedSquares`, et une ligne dans le journal), de sorte qu'un mode
 d'attribution des points pourra en tenir compte plus tard.
 
-### 7. L'arrivée ne pose pas de question
+### 7. La case occupée renvoie l'occupant d'où vient l'arrivant — ajouté le 2026-10-25
 
-Atteindre la 63 termine la partie immédiatement.
+Règle du jeu oubliée par la première version, relevée aux essais : quand une
+équipe arrive sur une case occupée, case spéciale ou non, l'équipe qui s'y
+trouvait part sur la case d'où vient l'arrivante. Choix faits pour les cas que
+la remarque laissait ouverts :
 
-### 8. Le rang d'arrivée est figé à l'arrivée
+- la case où part l'équipe délogée garde ses pouvoirs : le puits, la prison ou
+  la loge la retiennent, une oie lui donne un lancer ;
+- elle doit répondre à la question de sa nouvelle case, comme sur toute case où
+  l'on arrive ;
+- quitter sa case la libère de ce qui l'y retenait : c'est ainsi qu'on sort du
+  puits ou de la prison, désormais vers la case de l'arrivante plutôt que sur
+  place, ce qui est la règle classique du puits ; un lancer d'oie en attente
+  est perdu avec l'oie ;
+- toutes les équipes présentes partent, pas seulement la première ;
+- pas de réaction en chaîne : arriver délogée sur une case occupée ne déloge
+  personne à son tour ;
+- ni la case 0, d'où tout le monde part, ni la 63, où attendent les équipes
+  face à la question finale, ne délogent personne ; une équipe ayant gagné non
+  plus, ni un rebond qui ramène l'équipe sur sa propre case.
 
-`finishRank` est calculé au moment où l'équipe atteint la 63, en comptant celles
-déjà arrivées. Deux équipes qui arriveraient dans la même seconde pourraient en
-théorie recevoir le même rang ; `finishedAt` permet de le recalculer.
+### 8. Le rang d'arrivée est figé à la bonne réponse finale
+
+`finishRank` est calculé au moment où l'équipe répond juste à la question
+finale, en comptant celles qui l'ont fait avant elle. Deux équipes qui
+répondraient dans la même seconde pourraient en théorie recevoir le même rang ;
+`finishedAt` permet de le recalculer.
 
 ### 9. Les équipes de test sont masquées, sauf à elles-mêmes
 

@@ -90,6 +90,26 @@ export function addDays(day: string, count: number): string {
   ).padStart(2, '0')}`;
 }
 
+/**
+ * A playing day as players read it, e.g. "mercredi 29 octobre".
+ *
+ * Penalty messages give the day the team rolls again rather than a count of
+ * days: "encore 4 jours" on the day of the fall into the puits, which costs
+ * three turns, read as a fourth turn. A date cannot be miscounted.
+ */
+const DAY_LABEL_FORMAT = new Intl.DateTimeFormat('fr-FR', {
+  timeZone: 'UTC',
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+});
+
+export function dayLabel(day: string): string {
+  const [year, month, date] = day.split('-').map((value) => parseInt(value, 10));
+  // Midi UTC, comme addDays : le jour affiche est celui de la chaine, partout.
+  return DAY_LABEL_FORMAT.format(new Date(Date.UTC(year, month - 1, date, 12)));
+}
+
 /** Whole days between two playing days (negative if `to` is in the past). */
 export function daysBetween(from: string, to: string): number {
   const toUtc = (day: string) => {
@@ -147,8 +167,8 @@ export function rollDice(random: () => number = Math.random): [number, number] {
  * rolling again makes the patch pointless, so it is gone, and with it the
  * unexplainable jump to square 26.
  *
- * Nothing here touches the other teams: the puits and the prison are only
- * reported, the handler decides who gets released.
+ * Nothing here touches the other teams: who stands on the square landed on,
+ * and where it goes, is decided by teamsToDislodge and resolveDislodge below.
  *
  * @param startPosition where the team stands before the roll
  * @param total sum of the two dice
@@ -190,6 +210,9 @@ export function resolveMove(
       from: startPosition,
       to: result.position,
       depassement: target - FINISH_SQUARE,
+      // Le compte est dans le message : un rebond est un essai manque, et
+      // sans le dire, le metteur en scene du troisieme semble tomber du ciel.
+      manques: result.overshootCount,
     });
   } else {
     result.position = target;
@@ -198,6 +221,18 @@ export function resolveMove(
 
   // La regle de la case atteinte s'applique aussi bien a une avance qu'a un
   // rebond : reculer sur le puits y fait tomber tout autant.
+  applySquare(result);
+  return result;
+}
+
+/**
+ * Applies the rule of the square `result.position`, in place: effect, penalty,
+ * extra roll, return to square 0. Shared by the team that rolls and by the
+ * team it dislodges, so that a square behaves the same whoever lands on it.
+ */
+function applySquare(result: OieMoveResult): void {
+  const { effects } = result;
+
   switch (squareType(result.position)) {
     case 'arrivee':
       effects.push({ kind: 'arrivee', at: result.position });
@@ -240,8 +275,89 @@ export function resolveMove(
     default:
       break;
   }
+}
 
+// ==================== CASE OCCUPEE ====================
+
+/**
+ * Squares where any number of teams may stand together. Square 0 is where
+ * every team starts; square 63 holds the teams facing the final question and
+ * the winners, and nobody is sent back from the finish.
+ */
+export function isSharedSquare(squareNumber: number): boolean {
+  return squareNumber === 0 || squareNumber === FINISH_SQUARE;
+}
+
+/**
+ * Teams dislodged by a team that has just landed on `to` coming from `from`.
+ *
+ * Rule of the game: whoever stood on the square is sent to the square the
+ * newcomer came from. That covers the puits and the prison too: the team held
+ * there is freed by being sent away, which is the classic rule of the puits.
+ * Nothing happens when the newcomer did not actually move (a rebound can bring
+ * it back to its own square), nor on a shared square.
+ */
+export function teamsToDislodge(
+  states: OieTeamState[],
+  arrivingTeamId: string,
+  from: number,
+  to: number
+): OieTeamState[] {
+  if (from === to || isSharedSquare(to)) return [];
+  return states.filter(
+    (other) => other.teamId !== arrivingTeamId && other.position === to && !other.finishedAt
+  );
+}
+
+/**
+ * Where a dislodged team ends up, and what the square does to it.
+ *
+ * The square it is sent to keeps all its powers: sent onto the puits, it falls
+ * in; onto an oie, it gets the extra roll. It never sets off a chain, though:
+ * a dislodged team that lands where another one stands does not dislodge it in
+ * turn, otherwise one roll could reshuffle the whole board.
+ */
+export function resolveDislodge(to: number): OieMoveResult {
+  const result: OieMoveResult = {
+    position: to,
+    finished: false,
+    overshootCount: 0, // sans objet ici, l'appelant garde celui de l'equipe
+    inPuits: false,
+    inPrison: false,
+    skippedDays: 0,
+    bonusRoll: false,
+    effects: [],
+  };
+  applySquare(result);
   return result;
+}
+
+/**
+ * New state of a dislodged team.
+ *
+ * Leaving its square ends whatever held it there (puits, prison, loge): only
+ * the square it is sent to counts from now on. Its pending oie roll goes too,
+ * since it belonged to the oie it has left. And it must answer the question of
+ * its new square, as on any square a team arrives on.
+ */
+export function dislodgedState(
+  state: OieTeamState,
+  outcome: OieMoveResult,
+  hasQuestion: boolean,
+  today: string,
+  now: string
+): OieTeamState {
+  return {
+    ...state,
+    position: outcome.position,
+    questionPending: hasQuestion,
+    inPuits: outcome.inPuits,
+    inPrison: outcome.inPrison,
+    bonusRolls: outcome.bonusRoll ? 1 : 0,
+    nextRollAllowedDay:
+      outcome.skippedDays > 0 ? addDays(today, outcome.skippedDays + 1) : today,
+    updatedAt: now,
+  };
 }
 
 // ==================== TEAM STATE ====================
@@ -305,13 +421,13 @@ export function rollRefusal(
     return null;
   }
   if (daysBetween(today, state.nextRollAllowedDay) > 0) {
-    const remaining = daysBetween(today, state.nextRollAllowedDay);
+    const reprise = dayLabel(state.nextRollAllowedDay);
     if (state.inPuits) {
-      return `Vous êtes au fond du puits : encore ${remaining} jour(s) sans lancer, à moins qu'une autre équipe n'y tombe et vous repêche.`;
+      return `Vous êtes au fond du puits : vous pourrez relancer le ${reprise}, ou plus tôt si une autre équipe y tombe et vous repêche.`;
     }
     return state.inPrison
-      ? `Vous êtes en prison : encore ${remaining} jour(s) sans lancer, à moins qu'une autre équipe ne s'y fasse enfermer.`
-      : `Vous passez un tour : encore ${remaining} jour(s) sans lancer.`;
+      ? `Vous êtes en prison : vous pourrez relancer le ${reprise}, ou plus tôt si une autre équipe s'y fait enfermer.`
+      : `Vous passez un tour : vous pourrez relancer le ${reprise}.`;
   }
   if (rollsRemaining(state, today, rollsPerDay) <= 0) {
     return 'Vous avez utilisé tous vos lancers du jour. Revenez demain.';

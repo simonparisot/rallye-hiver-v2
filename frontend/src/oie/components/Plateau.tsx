@@ -109,6 +109,7 @@ const Plateau: React.FC<PlateauProps> = ({ squares, teams, caseSurlignee }) => {
         <li><span className="oie-puce oie-case-prison" /> La prison : deux tours, sauf délivrance</li>
         <li><span className="oie-puce oie-case-mort" /> La répétition : retour à la case 0</li>
         <li><span className="oie-puce oie-case-arrivee" /> Rideau : la question finale, celle qui fait gagner</li>
+        <li><span className="oie-puce" /> Case occupée : l'équipe qui s'y trouvait part sur la case d'où vous venez</li>
       </ul>
     </div>
   );

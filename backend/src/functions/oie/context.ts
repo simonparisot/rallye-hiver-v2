@@ -6,6 +6,7 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { getTeamById, getUserById } from '../../utils/dynamodb';
 import { OieMoveEffect } from '../../types/oie';
+import { MAX_OVERSHOOTS } from './rules';
 
 export interface OiePlayerContext {
   userId: string;
@@ -65,9 +66,9 @@ export function narrateEffect(teamName: string, effect: OieMoveEffect): string |
     case 'oie':
       return `${teamName} tombe sur l'acteur et son oie en case ${effect.at} et relance les dés`;
     case 'rebond':
-      return `${teamName} dépasse la case 63 de ${effect.depassement} et recule en case ${effect.to}`;
+      return `${teamName} dépasse la case 63 de ${effect.depassement} et recule en case ${effect.to} (63 manqué ${effect.manques} fois sur ${MAX_OVERSHOOTS})`;
     case 'metteur_en_scene':
-      return `Le metteur en scène place ${teamName} directement en case 63`;
+      return `Troisième essai manqué : le metteur en scène place ${teamName} directement en case 63`;
     case 'mort':
       return `${teamName} tombe sur la répétition en case ${effect.from} et repart de la case 0`;
     case 'puits':

@@ -11,19 +11,23 @@ import {
   addDays,
   bonusRolls,
   canRoll,
+  dayLabel,
   daysBetween,
+  dislodgedState,
   FINISH_SQUARE,
   initialTeamState,
   isAnswerCorrect,
   normalizeAnswer,
   parisDay,
   PUITS_SKIPPED_DAYS,
+  resolveDislodge,
   resolveMove,
   rollDice,
   rollRefusal,
   rollsRemaining,
   squareType,
   teamStatus,
+  teamsToDislodge,
 } from '../rules';
 import { OieTeamState } from '../../../types/oie';
 
@@ -184,7 +188,38 @@ describe('Arrivee en case 63', () => {
     expect(move.position).toBe(60);
     expect(move.finished).toBe(false);
     expect(move.overshootCount).toBe(1);
-    expect(move.effects[0]).toEqual({ kind: 'rebond', from: 61, to: 60, depassement: 3 });
+    expect(move.effects[0]).toEqual({ kind: 'rebond', from: 61, to: 60, depassement: 3, manques: 1 });
+  });
+
+  test('chaque rebond compte comme un essai manque, et le dit', () => {
+    // Ce qui a ete pris pour un bug : 61 + 7 mene au metteur en scene des le
+    // premier essai depuis la 61. C'etait en fait le troisieme depassement,
+    // les deux premiers ayant ete des rebonds plus tot dans la partie.
+    const premier = resolveMove(60, 5, 0); // 65, retour en 61
+    expect(premier.position).toBe(61);
+    expect(premier.effects[0]).toMatchObject({ kind: 'rebond', manques: 1 });
+
+    const second = resolveMove(61, 9, premier.overshootCount); // 70, retour en 56
+    expect(second.position).toBe(56);
+    expect(second.effects[0]).toMatchObject({ kind: 'rebond', manques: 2 });
+
+    const troisieme = resolveMove(61, 7, second.overshootCount);
+    expect(troisieme.position).toBe(FINISH_SQUARE);
+    expect(troisieme.effects).toContainEqual({ kind: 'metteur_en_scene', from: 61, to: 63 });
+  });
+
+  test('sans depassement prealable, 61 + 7 recule et finit sur la repetition', () => {
+    // 68, cinq de trop, retour en 58 : la repetition renvoie en case 0.
+    const move = resolveMove(61, 7, 0);
+    expect(move.finished).toBe(false);
+    expect(move.position).toBe(0);
+    expect(move.effects).toContainEqual({ kind: 'mort', from: 58, to: 0 });
+  });
+
+  test('les des eux-memes ne comptent pour rien, seul le total compte', () => {
+    // 2 + 5 et 3 + 4 donnent exactement le meme deplacement.
+    expect(resolveMove(57, 7, 0)).toEqual(resolveMove(57, 7, 0));
+    expect(resolveMove(57, 7, 0).position).toBe(62);
   });
 
   test('le rebond applique les regles de la case d\'arrivee', () => {
@@ -385,6 +420,95 @@ describe('Le lancer du a une oie', () => {
   test('une valeur negative stockee ne rend pas de lancer', () => {
     expect(bonusRolls(state({ bonusRolls: -3 }))).toBe(0);
     expect(canRoll(state({ bonusRolls: -3, rollsUsedToday: 1, rollsDay: TODAY }), TODAY, 1)).toBe(false);
+  });
+});
+
+describe('Message des penalites', () => {
+  test('le puits donne le jour de reprise, pas un compte de jours', () => {
+    // Tombee le vendredi 15 janvier : trois tours, reprise le mardi 19.
+    // L'ancien message annoncait « encore 4 jour(s) », lu comme un quatrieme tour.
+    const puits = state({ inPuits: true, nextRollAllowedDay: addDays(TODAY, PUITS_SKIPPED_DAYS + 1) });
+    const message = rollRefusal(puits, TODAY, 1) || '';
+    expect(message).toContain('mardi 19 janvier');
+    expect(message).not.toMatch(/\d+ jour/);
+  });
+
+  test('le libelle du jour ne depend pas du fuseau de la machine', () => {
+    expect(dayLabel('2027-01-15')).toBe('vendredi 15 janvier');
+    expect(dayLabel('2026-10-29')).toBe('jeudi 29 octobre');
+  });
+});
+
+describe('La case occupee', () => {
+  const equipe = (teamId: string, position: number, overrides: Partial<OieTeamState> = {}) =>
+    ({ ...initialTeamState(teamId, TODAY, NOW), position, ...overrides });
+
+  test('l\'equipe qui occupait la case est delogee', () => {
+    const states = [equipe('moi', 20), equipe('autre', 25), equipe('loin', 40)];
+    expect(teamsToDislodge(states, 'moi', 20, 25).map((s) => s.teamId)).toEqual(['autre']);
+  });
+
+  test('case speciale ou non, la regle vaut partout', () => {
+    // L'oie, le puits, la prison, la loge, le souffleur : toutes delogent.
+    [9, 14, 19, 31, 52].forEach((caseOccupee) => {
+      const states = [equipe('moi', 3), equipe('autre', caseOccupee)];
+      expect(teamsToDislodge(states, 'moi', 3, caseOccupee)).toHaveLength(1);
+    });
+  });
+
+  test('ni la case 0 ni la case 63 ne delogent personne', () => {
+    const depart = [equipe('moi', 58), equipe('autre', 0)];
+    expect(teamsToDislodge(depart, 'moi', 55, 0)).toEqual([]);
+    const arrivee = [equipe('moi', 60), equipe('autre', 63, { questionPending: true })];
+    expect(teamsToDislodge(arrivee, 'moi', 60, 63)).toEqual([]);
+  });
+
+  test('un rebond qui ramene sur sa propre case ne deloge personne', () => {
+    // 61 + 4 = 65, deux de trop, retour en 61.
+    expect(resolveMove(61, 4, 0).position).toBe(61);
+    const states = [equipe('moi', 61), equipe('autre', 61)];
+    expect(teamsToDislodge(states, 'moi', 61, 61)).toEqual([]);
+  });
+
+  test('toutes les equipes presentes sont delogees, pas seulement la premiere', () => {
+    const states = [equipe('moi', 10), equipe('a', 17), equipe('b', 17)];
+    expect(teamsToDislodge(states, 'moi', 10, 17)).toHaveLength(2);
+  });
+
+  test('l\'equipe delogee doit repondre a la question de sa nouvelle case', () => {
+    const avant = equipe('autre', 25, { questionPending: false });
+    const apres = dislodgedState(avant, resolveDislodge(20), true, TODAY, NOW);
+    expect(apres.position).toBe(20);
+    expect(apres.questionPending).toBe(true);
+  });
+
+  test('envoyee sur une case speciale, elle en subit l\'effet', () => {
+    const puits = dislodgedState(equipe('autre', 40), resolveDislodge(31), true, TODAY, NOW);
+    expect(puits.inPuits).toBe(true);
+    expect(puits.nextRollAllowedDay).toBe(addDays(TODAY, PUITS_SKIPPED_DAYS + 1));
+
+    const oie = dislodgedState(equipe('autre', 40), resolveDislodge(27), false, TODAY, NOW);
+    expect(oie.bonusRolls).toBe(1);
+    expect(oie.questionPending).toBe(false);
+    expect(teamStatus(oie, TODAY, 1)).toBe('relance_oie');
+  });
+
+  test('tiree du puits, elle est libre aussitot', () => {
+    const auFond = equipe('autre', 31, { inPuits: true, nextRollAllowedDay: addDays(TODAY, 4) });
+    const libre = dislodgedState(auFond, resolveDislodge(25), true, TODAY, NOW);
+    expect(libre.inPuits).toBe(false);
+    expect(libre.nextRollAllowedDay).toBe(TODAY);
+    expect(rollRefusal({ ...libre, questionPending: false }, TODAY, 1)).toBeNull();
+  });
+
+  test('quitter une oie fait perdre le lancer qu\'elle devait', () => {
+    const surOie = equipe('autre', 18, { bonusRolls: 1 });
+    expect(dislodgedState(surOie, resolveDislodge(12), true, TODAY, NOW).bonusRolls).toBe(0);
+  });
+
+  test('une equipe arrivee n\'est jamais delogee', () => {
+    const states = [equipe('moi', 50), equipe('gagnante', 55, { finishedAt: NOW })];
+    expect(teamsToDislodge(states, 'moi', 50, 55)).toEqual([]);
   });
 });
 

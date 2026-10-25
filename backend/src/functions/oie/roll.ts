@@ -6,23 +6,26 @@ import { finishRankAmong, markEnigmaSolved } from './finish';
 import {
   addDays,
   bonusRolls,
+  dislodgedState,
   FINISH_SQUARE,
   findSquare,
   parisDay,
+  resolveDislodge,
   resolveMove,
   rollDice,
   rollRefusal,
   rollsUsedOn,
   squareHasQuestion,
+  teamsToDislodge,
 } from './rules';
 import {
   OieConflictError,
+  changeTeamState,
   getAllTeamStates,
   getBoard,
   getTeamState,
   logEvent,
   putTeamState,
-  releaseTeam,
 } from './store';
 import { buildBoardView, getTeamNames } from './view';
 
@@ -139,35 +142,61 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       });
     }
 
-    // Reperage : celui qui tombe dans le puits (ou en prison) delivre celui qui
-    // s'y trouvait, et prend sa place.
+    // Case occupee : l'equipe qui s'y trouvait part sur la case d'ou vient
+    // celle qui arrive, et subit ce que cette case reserve. C'est aussi ce qui
+    // tire une equipe du puits ou de la prison.
     const releases: string[] = [];
-    if (move.inPuits || move.inPrison) {
-      const field = move.inPuits ? 'inPuits' : 'inPrison';
+    const toDislodge = teamsToDislodge(allStates, player.teamId, state.position, move.position);
+    if (toDislodge.length > 0) {
       const names = await getTeamNames();
-      const held = allStates.filter(
-        (other) => other.teamId !== player.teamId && (other as any)[field] === true
-      );
+      const destination = state.position;
+      const outcome = resolveDislodge(destination);
+      const hasQuestion = squareHasQuestion(findSquare(board.squares, outcome.position));
 
-      for (const prisoner of held) {
-        const freed = await releaseTeam(prisoner.teamId, field, today, nowIso);
-        if (!freed) continue;
+      for (const occupant of toDislodge) {
+        const changed = await changeTeamState(occupant.teamId, today, nowIso, (current) =>
+          // Relu a chaque essai : si l'equipe a bouge entre-temps, on la laisse.
+          current.position === move.position && !current.finishedAt
+            ? dislodgedState(current, outcome, hasQuestion, today, nowIso)
+            : null
+        );
+        if (!changed) continue;
 
-        const prisonerName = names.get(prisoner.teamId)?.teamName || 'Une equipe';
-        const message = move.inPuits
-          ? `${player.teamName} repêche ${prisonerName} du puits`
-          : `${player.teamName} fait libérer ${prisonerName} de la prison`;
+        const occupantName = names.get(occupant.teamId)?.teamName || 'Une équipe';
+        const { before } = changed;
+        const message = before.inPuits
+          ? `${player.teamName} tombe dans le puits et en tire ${occupantName}, qui part en case ${destination}`
+          : before.inPrison
+            ? `${player.teamName} prend la place de ${occupantName} en prison : ${occupantName} sort et part en case ${destination}`
+            : `${player.teamName} tombe sur ${occupantName} en case ${move.position} : ${occupantName} part en case ${destination}`;
         releases.push(message);
 
         await logEvent({
-          type: 'liberation',
-          teamId: prisoner.teamId,
-          teamName: prisonerName,
+          type: before.inPuits || before.inPrison ? 'liberation' : 'deplacement',
+          teamId: occupant.teamId,
+          teamName: occupantName,
           userId: player.userId,
           occurredAt: horodatage(),
           message,
-          detail: { freedBy: player.teamId, field },
+          detail: { dislodgedBy: player.teamId, from: move.position, to: outcome.position },
         });
+
+        // Ce que la case d'arrivee fait a l'equipe delogee, raconte comme pour
+        // n'importe quel lancer : puits, prison, loge, oie, souffleur.
+        for (const effect of outcome.effects) {
+          const suite = narrateEffect(occupantName, effect);
+          if (!suite) continue;
+          releases.push(suite);
+          await logEvent({
+            type: 'case_speciale',
+            teamId: occupant.teamId,
+            teamName: occupantName,
+            userId: player.userId,
+            occurredAt: horodatage(),
+            message: suite,
+            detail: { effect, dislodgedBy: player.teamId },
+          });
+        }
       }
     }
 

@@ -4,7 +4,7 @@
  * experiment can be removed in one piece.
  */
 
-import { GetCommand, PutCommand, QueryCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, PutCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 import { dynamoDb } from '../../utils/dynamodb';
 import { OieBoardConfig, OieEvent, OieEventType, OieSquare, OieTeamState } from '../../types/oie';
@@ -198,47 +198,34 @@ export async function putTeamState(next: OieTeamState, expectedVersion: number):
 }
 
 /**
- * Releases a team from the puits or from the prison.
- * Conditional on the team still being held, so that two teams landing at the
- * same time cannot free someone twice or free the newcomer.
+ * Changes another team's state, typically to dislodge it from a square.
+ *
+ * The state is read again and the change recomputed on every attempt, under
+ * the same version condition as putTeamState: if the team plays at the very
+ * same moment, its own move wins and the change is reconsidered against where
+ * it now stands. `change` returns null when it no longer applies (the team has
+ * left the square meanwhile), and the function then returns null too.
  */
-export async function releaseTeam(
+export async function changeTeamState(
   teamId: string,
-  field: 'inPuits' | 'inPrison',
   today: string,
-  now: string
-): Promise<boolean> {
-  try {
-    await dynamoDb.send(
-      new UpdateCommand({
-        TableName: OIE_TEAM_STATE_TABLE,
-        Key: { teamId },
-        UpdateExpression:
-          'SET #field = :false, nextRollAllowedDay = :today, updatedAt = :now, version = version + :one',
-        ConditionExpression: '#field = :true',
-        ExpressionAttributeNames: { '#field': field },
-        ExpressionAttributeValues: {
-          ':false': false,
-          ':true': true,
-          ':today': today,
-          ':now': now,
-          ':one': 1,
-        },
-      })
-    );
-    return true;
-  } catch (err: any) {
-    if (err?.name === 'ConditionalCheckFailedException') {
-      return false; // deja libere par quelqu'un d'autre
-    }
-    throw err;
-  }
-}
+  now: string,
+  change: (state: OieTeamState) => OieTeamState | null,
+  attempts: number = 3
+): Promise<{ before: OieTeamState; after: OieTeamState } | null> {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const before = await getTeamState(teamId, today, now);
+    const next = change(before);
+    if (!next) return null;
 
-/** Teams currently held in the puits or in the prison. */
-export async function getHeldTeams(field: 'inPuits' | 'inPrison'): Promise<OieTeamState[]> {
-  const states = await getAllTeamStates();
-  return states.filter((state) => (state as any)[field] === true);
+    try {
+      const after = await putTeamState(next, before.version);
+      return { before, after };
+    } catch (err) {
+      if (!(err instanceof OieConflictError) || attempt === attempts) throw err;
+    }
+  }
+  return null;
 }
 
 // ==================== EVENTS ====================
@@ -273,19 +260,55 @@ export async function logEvent(input: {
   return event;
 }
 
-/** Most recent events, newest first. */
-export async function getRecentEvents(limit: number = 30): Promise<OieEvent[]> {
-  const result = await dynamoDb.send(
-    new QueryCommand({
-      TableName: OIE_EVENTS_TABLE,
-      KeyConditionExpression: 'boardId = :boardId',
-      ExpressionAttributeValues: { ':boardId': BOARD_ID },
-      ScanIndexForward: false,
-      Limit: limit,
-    })
-  );
+/**
+ * Ce que le fil « Ce qui se passe » montre : ce qui bouge sur le plateau.
+ *
+ * Les reponses et les appels au souffleur restent au journal, pour l'analyse,
+ * mais n'ont rien a faire dans le fil : une equipe qui se trompe cinq fois de
+ * suite y poussait cinq lignes, et chassait du fil les deplacements des autres,
+ * qui sont justement ce que le plateau partage doit raconter.
+ */
+const FEED_EVENT_TYPES: OieEventType[] = [
+  'lancer',
+  'deplacement',
+  'case_speciale',
+  'liberation',
+  'arrivee',
+  'reinitialisation',
+];
 
-  return (result.Items || []) as OieEvent[];
+/** Lignes lues par page, et pages lues au plus : le cout d'un GET reste borne. */
+const FEED_PAGE_SIZE = 200;
+const FEED_MAX_PAGES = 3;
+
+/** Most recent board events for the shared feed, newest first. */
+export async function getFeedEvents(limit: number = 100): Promise<OieEvent[]> {
+  const feed: OieEvent[] = [];
+  let lastKey: Record<string, any> | undefined;
+  let pages = 0;
+
+  // Le filtre est applique ici plutot que par une FilterExpression : DynamoDB
+  // applique Limit avant le filtre, si bien qu'une page pleine de reponses
+  // reviendrait presque vide sans rien dire.
+  do {
+    const result: any = await dynamoDb.send(
+      new QueryCommand({
+        TableName: OIE_EVENTS_TABLE,
+        KeyConditionExpression: 'boardId = :boardId',
+        ExpressionAttributeValues: { ':boardId': BOARD_ID },
+        ScanIndexForward: false,
+        Limit: FEED_PAGE_SIZE,
+        ExclusiveStartKey: lastKey,
+      })
+    );
+    ((result.Items || []) as OieEvent[]).forEach((event) => {
+      if (feed.length < limit && FEED_EVENT_TYPES.includes(event.type)) feed.push(event);
+    });
+    lastKey = result.LastEvaluatedKey;
+    pages += 1;
+  } while (lastKey && feed.length < limit && pages < FEED_MAX_PAGES);
+
+  return feed;
 }
 
 /** Empty square helper re-exported so handlers need a single import. */

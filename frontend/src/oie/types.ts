@@ -104,7 +104,7 @@ export interface OieBoardResponse {
 export type OieMoveEffect =
   | { kind: 'avance'; from: number; to: number }
   | { kind: 'oie'; at: number }
-  | { kind: 'rebond'; from: number; to: number; depassement: number }
+  | { kind: 'rebond'; from: number; to: number; depassement: number; manques: number }
   | { kind: 'metteur_en_scene'; from: number; to: number }
   | { kind: 'mort'; from: number; to: number }
   | { kind: 'puits'; at: number }
@@ -129,7 +129,7 @@ export interface OieRollResponse extends OieBoardResponse {
   effects: OieMoveEffect[];
   /** Phrases deja ecrites en francais, dans l'ordre des effets. */
   journal: string[];
-  /** Equipes repechees par ce lancer. */
+  /** Equipes delogees par ce lancer (case occupee, puits, prison), et ce qui leur arrive. */
   releases: string[];
 }
 

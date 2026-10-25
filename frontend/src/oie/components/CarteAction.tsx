@@ -148,6 +148,13 @@ const CarteAction: React.FC<CarteActionProps> = ({
               : 'Lancer les dés'}
         </button>
 
+        {me.overshootCount > 0 && (
+          <p className="oie-quota" data-testid="oie-63-manques">
+            63 manqué {me.overshootCount} fois sur 3 : au troisième dépassement, le metteur en
+            scène vous place en case 63.
+          </p>
+        )}
+
         <p className="oie-quota" data-testid="oie-quota">
           {me.rollsRemainingToday} lancer{me.rollsRemainingToday > 1 ? 's' : ''} restant
           {me.rollsRemainingToday > 1 ? 's' : ''} aujourd'hui sur {me.rollsPerDay}

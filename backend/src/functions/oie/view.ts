@@ -21,7 +21,7 @@ import {
   squareHasQuestion,
   teamStatus,
 } from './rules';
-import { getAllTeamStates, getRecentEvents } from './store';
+import { getAllTeamStates, getFeedEvents } from './store';
 
 /** Board as the players see it: no question, no answer, no hint. */
 export function publicBoard(board: OieBoardConfig) {
@@ -119,7 +119,7 @@ export async function buildBoardView(
   const [states, names, events] = await Promise.all([
     getAllTeamStates(),
     getTeamNames(),
-    getRecentEvents(30),
+    getFeedEvents(100),
   ]);
 
   // L'etat que l'appelant vient de calculer prime sur celui relu par le scan.
