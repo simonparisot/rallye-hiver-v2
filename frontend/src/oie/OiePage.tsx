@@ -10,6 +10,7 @@ import Plateau from './components/Plateau';
 import CarteAction from './components/CarteAction';
 import ResultatLancer from './components/ResultatLancer';
 import FilEvenements from './components/FilEvenements';
+import ReglesOie from './components/ReglesOie';
 import './OiePage.css';
 
 /**
@@ -62,6 +63,12 @@ const OiePage: React.FC = () => {
   const fermerPanneauRef = useRef<HTMLButtonElement>(null);
   const rendreLeFocus = useRef(false);
 
+  // Les règles s'ouvrent depuis l'en-tête. Tant qu'elles sont ouvertes, Échap
+  // les ferme, elles seules : le panneau, s'il est ouvert, reste ouvert.
+  const [reglesOuvertes, setReglesOuvertes] = useState(false);
+  const reglesOuvertesRef = useRef(false);
+  reglesOuvertesRef.current = reglesOuvertes;
+
   const fermerPanneau = useCallback(() => {
     setPanneauOuvert(false);
     rendreLeFocus.current = true;
@@ -78,7 +85,7 @@ const OiePage: React.FC = () => {
     }
     fermerPanneauRef.current?.focus();
     const echap = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') fermerPanneau();
+      if (event.key === 'Escape' && !reglesOuvertesRef.current) fermerPanneau();
     };
     document.addEventListener('keydown', echap);
     return () => document.removeEventListener('keydown', echap);
@@ -218,8 +225,38 @@ const OiePage: React.FC = () => {
             de l'intrigue.
           </p>
         </div>
-        <Link className="oie-bouton-secondaire" to="/" data-testid="oie-retour">Retour au jeu</Link>
+        {/* Les règles, à côté du titre : on les trouve en arrivant, avant
+            d'avoir ouvert le panneau, et l'en-tête est dans le flux de la
+            page, à gauche de la gouttière de la languette : il ne recouvre ni
+            le plateau ni la languette. */}
+        <div className="oie-entete-actions">
+          {plateau && (
+            <button
+              type="button"
+              className="oie-regles-ouvrir"
+              data-testid="oie-regles-ouvrir"
+              aria-haspopup="dialog"
+              onClick={() => setReglesOuvertes(true)}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                   strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5v14z" />
+                <path d="M4 19.5A2.5 2.5 0 006.5 22H20v-5" />
+              </svg>
+              Consulter les règles du jeu de l'oie
+            </button>
+          )}
+          <Link className="oie-bouton-secondaire" to="/" data-testid="oie-retour">Retour au jeu</Link>
+        </div>
       </header>
+
+      {plateau && (
+        <ReglesOie
+          ouverte={reglesOuvertes}
+          onFermer={() => setReglesOuvertes(false)}
+          lancersParJour={plateau.me.rollsPerDay}
+        />
+      )}
 
       {erreur && (
         <p className="oie-message oie-message-erreur" data-testid="oie-erreur">{erreur}</p>
