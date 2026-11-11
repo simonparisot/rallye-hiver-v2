@@ -13,7 +13,8 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-top: 10px;
+  /* Sous le bouton, de l'air avant la première carte du panneau. */
+  margin: 10px 0 20px;
   padding: 9px 15px;
   cursor: pointer;
   background: var(--theatre-scene);
@@ -94,6 +95,12 @@
   padding: 8px 24px 32px;
 }
 .regles-corps:focus { outline: none; }
+/* Le texte reçoit le focus pour défiler au clavier : on le montre quand on
+   y arrive par Tab. */
+.regles-corps:focus-visible {
+  outline: 3px solid var(--theatre-tragedie);
+  outline-offset: -3px;
+}
 
 /* --- Le texte --- */
 .regles-texte {

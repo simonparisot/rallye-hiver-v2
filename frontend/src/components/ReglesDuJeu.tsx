@@ -14,8 +14,9 @@ import './ReglesDuJeu.css';
  * avec le vocabulaire d'un thème particulier.
  *
  * Fenêtre plein écran sur téléphone, colonne de lecture centrée sur grand
- * écran. Échap ferme, le focus reste dans la fenêtre tant qu'elle est
- * ouverte et revient ensuite à ce qui l'a ouverte.
+ * écran. Le focus va au texte, qui défile au clavier ; Échap ferme, le
+ * focus reste dans la fenêtre tant qu'elle est ouverte et revient ensuite à
+ * ce qui l'a ouverte.
  */
 
 const FUSEAU = 'Europe/Paris';
@@ -190,7 +191,7 @@ const SELECTEUR_FOCUSABLE =
 
 const ReglesDuJeu: React.FC<ReglesDuJeuProps> = ({ ouverte, onFermer, retourFocus }) => {
   const fenetre = useRef<HTMLDivElement>(null);
-  const fermer = useRef<HTMLButtonElement>(null);
+  const corps = useRef<HTMLDivElement>(null);
   const surFermer = useRef(onFermer);
   surFermer.current = onFermer;
 
@@ -199,7 +200,9 @@ const ReglesDuJeu: React.FC<ReglesDuJeuProps> = ({ ouverte, onFermer, retourFocu
     const avant = document.activeElement as HTMLElement | null;
     const debordement = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    fermer.current?.focus();
+    // Le focus va au texte, pas au bouton « Fermer » : c'est ce qu'on vient
+    // lire, et Flèche bas, Page suivante ou Fin le font alors défiler.
+    corps.current?.focus();
 
     const auClavier = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -254,7 +257,6 @@ const ReglesDuJeu: React.FC<ReglesDuJeuProps> = ({ ouverte, onFermer, retourFocu
         <header className="regles-tete">
           <h2 id="regles-titre">Règles du jeu</h2>
           <button
-            ref={fermer}
             type="button"
             className="regles-fermer"
             data-testid="regles-fermer"
@@ -264,7 +266,14 @@ const ReglesDuJeu: React.FC<ReglesDuJeuProps> = ({ ouverte, onFermer, retourFocu
             ×
           </button>
         </header>
-        <div className="regles-corps" tabIndex={-1}>
+        <div
+          ref={corps}
+          className="regles-corps"
+          data-testid="regles-corps"
+          tabIndex={0}
+          role="region"
+          aria-labelledby="regles-titre"
+        >
           <div className="regles-texte">
             <ReglesContenu />
           </div>
