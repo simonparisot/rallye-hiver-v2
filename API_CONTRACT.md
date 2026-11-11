@@ -1,7 +1,7 @@
 # API Contract
 
 **Last updated by**: backend agent
-**Last updated**: 2026-10-10
+**Last updated**: 2026-11-11
 **Base URL**: `https://rpg0alko8b.execute-api.eu-west-1.amazonaws.com/prod`
 
 ---
@@ -658,10 +658,16 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 ```
 
 **Notes**:
-- `correctPassword`, `solution` et `hints` ne sont JAMAIS exposés aux clients
+- `correctPassword`, `solution`, `hints` et `hintsAvailableFrom` ne sont JAMAIS
+  exposés aux clients (la date d'ouverture des indices n'est pas annoncée aux
+  équipes)
 - `hintsCount` : nombre d'indices pré-écrits existants. Le joueur en a besoin pour
   savoir s'il peut demander un indice ; le texte des indices reste côté serveur
-- Returns all active enigmas
+- `hintsEnabled` peut figurer dans la réponse (réglage brut de l'orga) ; le
+  frontend joueur ne s'en sert pas et lit `hintsAvailable` sur `GET /hints/{enigmaId}`
+- Ne renvoie que les intrigues publiées (`isActive !== false`) depuis le
+  2026-11-11. Les intrigues non publiées ne sont visibles que par
+  `GET /admin/enigmas`
 
 #### GET /enigmas/{enigmaId}
 
@@ -689,10 +695,12 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 ```
 
 **Notes**:
-- `correctPassword`, `solution` et `hints` ne sont JAMAIS exposés aux clients
+- `correctPassword`, `solution`, `hints` et `hintsAvailableFrom` ne sont JAMAIS
+  exposés aux clients
 
 **Errors**:
-- `404`: Enigma not found
+- `404`: Enigma not found, ou intrigue non publiée (`isActive === false`) depuis
+  le 2026-11-11
 
 #### GET /enigmas/by-difficulty
 
@@ -1134,7 +1142,8 @@ qui rend le prompt hacking sans objet.
 
 **Errors**:
 - `403`: L'utilisateur n'a pas d'équipe, ou l'équipe n'a pas réglé son inscription
-- `404`: Enigma not found
+- `404`: Enigma not found, ou intrigue non publiée (`isActive === false`) depuis
+  le 2026-11-11
 
 #### POST /hints/{enigmaId}/request
 
@@ -2444,6 +2453,7 @@ L'opération est tracée dans le journal du plateau.
 
 | Date | Endpoint | Change | Type | Impact |
 |------|----------|--------|------|--------|
+| 2026-11-11 | GET /enigmas, GET /enigmas/{enigmaId}, GET /hints/{enigmaId} | Les intrigues non publiées disparaissent côté joueur : `GET /enigmas` ne les liste plus, `GET /enigmas/{id}` et `GET /hints/{id}` répondent 404. `hintsAvailableFrom` est retiré des réponses joueur | Bug Fix + Breaking | **Breaking** : un client qui comptait sur les intrigues non publiées dans `GET /enigmas` ne les voit plus (le frontend joueur les filtrait déjà, l'admin passe par `/admin/enigmas`). Côté worker, une demande en attente sur une intrigue dont les indices ont été fermés entre-temps est conclue `failed` (« Indices fermés ») |
 | 2026-11-11 | GET /hints/{enigmaId}, POST /hints/{enigmaId}/request, POST /enigmas, PUT /enigmas/{id}, PUT /admin/enigmas/{id} | Ouverture des indices par énigme : deux champs sur l'énigme, `hintsEnabled` (booléen, fermé par défaut) et `hintsAvailableFrom` (AAAA-MM-JJ, jour de Paris, `null` ou `""` pour l'effacer). `GET /hints` renvoie `hintsAvailable` ; la demande d'indice répond 403 tant que c'est fermé | Feature + Breaking | **Breaking** : une énigme sans réglage n'offre plus d'indice. Les énigmes existantes doivent être ouvertes depuis l'admin. Une date mal formée est refusée en 400 |
 | 2026-09-12 | GET /oie, POST /oie/answer, POST /oie/roll, POST /oie/prompter | Énigme du jeu de l'oie : plateau partagé par toutes les équipes (édition 2027) | Feature | Une des vingt énigmes se joue sur un plateau commun ; arriver en case 63 marque l'énigme résolue dans `TeamEnigmaProgress`, donc le classement existant la compte |
 | 2026-09-12 | GET/PUT /admin/oie/board, GET /admin/oie/teams, POST /admin/oie/teams/{teamId}/reset | Administration du plateau : 63 questions, quota de lancers, état des équipes | Feature | Le quota `rollsPerDay` est modifiable à tout moment, sans déploiement |
