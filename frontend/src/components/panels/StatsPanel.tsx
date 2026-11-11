@@ -116,7 +116,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                 <div data-testid="team-loading" className="loading-state">Chargement...</div>
               ) : (
                 <>
-                  <div className="info-box" style={{ marginBottom: '20px' }}>
+                  <div className="info-box">
                     <p>
                       N'oubliez pas d'inviter les autres membres de votre équipe à s'inscrire et à rejoindre cette équipe.
                       Pensez à régler les frais d'inscription (29€ par équipe) pour accéder au rallye !
@@ -381,7 +381,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
 
                     {(
                       <>
-                        <div className="info-box" style={{ marginBottom: '20px' }}>
+                        <div className="info-box">
                           <p>
                             N'oubliez pas d'inviter les autres membres de votre équipe à s'inscrire et à rejoindre cette équipe !
                           </p>
