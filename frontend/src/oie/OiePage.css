@@ -116,8 +116,11 @@
 /* Deux lignes verticales, lues de bas en haut : « Votre équipe », puis
    l'état (« À vous de lancer », « Au fond du puits »...). */
 .oie-languette-textes {
+  /* En écriture verticale, l'axe des colonnes est horizontal : les deux
+     textes se posent côte à côte au lieu de se suivre. */
   display: flex;
-  gap: 2px;
+  flex-direction: column;
+  gap: 4px;
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   line-height: 1.15;
@@ -136,8 +139,10 @@
   font-weight: 600;
 }
 
+/* Le vermillon plein ne donne que 4,1:1 avec le blanc : la variante prévue
+   par le thème pour les aplats rouges portant du texte blanc. */
 .oie-languette-a-agir {
-  background: var(--theatre-tragedie);
+  background: var(--theatre-tragedie-fonce);
   border-color: var(--theatre-tragedie-sombre);
   color: #fff;
   animation: oie-appel 2.4s ease-in-out infinite;
@@ -858,12 +863,11 @@
    colonne coupée ne se devinait pas, et la languette la recouvrait encore. */
 @media (max-width: 600px) {
   .oie-page {
-    --oie-languette: 36px;
     padding: 16px calc(var(--oie-languette) + 4px) 40px 12px;
   }
   .oie-languette { padding: 12px 0; }
   .oie-languette:hover { width: var(--oie-languette); }
-  .oie-languette-textes { gap: 1px; line-height: 1.1; }
+  .oie-languette-textes { gap: 3px; line-height: 1.1; }
   .oie-plateau-cadre { padding: 6px; }
   /* Le libellé ne tient plus : la couleur et l'info-bulle portent seules la
      nature de la case. */
@@ -875,4 +879,12 @@
   .oie-case-illustree { min-height: 46px; aspect-ratio: auto; }
   .oie-case-illustree .oie-case-numero { padding: 0 3px; }
   .oie-pion { padding: 0 3px; letter-spacing: 0; }
+}
+
+/* Très petit téléphone : avec une languette de 44 px, la case descend à
+   25 px et les numéros larges (« 60 ») touchaient le bord. Un pixel de moins
+   de chaque côté suffit. */
+@media (max-width: 340px) {
+  .oie-case { padding: 2px; }
+  .oie-case-illustree .oie-case-numero { padding: 0 2px; }
 }
