@@ -131,7 +131,7 @@ export interface OieRollResponse extends OieBoardResponse {
   effects: OieMoveEffect[];
   /** Phrases deja ecrites en francais, dans l'ordre des effets. */
   journal: string[];
-  /** Equipes delogees par ce lancer (case occupee, puits, prison), et ce qui leur arrive. */
+  /** Reculs en chaine causes par ce lancer (case occupee), une phrase par equipe reculee. */
   releases: string[];
 }
 

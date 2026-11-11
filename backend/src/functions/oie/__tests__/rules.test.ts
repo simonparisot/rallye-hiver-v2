@@ -13,21 +13,20 @@ import {
   canRoll,
   dayLabel,
   daysBetween,
-  dislodgedState,
   FINISH_SQUARE,
   initialTeamState,
   isAnswerCorrect,
   normalizeAnswer,
   parisDay,
   PUITS_SKIPPED_DAYS,
-  resolveDislodge,
+  pushedState,
   resolveMove,
+  resolvePushChain,
   rollDice,
   rollRefusal,
   rollsRemaining,
   squareType,
   teamStatus,
-  teamsToDislodge,
 } from '../rules';
 import { OieTeamState } from '../../../types/oie';
 
@@ -161,20 +160,18 @@ describe('Les ponts', () => {
     expect(resolveMove(20, 8, 0).position).toBe(28);
   });
 
-  test('une equipe delogee envoyee sur un pont le traverse aussi', () => {
-    const outcome = resolveDislodge(23);
-    expect(outcome.position).toBe(30);
-    expect(outcome.effects).toContainEqual({ kind: 'pont', from: 23, to: 30 });
-  });
-
-  test('arriver par un pont sur une case occupee deloge l\'occupant vers la case de depart', () => {
-    // L'arrivee reelle est la case d'en face : c'est elle qui compte.
+  test('arriver par un pont sur une case occupee fait reculer l\'occupant de la case d\'en face', () => {
+    // L'arrivee reelle est la case d'en face : c'est elle qui compte. Le pont
+    // lui-meme, traverse, ne pousse personne.
     const move = resolveMove(2, 4, 0);
     const states = [
       { ...initialTeamState('moi', TODAY, NOW), position: 2 },
+      { ...initialTeamState('surLePont', TODAY, NOW), position: 6 },
       { ...initialTeamState('autre', TODAY, NOW), position: 12 },
     ];
-    expect(teamsToDislodge(states, 'moi', 2, move.position).map((s) => s.teamId)).toEqual(['autre']);
+    expect(resolvePushChain(states, 'moi', 2, move.position)).toEqual([
+      { teamId: 'autre', from: 12, to: 11, rang: 1, pushedBy: ['moi'] },
+    ]);
   });
 });
 
@@ -481,76 +478,181 @@ describe('Message des penalites', () => {
   });
 });
 
-describe('La case occupee', () => {
+describe('La case occupee : recul d\'une case, en chaine', () => {
   const equipe = (teamId: string, position: number, overrides: Partial<OieTeamState> = {}) =>
     ({ ...initialTeamState(teamId, TODAY, NOW), position, ...overrides });
 
-  test('l\'equipe qui occupait la case est delogee', () => {
-    const states = [equipe('moi', 20), equipe('autre', 25), equipe('loin', 40)];
-    expect(teamsToDislodge(states, 'moi', 20, 25).map((s) => s.teamId)).toEqual(['autre']);
+  test('A arrive sur B : B recule d\'une case', () => {
+    const states = [equipe('A', 20), equipe('B', 25), equipe('loin', 40)];
+    expect(resolvePushChain(states, 'A', 20, 25)).toEqual([
+      { teamId: 'B', from: 25, to: 24, rang: 1, pushedBy: ['A'] },
+    ]);
   });
 
-  test('case speciale ou non, la regle vaut partout', () => {
-    // L'oie, le puits, la prison, la loge, le souffleur : toutes delogent.
+  test('chaine A -> B -> C -> D : chacune recule d\'une case, dans l\'ordre', () => {
+    const states = [equipe('A', 10), equipe('B', 30), equipe('C', 29), equipe('D', 28), equipe('E', 26)];
+    expect(resolvePushChain(states, 'A', 10, 30)).toEqual([
+      { teamId: 'B', from: 30, to: 29, rang: 1, pushedBy: ['A'] },
+      { teamId: 'C', from: 29, to: 28, rang: 2, pushedBy: ['B'] },
+      { teamId: 'D', from: 28, to: 27, rang: 3, pushedBy: ['C'] },
+    ]);
+    // E, en 26, n'est pas touchee : la case 27 etait libre.
+  });
+
+  test('plusieurs equipes sur la meme case reculent ensemble, et poussent ensemble', () => {
+    const states = [equipe('A', 10), equipe('B1', 17), equipe('B2', 17), equipe('C', 16)];
+    expect(resolvePushChain(states, 'A', 10, 17)).toEqual([
+      { teamId: 'B1', from: 17, to: 16, rang: 1, pushedBy: ['A'] },
+      { teamId: 'B2', from: 17, to: 16, rang: 1, pushedBy: ['A'] },
+      { teamId: 'C', from: 16, to: 15, rang: 2, pushedBy: ['B1', 'B2'] },
+    ]);
+  });
+
+  test('la chaine s\'arrete en case 0, partagee, et ne descend jamais dessous', () => {
+    const states = [equipe('A', 0), equipe('B', 2), equipe('C', 1), equipe('Z', 0)];
+    // A, partie de 0, arrive en 2 (un pont mis a part, la regle est la meme).
+    const pushes = resolvePushChain(states, 'A', 0, 2);
+    expect(pushes).toEqual([
+      { teamId: 'B', from: 2, to: 1, rang: 1, pushedBy: ['A'] },
+      { teamId: 'C', from: 1, to: 0, rang: 2, pushedBy: ['B'] },
+    ]);
+    // Z reste en 0 avec C : personne n'est pousse depuis la case 0.
+    expect(pushes.every((push) => push.to >= 0)).toBe(true);
+  });
+
+  test('la chaine termine toujours : un plateau plein se vide jusqu\'a la case 0', () => {
+    const states = [equipe('A', 50)];
+    for (let square = 1; square <= 62; square += 1) states.push(equipe(`t${square}`, square));
+    const pushes = resolvePushChain(states, 'A', 50, 62);
+    expect(pushes).toHaveLength(62); // t62 .. t1, chacune une fois
+    expect(new Set(pushes.map((push) => push.teamId)).size).toBe(62);
+    expect(pushes[pushes.length - 1]).toMatchObject({ teamId: 't1', from: 1, to: 0, rang: 62 });
+  });
+
+  test('l\'arrivante n\'est jamais poussee par sa propre chaine', () => {
+    // 61 + 3 = 64, un de trop, retour en 62 : l'arrivante vient de 61, juste
+    // en dessous de la case ou elle pousse.
+    expect(resolveMove(61, 3, 0).position).toBe(62);
+    const states = [equipe('A', 61), equipe('B', 62)];
+    expect(resolvePushChain(states, 'A', 61, 62)).toEqual([
+      { teamId: 'B', from: 62, to: 61, rang: 1, pushedBy: ['A'] },
+    ]);
+  });
+
+  test('case speciale ou non, l\'arrivee pousse partout', () => {
+    // L'oie, le souffleur, la loge, le puits, la prison, la repetition.
     [9, 14, 19, 31, 52].forEach((caseOccupee) => {
-      const states = [equipe('moi', 3), equipe('autre', caseOccupee)];
-      expect(teamsToDislodge(states, 'moi', 3, caseOccupee)).toHaveLength(1);
+      const states = [equipe('A', 3), equipe('B', caseOccupee)];
+      expect(resolvePushChain(states, 'A', 3, caseOccupee)).toEqual([
+        { teamId: 'B', from: caseOccupee, to: caseOccupee - 1, rang: 1, pushedBy: ['A'] },
+      ]);
     });
   });
 
-  test('ni la case 0 ni la case 63 ne delogent personne', () => {
-    const depart = [equipe('moi', 58), equipe('autre', 0)];
-    expect(teamsToDislodge(depart, 'moi', 55, 0)).toEqual([]);
-    const arrivee = [equipe('moi', 60), equipe('autre', 63, { questionPending: true })];
-    expect(teamsToDislodge(arrivee, 'moi', 60, 63)).toEqual([]);
+  test('cases exemptees : ni la case 0 ni la 63 ne poussent personne', () => {
+    const depart = [equipe('A', 58), equipe('B', 0)];
+    expect(resolvePushChain(depart, 'A', 55, 0)).toEqual([]);
+    const arrivee = [equipe('A', 60), equipe('B', 63, { questionPending: true }), equipe('C', 62)];
+    expect(resolvePushChain(arrivee, 'A', 60, 63)).toEqual([]);
   });
 
-  test('un rebond qui ramene sur sa propre case ne deloge personne', () => {
+  test('un rebond qui ramene sur sa propre case ne pousse personne', () => {
     // 61 + 4 = 65, deux de trop, retour en 61.
     expect(resolveMove(61, 4, 0).position).toBe(61);
-    const states = [equipe('moi', 61), equipe('autre', 61)];
-    expect(teamsToDislodge(states, 'moi', 61, 61)).toEqual([]);
+    const states = [equipe('A', 61), equipe('B', 61)];
+    expect(resolvePushChain(states, 'A', 61, 61)).toEqual([]);
   });
 
-  test('toutes les equipes presentes sont delogees, pas seulement la premiere', () => {
-    const states = [equipe('moi', 10), equipe('a', 17), equipe('b', 17)];
-    expect(teamsToDislodge(states, 'moi', 10, 17)).toHaveLength(2);
+  test('une equipe arrivee n\'est jamais poussee', () => {
+    const states = [equipe('A', 50), equipe('gagnante', 55, { finishedAt: NOW })];
+    expect(resolvePushChain(states, 'A', 50, 55)).toEqual([]);
   });
 
-  test('l\'equipe delogee doit repondre a la question de sa nouvelle case', () => {
-    const avant = equipe('autre', 25, { questionPending: false });
-    const apres = dislodgedState(avant, resolveDislodge(20), true, TODAY, NOW);
-    expect(apres.position).toBe(20);
+  test('arrivee par une oie : seule la case de l\'oie, finale, pousse', () => {
+    const move = resolveMove(4, 5, 0); // 9, une oie : on y reste, avec un lancer du
+    expect(move.position).toBe(9);
+    expect(move.bonusRoll).toBe(true);
+    const states = [equipe('A', 4), equipe('B', 9), equipe('C', 8)];
+    expect(resolvePushChain(states, 'A', 4, move.position)).toEqual([
+      { teamId: 'B', from: 9, to: 8, rang: 1, pushedBy: ['A'] },
+      { teamId: 'C', from: 8, to: 7, rang: 2, pushedBy: ['B'] },
+    ]);
+  });
+
+  test('arrivee par la repetition : retour en 0, personne n\'est pousse', () => {
+    const move = resolveMove(50, 8, 0); // 58, la repetition, retour en 0
+    expect(move.position).toBe(0);
+    const states = [equipe('A', 50), equipe('B', 58), equipe('C', 0)];
+    expect(resolvePushChain(states, 'A', 50, move.position)).toEqual([]);
+  });
+
+  test('arrivee en 63 : les equipes de la 62 ne sont pas poussees', () => {
+    const move = resolveMove(55, 8, 0);
+    expect(move.position).toBe(FINISH_SQUARE);
+    const states = [equipe('A', 55), equipe('B', 63, { questionPending: true }), equipe('C', 62)];
+    expect(resolvePushChain(states, 'A', 55, move.position)).toEqual([]);
+  });
+
+  test('l\'equipe qui recule doit repondre a la question de sa nouvelle case', () => {
+    const avant = equipe('B', 25, { questionPending: false });
+    const apres = pushedState(avant, 24, true, TODAY, NOW);
+    expect(apres.position).toBe(24);
     expect(apres.questionPending).toBe(true);
+    expect(pushedState(avant, 24, false, TODAY, NOW).questionPending).toBe(false);
   });
 
-  test('envoyee sur une case speciale, elle en subit l\'effet', () => {
-    const puits = dislodgedState(equipe('autre', 40), resolveDislodge(31), true, TODAY, NOW);
-    expect(puits.inPuits).toBe(true);
-    expect(puits.nextRollAllowedDay).toBe(addDays(TODAY, PUITS_SKIPPED_DAYS + 1));
-
-    const oie = dislodgedState(equipe('autre', 40), resolveDislodge(27), false, TODAY, NOW);
-    expect(oie.bonusRolls).toBe(1);
-    expect(oie.questionPending).toBe(false);
-    expect(teamStatus(oie, TODAY, 1)).toBe('relance_oie');
+  test('reculer sur une case speciale n\'a aucun effet', () => {
+    // Poussee de 32 sur le puits : elle n'y tombe pas.
+    const puits = pushedState(equipe('B', 32), 31, true, TODAY, NOW);
+    expect(puits.inPuits).toBe(false);
+    expect(puits.nextRollAllowedDay).toBe(TODAY);
+    // De 53 sur la prison : pas enfermee.
+    expect(pushedState(equipe('B', 53), 52, true, TODAY, NOW).inPrison).toBe(false);
+    // De 28 sur l'oie : pas de lancer offert.
+    const oie = pushedState(equipe('B', 28), 27, false, TODAY, NOW);
+    expect(oie.bonusRolls).toBe(0);
+    expect(teamStatus(oie, TODAY, 1)).toBe('peut_lancer');
+    // De 20 sur la loge : pas de tour passe.
+    expect(rollRefusal(pushedState(equipe('B', 20), 19, false, TODAY, NOW), TODAY, 1)).toBeNull();
+    // De 7 sur le pont : elle reste sur le pont, sans le traverser.
+    expect(pushedState(equipe('B', 7), 6, false, TODAY, NOW).position).toBe(6);
+    // De 59 sur la repetition : pas de retour en 0.
+    expect(pushedState(equipe('B', 59), 58, false, TODAY, NOW).position).toBe(58);
   });
 
-  test('tiree du puits, elle est libre aussitot', () => {
-    const auFond = equipe('autre', 31, { inPuits: true, nextRollAllowedDay: addDays(TODAY, 4) });
-    const libre = dislodgedState(auFond, resolveDislodge(25), true, TODAY, NOW);
+  test('tiree du puits par le recul, elle est libre aussitot', () => {
+    const auFond = equipe('B', 31, { inPuits: true, nextRollAllowedDay: addDays(TODAY, PUITS_SKIPPED_DAYS + 1) });
+    const libre = pushedState(auFond, 30, true, TODAY, NOW);
+    expect(libre.position).toBe(30);
     expect(libre.inPuits).toBe(false);
     expect(libre.nextRollAllowedDay).toBe(TODAY);
     expect(rollRefusal({ ...libre, questionPending: false }, TODAY, 1)).toBeNull();
   });
 
-  test('quitter une oie fait perdre le lancer qu\'elle devait', () => {
-    const surOie = equipe('autre', 18, { bonusRolls: 1 });
-    expect(dislodgedState(surOie, resolveDislodge(12), true, TODAY, NOW).bonusRolls).toBe(0);
+  test('sortie de prison par le recul, elle est libre aussitot', () => {
+    const enfermee = equipe('B', 52, { inPrison: true, nextRollAllowedDay: addDays(TODAY, 3) });
+    const libre = pushedState(enfermee, 51, false, TODAY, NOW);
+    expect(libre.inPrison).toBe(false);
+    expect(rollRefusal(libre, TODAY, 1)).toBeNull();
   });
 
-  test('une equipe arrivee n\'est jamais delogee', () => {
-    const states = [equipe('moi', 50), equipe('gagnante', 55, { finishedAt: NOW })];
-    expect(teamsToDislodge(states, 'moi', 50, 55)).toEqual([]);
+  test('quitter une oie fait perdre le lancer qu\'elle devait', () => {
+    const surOie = equipe('B', 18, { bonusRolls: 1 });
+    expect(pushedState(surOie, 17, true, TODAY, NOW).bonusRolls).toBe(0);
+  });
+
+  test('le quota, les compteurs et les essais manques ne bougent pas', () => {
+    const avant = equipe('B', 40, { rollsUsedToday: 1, totalRolls: 7, wrongAnswers: 2, overshootCount: 1, hintedSquares: [14] });
+    const apres = pushedState(avant, 39, true, TODAY, NOW);
+    expect(apres).toMatchObject({ rollsUsedToday: 1, totalRolls: 7, wrongAnswers: 2, overshootCount: 1, hintedSquares: [14], version: avant.version });
+  });
+
+  test('une equipe poussee sur le puits occupe en tire l\'occupante, sans y tomber', () => {
+    const states = [equipe('A', 25), equipe('B', 32), equipe('C', 31, { inPuits: true })];
+    expect(resolvePushChain(states, 'A', 25, 32)).toEqual([
+      { teamId: 'B', from: 32, to: 31, rang: 1, pushedBy: ['A'] },
+      { teamId: 'C', from: 31, to: 30, rang: 2, pushedBy: ['B'] },
+    ]);
   });
 });
 

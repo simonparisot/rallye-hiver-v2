@@ -33,6 +33,9 @@ provider:
     GAME_STATUS_TABLE: ${self:service}-game-status
     ENIGMA_DIFFICULTY_CACHE_TABLE: ${self:service}-enigma-difficulty-cache
     HINT_REQUESTS_TABLE: ${self:service}-hint-requests
+    # Tentatives de mot de passe de fin de tournée, à part de celles des
+    # intrigues que lisent les statistiques de difficulté.
+    PARCOURS_ATTEMPTS_TABLE: ${self:service}-parcours-attempts
     # Secrets et identifiants lus dans SSM Parameter Store au moment du
     # déploiement, sous /rallye-hiver/<stage>/. Plus rien n'a donc à être fourni
     # en variables d'environnement pour déployer.
@@ -88,6 +91,8 @@ provider:
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.GAME_STATUS_TABLE}
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.HINT_REQUESTS_TABLE}
             - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.HINT_REQUESTS_TABLE}/index/*
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PARCOURS_ATTEMPTS_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PARCOURS_ATTEMPTS_TABLE}/index/*
         # Choix d'indice par Bedrock (HINT_PROVIDER=bedrock). Le point d'entree
         # Messages natif a son propre droit (bedrock-mantle:CreateInference) ;
         # InvokeModel sert si HINT_MODEL designe un profil d'inference, qui
@@ -502,23 +507,14 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
-  markParcoursCompleted:
-    handler: src/functions/parcours/markCompleted.handler
+  # Validation d'une tournée par le mot de passe trouvé à sa fin. Remplace
+  # POST/DELETE /parcours/{parcoursId}/complete.
+  submitParcoursAttempt:
+    handler: src/functions/parcours/submitAttempt.handler
     events:
       - http:
-          path: /parcours/{parcoursId}/complete
+          path: /parcours/{parcoursId}/attempt
           method: post
-          cors: true
-          authorizer:
-            name: authorizer
-            resultTtlInSeconds: 0
-
-  unmarkParcoursCompleted:
-    handler: src/functions/parcours/unmarkCompleted.handler
-    events:
-      - http:
-          path: /parcours/{parcoursId}/complete
-          method: delete
           cors: true
           authorizer:
             name: authorizer
@@ -601,6 +597,75 @@ functions:
           path: /admin/game/start
           method: post
           cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  # Messages servis au hasard quand une equipe donne un mauvais mot de passe.
+  # Item gameId = settings#wrong-password-messages de la table game-status,
+  # deja couverte par les droits IAM du role (GetItem, PutItem, DeleteItem).
+  adminGetWrongPasswordMessages:
+    handler: src/functions/admin/settings/wrongPasswordMessages.getHandler
+    events:
+      - http:
+          path: /admin/settings/wrong-password-messages
+          method: get
+          cors:
+            origin: ${ssm:/rallye-hiver/${self:provider.stage}/cors-origin}
+            headers:
+              - Content-Type
+              - Authorization
+              - X-Amz-Date
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Requested-With
+            allowCredentials: true
+            maxAge: 3600
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminPutWrongPasswordMessages:
+    handler: src/functions/admin/settings/wrongPasswordMessages.putHandler
+    events:
+      - http:
+          path: /admin/settings/wrong-password-messages
+          method: put
+          cors:
+            origin: ${ssm:/rallye-hiver/${self:provider.stage}/cors-origin}
+            headers:
+              - Content-Type
+              - Authorization
+              - X-Amz-Date
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Requested-With
+            allowCredentials: true
+            maxAge: 3600
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminResetWrongPasswordMessages:
+    handler: src/functions/admin/settings/wrongPasswordMessages.deleteHandler
+    events:
+      - http:
+          path: /admin/settings/wrong-password-messages
+          method: delete
+          cors:
+            origin: ${ssm:/rallye-hiver/${self:provider.stage}/cors-origin}
+            headers:
+              - Content-Type
+              - Authorization
+              - X-Amz-Date
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Requested-With
+            allowCredentials: true
+            maxAge: 3600
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
@@ -1316,6 +1381,44 @@ resources:
               - AttributeName: teamEnigmaKey
                 KeyType: HASH
               - AttributeName: requestedAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+
+    # Tentatives de mot de passe de fin de tournée (une ligne par tentative).
+    ParcoursAttemptsTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
+      Properties:
+        TableName: ${self:provider.environment.PARCOURS_ATTEMPTS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: attemptId
+            AttributeType: S
+          - AttributeName: teamId
+            AttributeType: S
+          - AttributeName: parcoursId
+            AttributeType: S
+          - AttributeName: attemptedAt
+            AttributeType: S
+        KeySchema:
+          - AttributeName: attemptId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: teamId-attemptedAt-index
+            KeySchema:
+              - AttributeName: teamId
+                KeyType: HASH
+              - AttributeName: attemptedAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: parcoursId-attemptedAt-index
+            KeySchema:
+              - AttributeName: parcoursId
+                KeyType: HASH
+              - AttributeName: attemptedAt
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL

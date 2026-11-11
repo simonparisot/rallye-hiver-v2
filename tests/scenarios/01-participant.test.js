@@ -84,6 +84,11 @@ describe('Membre d\'une équipe', () => {
       expect(parcours).toHaveProperty('requiredEnigmasCount');
       // L'adresse du PDF suffit à l'ouvrir : la liste ne la donne à personne.
       liste.data.parcours.forEach((p) => expect(p).not.toHaveProperty('pdfUrl'));
+      // Le mot de passe de fin de tournée non plus ; seulement s'il existe.
+      liste.data.parcours.forEach((p) => {
+        expect(p).not.toHaveProperty('correctPassword');
+        expect(typeof p.hasPassword).toBe('boolean');
+      });
     });
 
     test('indique les parcours accessibles à l\'équipe', async () => {

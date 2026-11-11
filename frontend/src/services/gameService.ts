@@ -49,6 +49,7 @@ function transformParcoursWithAccess(
     requiredEnigmaIds: parcours.requiredEnigmaIds,
     isCompleted: accessInfo.completed || false,
     completedAt: accessInfo.completedAt,
+    hasPassword: parcours.hasPassword ?? false,
   };
 }
 
@@ -126,6 +127,7 @@ export async function getParcoursWithAccess(): Promise<Parcours[]> {
         })),
         isCompleted: p.completed,
         completedAt: p.completedAt || undefined,
+        hasPassword: p.hasPassword ?? false,
       };
     })
     .sort((a, b) => a.order - b.order);

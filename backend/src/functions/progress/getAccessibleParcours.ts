@@ -1,15 +1,16 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getUserById, getAllParcours, getAllTeamParcoursAccess } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
-import { loadAccessContext, evaluateParcoursAccess, withoutPdf } from '../../utils/parcoursAccess';
+import { loadAccessContext, evaluateParcoursAccess, forPlayers } from '../../utils/parcoursAccess';
 
 /**
  * Les tournées publiées, avec pour chacune son état pour l'équipe : ouverte ou
- * non, intrigues requises et résolues, réalisation déclarée.
+ * non, intrigues requises et résolues, réalisation (mot de passe trouvé).
  *
  * `parcours` les liste toutes ; `accessibleParcours` ne garde que les
  * ouvertes, pour les clients qui ne lisaient que celle-là. Le PDF d'une
- * tournée verrouillée n'est jamais renvoyé.
+ * tournée verrouillée n'est jamais renvoyé, le mot de passe de fin de tournée
+ * jamais du tout (`hasPassword` dit seulement s'il existe).
  */
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -39,7 +40,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         const { isUnlocked, requiredEnigmas } = evaluateParcoursAccess(p, context);
         const accessRecord: any = accessMap.get(p.parcoursId);
         return {
-          ...(isUnlocked ? p : withoutPdf(p)),
+          ...forPlayers(p, { withPdf: isUnlocked }),
           isUnlocked,
           requiredEnigmas,
           unlockedAt: isUnlocked ? accessRecord?.unlockedAt || null : null,

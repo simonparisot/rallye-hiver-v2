@@ -1,15 +1,15 @@
 import { test, expect, ouvrirSection } from './fixtures.js';
 import { resetTestTeamProgress } from '../helpers/cleanup.js';
+import { parcoursPasswordByNumber } from '../helpers/parcours.js';
 
 /**
  * Scénarios 3, 6 et 8 par l'interface : consulter un parcours, le télécharger,
- * le marquer comme réalisé — et revenir sur cette complétion, ce qui rend le
- * scénario rejouable et sans trace.
+ * le valider par son mot de passe de fin de tournée. La remise à zéro de
+ * l'équipe de test avant et après chaque test rend le scénario rejouable.
  */
 test.describe('Parcours', () => {
-  // Le test de complétion enregistre réellement côté serveur, y compris quand
-  // l'affichage ne suit pas : sans remise à zéro, le test suivant ne trouverait
-  // plus le bouton « Marquer comme réalisé ».
+  // La validation enregistre réellement côté serveur : sans remise à zéro, le
+  // test suivant ne trouverait plus le champ du mot de passe.
   test.beforeEach(async () => {
     await resetTestTeamProgress();
   });
@@ -55,51 +55,37 @@ test.describe('Parcours', () => {
     expect(telechargement.suggestedFilename()).toMatch(/\.pdf$/i);
   });
 
-  test('[défaut connu] le détail reflète la complétion sans avoir à rouvrir', async ({ page }) => {
-    // Constaté : l'API répond 200 et enregistre bien la complétion, mais le
-    // panneau ouvert continue d'afficher « Marquer comme réalisé ».
-    // selectedParcours (ParcoursPanel.tsx:37) est une copie figée prise au clic ;
-    // les mutations invalident les requêtes, ce qui rafraîchit la liste, mais
-    // rien ne resynchronise le détail affiché.
-    // Pour le participant, le clic paraît sans effet — et il reclique.
-    test.fail();
+  test('6. un parcours se valide par son mot de passe de fin de tournée', async ({ page }) => {
+    const motDePasse = await parcoursPasswordByNumber(1);
 
     await page.goto('/');
     await ouvrirSection(page, 'parcours');
     await page.getByTestId('parcours-card-1').click();
     await expect(page.getByTestId('parcours-expanded-view')).toBeVisible();
 
-    await page.getByTestId('parcours-complete-button').click();
+    const formulaire = page.getByTestId('parcours-password-form');
+    const ouverte = await formulaire.isVisible().catch(() => false);
+    test.skip(
+      !motDePasse || !ouverte,
+      'La tournée 1 n\'est pas ouverte pour l\'équipe de test, ou n\'a pas de mot de passe.'
+    );
 
-    await expect(page.getByTestId('parcours-completed-banner')).toBeVisible({ timeout: 10_000 });
-  });
+    // Une mauvaise réponse est refusée, sans valider la tournée.
+    await page.getByTestId('parcours-password-input').fill('reponse-volontairement-fausse-42');
+    await page.getByTestId('parcours-password-submit').click();
+    await expect(page.getByTestId('parcours-attempt-error')).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId('parcours-attempt-close').click();
+    await expect(page.getByTestId('parcours-completed-banner')).toHaveCount(0);
 
-  test('6. un parcours peut être marqué comme réalisé, puis remis en état', async ({ page }) => {
-    await page.goto('/');
-    await ouvrirSection(page, 'parcours');
-    await page.getByTestId('parcours-card-1').click();
-    await expect(page.getByTestId('parcours-expanded-view')).toBeVisible();
-
-    await page.getByTestId('parcours-complete-button').click();
-    // Le rechargement contourne le défaut d'affichage ci-dessus : ce test
-    // vérifie que la complétion est bien enregistrée, pas qu'elle s'affiche.
-    await page.waitForTimeout(2000);
-    await page.reload({ waitUntil: 'networkidle' });
-    // Un rechargement ramène à la section par défaut.
-    await ouvrirSection(page, 'parcours');
-    await page.getByTestId('parcours-card-1').click();
+    // La bonne réponse valide la tournée, et le détail le montre sans recharger.
+    await page.getByTestId('parcours-password-input').fill(motDePasse as string);
+    await page.getByTestId('parcours-password-submit').click();
+    await expect(page.getByTestId('parcours-attempt-success')).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId('parcours-attempt-close').click();
 
     await expect(page.getByTestId('parcours-completed-banner')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('parcours-completed-badge-1')).toBeVisible();
-
-    // Retour à l'état initial : le scénario ne laisse rien derrière lui.
-    await page.getByTestId('parcours-uncomplete-button').click();
-    await page.waitForTimeout(2000);
-    await page.reload({ waitUntil: 'networkidle' });
-    // Un rechargement ramène à la section par défaut.
-    await ouvrirSection(page, 'parcours');
-    await page.getByTestId('parcours-card-1').click();
-
-    await expect(page.getByTestId('parcours-complete-button')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId('parcours-password-form')).toHaveCount(0);
+    // Plus de retour arrière côté joueur : afterAll remet l'équipe à zéro.
   });
 });

@@ -14,8 +14,9 @@
  *      par `nextHintCost(enigma.points, dejaDonnes.length)` ;
  *   2. dans `functions/teams/getStats.ts`, sommer `enigmaScoreAfterHints()`
  *      plutôt que `enigma.points`.
- * L'interface joueur devra alors réafficher le chiffre, qu'elle remplace
- * aujourd'hui par un avertissement sans montant.
+ * L'interface joueur annonce aujourd'hui « Les indices ne coûtent aucun
+ * point. » (components/panels/HintRequestSection.tsx) : elle devra alors
+ * annoncer le coût réel.
  *
  * Règle écrite ici : chaque indice demandé coûte 25 % des points de l'énigme, de
  * manière cumulative (deux indices : 50 %), et le score d'une énigme ne descend

@@ -66,5 +66,6 @@ export const TABLES = {
   progress: 'team-enigma-progress',
   attempts: 'password-attempts',
   parcoursAccess: 'team-parcours-access',
+  parcoursAttempts: 'parcours-attempts',
   gameStatus: 'game-status',
 };

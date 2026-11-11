@@ -5,6 +5,7 @@ import { getParcoursWithAccess, getParcoursPreview } from '../../services/gameSe
 import { teamAPI, parcoursAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import PDFViewer from '../PDFViewer';
+import ResultatTentative from '../ResultatTentative';
 import './ParcoursPanel.css';
 
 interface ParcoursPanelProps {
@@ -40,35 +41,30 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
   const [selectionLocale, setSelectionLocale] = useState<string | null>(null);
   const idSelectionne = selectionId !== undefined ? selectionId : selectionLocale;
   const selectedParcours = parcoursList.find((p) => p.id === idSelectionne) ?? null;
-  const [completionMessage, setCompletionMessage] = useState('');
+  const [password, setPassword] = useState('');
+  const [attemptMessage, setAttemptMessage] = useState('');
+  const [attemptSuccess, setAttemptSuccess] = useState(false);
 
-  const markCompletedMutation = useMutation({
-    mutationFn: (parcoursId: string) => parcoursAPI.markCompleted(parcoursId),
-    onSuccess: () => {
+  // Une tournée se valide par le mot de passe trouvé à sa fin, comme une
+  // intrigue. Il remplace l'ancien « Marquer comme réalisée ».
+  const passwordMutation = useMutation({
+    mutationFn: ({ parcoursId, password }: { parcoursId: string; password: string }) =>
+      parcoursAPI.submitAttempt(parcoursId, password),
+    onSuccess: (data) => {
+      setAttemptMessage(data.message);
+      setAttemptSuccess(data.success);
+      if (data.success) {
+        setPassword('');
+        queryClient.invalidateQueries({ queryKey: ['parcours-with-access'] });
+        queryClient.invalidateQueries({ queryKey: ['team-stats'] });
+      }
+    },
+    onError: (err: any) => {
+      // 403 (tournée refermée) ou 409 (mot de passe retiré) : l'affichage
+      // était en retard sur le serveur, on le recharge.
       queryClient.invalidateQueries({ queryKey: ['parcours-with-access'] });
-      queryClient.invalidateQueries({ queryKey: ['team-stats'] });
-      setCompletionMessage('✅ Tournée déclarée comme réalisée !');
-      setTimeout(() => setCompletionMessage(''), 4000);
-    },
-    onError: (error: any) => {
-      console.error('Error marking parcours as completed:', error);
-      setCompletionMessage('❌ Erreur lors de la déclaration');
-      setTimeout(() => setCompletionMessage(''), 4000);
-    },
-  });
-
-  const unmarkCompletedMutation = useMutation({
-    mutationFn: (parcoursId: string) => parcoursAPI.unmarkCompleted(parcoursId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['parcours-with-access'] });
-      queryClient.invalidateQueries({ queryKey: ['team-stats'] });
-      setCompletionMessage('↩️ Statut réalisé annulé');
-      setTimeout(() => setCompletionMessage(''), 4000);
-    },
-    onError: (error: any) => {
-      console.error('Error unmarking parcours completion:', error);
-      setCompletionMessage('❌ Erreur lors de l\'annulation');
-      setTimeout(() => setCompletionMessage(''), 4000);
+      setAttemptMessage(err?.response?.data?.error || 'Une erreur est survenue. Veuillez réessayer.');
+      setAttemptSuccess(false);
     },
   });
 
@@ -80,19 +76,17 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
     }
   };
 
-  // Le message de confirmation appartient à la tournée affichée.
-  useEffect(() => setCompletionMessage(''), [idSelectionne]);
+  // Le champ et le message appartiennent à la tournée affichée.
+  useEffect(() => {
+    setPassword('');
+    setAttemptMessage('');
+    setAttemptSuccess(false);
+  }, [idSelectionne]);
 
-  const handleMarkCompleted = () => {
-    if (selectedParcours && !selectedParcours.isCompleted) {
-      markCompletedMutation.mutate(selectedParcours.id);
-    }
-  };
-
-  const handleUnmarkCompleted = () => {
-    if (selectedParcours && selectedParcours.isCompleted) {
-      unmarkCompletedMutation.mutate(selectedParcours.id);
-    }
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedParcours || !password.trim() || passwordMutation.isPending) return;
+    passwordMutation.mutate({ parcoursId: selectedParcours.id, password: password.trim() });
   };
 
   const handleDownload = (e: React.MouseEvent, parcours: Parcours) => {
@@ -208,43 +202,60 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                     <div className="parcours-header-detail">
                       <div className="parcours-completion-section">
                         {selectedParcours.isCompleted ? (
-                          <div className="parcours-completed-container">
-                            <div className="parcours-completed-badge" data-testid="parcours-completed-banner">
-                              ✅ Tournée réalisée
-                              {selectedParcours.completedAt && (
-                                <span className="completed-date">
-                                  {' '}le {new Date(selectedParcours.completedAt).toLocaleDateString('fr-FR')}
-                                </span>
-                              )}
-                            </div>
-                            <button
-                              data-testid="parcours-uncomplete-button"
-                              className="btn-unmark-completed"
-                              onClick={handleUnmarkCompleted}
-                              disabled={unmarkCompletedMutation.isPending}
-                              title="Annuler le marquage comme réalisée"
-                            >
-                              {unmarkCompletedMutation.isPending ? 'Annulation...' : 'Annuler'}
-                            </button>
+                          <div className="parcours-completed-badge" data-testid="parcours-completed-banner">
+                            ✅ Tournée réalisée
+                            {selectedParcours.completedAt && (
+                              <span className="completed-date">
+                                {' '}le {new Date(selectedParcours.completedAt).toLocaleDateString('fr-FR')}
+                              </span>
+                            )}
                           </div>
+                        ) : !selectedParcours.hasPassword ? (
+                          <p className="parcours-password-indisponible" data-testid="parcours-password-unavailable">
+                            Le mot de passe de cette tournée n'est pas encore disponible
+                          </p>
                         ) : (
-                          <button
-                            data-testid="parcours-complete-button"
-                            className="btn-mark-completed"
-                            onClick={handleMarkCompleted}
-                            disabled={markCompletedMutation.isPending}
+                          <form
+                            className="parcours-password-form"
+                            data-testid="parcours-password-form"
+                            onSubmit={handlePasswordSubmit}
                           >
-                            {markCompletedMutation.isPending ? 'Marquage...' : 'Marquer comme réalisée'}
-                          </button>
-                        )}
-                        {completionMessage && (
-                          <div className={`completion-message ${completionMessage.includes('✅') || completionMessage.includes('↩️') ? 'success' : 'error'}`} data-testid="parcours-completion-message">
-                            {completionMessage}
-                          </div>
+                            <label htmlFor="parcours-password-input" className="parcours-password-label">
+                              Mot de passe de fin de tournée
+                            </label>
+                            <div className="parcours-password-ligne">
+                              <input
+                                id="parcours-password-input"
+                                type="text"
+                                placeholder="Entrez le mot de passe"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="parcours-password-input"
+                                data-testid="parcours-password-input"
+                                autoComplete="off"
+                                autoCapitalize="characters"
+                                disabled={passwordMutation.isPending}
+                              />
+                              <button
+                                type="submit"
+                                data-testid="parcours-password-submit"
+                                className="parcours-password-submit"
+                                disabled={passwordMutation.isPending || !password.trim()}
+                              >
+                                {passwordMutation.isPending ? 'Envoi…' : 'Valider'}
+                              </button>
+                            </div>
+                          </form>
                         )}
                       </div>
                     </div>
                   )}
+                  <ResultatTentative
+                    message={attemptMessage || null}
+                    reussi={attemptSuccess}
+                    onFermer={() => setAttemptMessage('')}
+                    testIdPrefix="parcours-attempt"
+                  />
                   {selectedParcours.pdfUrl ? (
                     <div className="parcours-pdf-container" data-testid="parcours-pdf-container">
                       <PDFViewer pdfUrl={selectedParcours.pdfUrl} title={selectedParcours.title} />

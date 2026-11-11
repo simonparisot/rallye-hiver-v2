@@ -137,7 +137,7 @@ export async function removeFromTestTeam(userId) {
  */
 export async function resetTestTeamProgress() {
   const teamId = assertTestTeam(config.teamId);
-  const supprimes = { progress: 0, attempts: 0, parcoursAccess: 0 };
+  const supprimes = { progress: 0, attempts: 0, parcoursAccess: 0, parcoursAttempts: 0 };
 
   // Progression par énigme
   const progress = await parcourirTout((clefDepart) => new QueryCommand({
@@ -186,6 +186,30 @@ export async function resetTestTeamProgress() {
       Key: { teamId: item.teamId, parcoursId: item.parcoursId },
     }));
     supprimes.parcoursAccess += 1;
+  }
+
+  // Tentatives de mot de passe de fin de tournée. La table n'existe qu'une
+  // fois la route POST /parcours/{id}/attempt déployée : son absence n'est
+  // pas une erreur de nettoyage.
+  try {
+    const parcoursAttempts = await parcourirTout((clefDepart) => new QueryCommand({
+      TableName: table(TABLES.parcoursAttempts),
+      IndexName: 'teamId-attemptedAt-index',
+      KeyConditionExpression: 'teamId = :t',
+      ExpressionAttributeValues: { ':t': teamId },
+      ExclusiveStartKey: clefDepart,
+    }));
+
+    for (const item of parcoursAttempts) {
+      assertTestTeam(item.teamId);
+      await dynamo().send(new DeleteCommand({
+        TableName: table(TABLES.parcoursAttempts),
+        Key: { attemptId: item.attemptId },
+      }));
+      supprimes.parcoursAttempts += 1;
+    }
+  } catch (err) {
+    if (err.name !== 'ResourceNotFoundException') throw err;
   }
 
   // Compteurs portés par l'équipe elle-même

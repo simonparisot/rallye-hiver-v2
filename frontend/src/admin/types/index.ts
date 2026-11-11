@@ -73,6 +73,11 @@ export interface CreateParcoursRequest {
   pdfUrl: string;
   /** Intrigues à résoudre toutes pour ouvrir la tournée ; vide = tournée libre. */
   requiredEnigmaIds: string[];
+  /**
+   * Mot de passe que les équipes trouvent à la fin de la tournée et saisissent
+   * pour la valider. Vide : la tournée ne peut pas encore être validée.
+   */
+  correctPassword?: string;
   isActive: boolean;
 }
 

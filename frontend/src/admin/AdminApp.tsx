@@ -8,6 +8,7 @@ import AdminTeams from './pages/AdminTeams';
 import AdminUsers from './pages/AdminUsers';
 import AdminAttempts from './pages/AdminAttempts';
 import AdminHintRequests from './pages/AdminHintRequests';
+import AdminWrongPasswordMessages from './pages/AdminWrongPasswordMessages';
 import AdminLogin from './pages/AdminLogin';
 import { useAdminAuth } from './contexts/AdminAuthContext';
 import { edition } from '../editions';
@@ -41,6 +42,7 @@ const AdminApp: React.FC = () => {
         <Route path="/users" element={<AdminUsers />} />
         <Route path="/attempts" element={<AdminAttempts />} />
         <Route path="/hints" element={<AdminHintRequests />} />
+        <Route path="/wrong-password-messages" element={<AdminWrongPasswordMessages />} />
         {/* Jeu de l'oie : seulement pour une édition qui le déclare */}
         {edition.enigmeOie && <Route path="/oie" element={<AdminOie />} />}
       </Routes>

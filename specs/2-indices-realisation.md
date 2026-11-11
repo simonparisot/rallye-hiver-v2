@@ -147,6 +147,53 @@ pour les modèles ouverts à tous. Au 13 septembre, ni le compte de test ni
 celui de production ne l'avaient fait ; le mode n'a donc pas encore été exercé
 sur une vraie demande, seulement compilé et couvert par les tests unitaires.
 
+**Mise à jour du 11 novembre 2026.** Le stage `test` tourne en `bedrock` avec
+Sonnet 4.6, posé par les paramètres SSM `/rallye-hiver/test/hint-provider` et
+`/rallye-hiver/test/hint-model`. C'est le choix retenu pour la production :
+`bedrock` avec le rôle de la lambda, sans clé d'API (voir § 8, point 4).
+
+### 3.1 quater Ouverture des indices par l'organisateur (11 novembre 2026)
+
+L'organisateur décide, intrigue par intrigue, si les équipes peuvent demander
+un indice. Deux champs sur l'énigme, lus par
+`backend/src/utils/hintAvailability.ts` (`indicesOuverts`) :
+
+- `hintsEnabled` (booléen) : l'interrupteur. **Fermé par défaut** : une
+  intrigue créée, ou qui n'a jamais reçu de réglage, n'offre aucun indice, même
+  si ses indices sont déjà rédigés. On peut donc les écrire sans les exposer.
+- `hintsAvailableFrom` (`AAAA-MM-JJ`, facultatif) : date d'ouverture, lue **en
+  jour de Paris** (« à partir du 12 janvier » veut dire dès minuit à Paris). Vide
+  ou `null` : ouverts dès que l'interrupteur l'est. Une date mal formée est
+  refusée en 400 par l'admin.
+
+**Ouverture et fermeture à tout moment.** L'admin les règle dans le formulaire
+de l'intrigue, ou d'un clic dans la liste (bouton Ouvrir / Fermer de la colonne
+« Indices », qui n'envoie que `{ hintsEnabled }` ; le handler de mise à jour ne
+réécrit que les champs reçus). La liste signale « ouverts, sans indice » quand
+l'interrupteur est ouvert sur une intrigue sans indice rédigé ; le formulaire
+avertit aussi quand la solution détaillée est vide, le modèle choisissant alors
+sans repère.
+
+**Contrôle côté serveur, pas seulement à l'écran.**
+
+- `POST /hints/{enigmaId}/request` répond **403** tant que les indices sont
+  fermés (ou avant la date).
+- Le worker du mode `queue` relit l'énigme au moment de servir : une demande
+  restée en attente sur une intrigue fermée entre-temps est conclue `failed`,
+  motif « Indices fermés », sans appel au modèle.
+- `GET /hints/{enigmaId}` renvoie `hintsAvailable` (calculé) ; la date
+  d'ouverture n'est jamais transmise aux équipes, ni par cet endpoint ni par
+  `GET /enigmas`.
+
+**Les indices déjà obtenus restent visibles.** Fermer les indices empêche d'en
+demander de nouveaux, pas de relire ceux que l'équipe a déjà reçus :
+`GET /hints/{enigmaId}` continue de les rendre, et le bouton reste affiché pour
+les relire.
+
+Les intrigues non publiées (`isActive === false`) n'existent pas côté joueur :
+`GET /enigmas` ne les liste pas, `GET /enigmas/{id}` et `GET /hints/{id}`
+répondent 404. Les parcours n'ont pas d'indice.
+
 ### 3.2 Coût en points : aucun, pour l'instant
 
 Le commanditaire veut d'abord savoir si le mécanisme de choix fonctionne.
@@ -155,8 +202,7 @@ retirerait à des équipes pour une fonctionnalité qui peut encore être retir�
 
 En conséquence : `pointsCharged` vaut 0 dans toutes les demandes, `getStats`
 n'applique aucune déduction, le classement n'est pas touché, et l'interface
-remplace le chiffre par un avertissement sans montant (« demander un indice
-pourra coûter des points à votre équipe »).
+l'annonce sobrement : « Les indices ne coûtent aucun point. »
 
 Le barème reste écrit et testé dans `backend/src/utils/hintCost.ts`, en sommeil,
 avec en tête du fichier la marche à suivre pour le rebrancher : deux lignes à
@@ -388,10 +434,17 @@ inventé, double clic) et `backend/src/services/__tests__/hintSelector.test.ts`
 2. **Décider du sort du classement admin** (question ouverte 9.1).
 3. **Fournir les vraies énigmes** (énoncé, solution détaillée, liste d'indices
    graduée) et les charger avec le script.
-4. **Pour un passage en production**, créer le paramètre SSM
-   `/rallye-hiver/prod/anthropic-api-key` et laisser `hint-provider` absent ou à
-   `anthropic`. Le mode `queue` suppose que quelqu'un lance le worker : il
-   convient à un essai, pas à un rallye de trois mois sans surveillance.
+4. **Pour un passage en production**, le choix retenu est `bedrock`, avec le
+   rôle IAM de la lambda : pas de clé d'API à gérer. Le jour du passage, poser
+   les deux paramètres SSM `/rallye-hiver/prod/hint-provider` = `bedrock` et
+   `/rallye-hiver/prod/hint-model` (le modèle validé sur `test`, Sonnet 4.6),
+   puis redéployer. **Les deux sont indispensables** : sans `hint-provider`, le
+   défaut du code est `anthropic`, qui exige une clé absente ; sans `hint-model`,
+   le défaut du code (`anthropic.claude-opus-5` en `bedrock`) est un modèle
+   refusé par le compte, et chaque demande échouerait. Vérifier aussi l'accès aux
+   modèles Anthropic dans la console Bedrock du compte de production (§ 3.1 ter).
+   Le mode `queue` suppose que quelqu'un lance le worker : il convient à un
+   essai, pas à un rallye de trois mois sans surveillance.
 5. **Corriger `generatePresignedUrl.ts`**, qui code en dur le bucket de
    production et empêche l'envoi de PDF sur tout bac à sable. Hors périmètre de
    ce chantier, signalé en passant.

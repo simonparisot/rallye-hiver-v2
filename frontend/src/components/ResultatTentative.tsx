@@ -7,6 +7,11 @@ interface ResultatTentativeProps {
   /** Vrai si la réponse était la bonne. */
   reussi: boolean;
   onFermer: () => void;
+  /**
+   * Préfixe des data-testid. Par défaut celui des intrigues ; la validation
+   * d'une tournée réutilise ce composant avec le sien.
+   */
+  testIdPrefix?: string;
 }
 
 /**
@@ -19,7 +24,12 @@ interface ResultatTentativeProps {
  * Trois façons de refermer, parce qu'on referme souvent : la croix, un clic à
  * côté, la touche d'échappement.
  */
-const ResultatTentative: React.FC<ResultatTentativeProps> = ({ message, reussi, onFermer }) => {
+const ResultatTentative: React.FC<ResultatTentativeProps> = ({
+  message,
+  reussi,
+  onFermer,
+  testIdPrefix = 'enigma-attempt',
+}) => {
   const boutonFermer = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -41,7 +51,7 @@ const ResultatTentative: React.FC<ResultatTentativeProps> = ({ message, reussi, 
   return (
     <div
       className="resultat-voile"
-      data-testid="enigma-attempt-overlay"
+      data-testid={`${testIdPrefix}-overlay`}
       onClick={onFermer}
       role="presentation"
     >
@@ -49,7 +59,7 @@ const ResultatTentative: React.FC<ResultatTentativeProps> = ({ message, reussi, 
         className={`resultat ${reussi ? 'resultat-reussi' : 'resultat-manque'}`}
         // Le testid dépend de l'issue : c'est sur lui que reposent les tests
         // qui vérifient qu'une bonne réponse est acceptée et une mauvaise refusée.
-        data-testid={reussi ? 'enigma-attempt-success' : 'enigma-attempt-error'}
+        data-testid={`${testIdPrefix}-${reussi ? 'success' : 'error'}`}
         role="alertdialog"
         aria-modal="true"
         aria-label={reussi ? 'Bonne réponse' : 'Réponse incorrecte'}
@@ -59,7 +69,7 @@ const ResultatTentative: React.FC<ResultatTentativeProps> = ({ message, reussi, 
           ref={boutonFermer}
           type="button"
           className="resultat-fermer"
-          data-testid="enigma-attempt-close"
+          data-testid={`${testIdPrefix}-close`}
           onClick={onFermer}
           aria-label="Fermer"
         >
