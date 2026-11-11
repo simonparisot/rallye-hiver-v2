@@ -241,9 +241,9 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
 
           <div className="souffleur-corps">
             {/* Ce que coûte un indice et ce qu'il apporte, avant tout le reste.
-                Le quart est écrit en dur : le barème dort encore côté serveur
-                (backend/src/utils/hintCost.ts, nextHintCost vaut 0), mais
-                c'est la règle annoncée aux équipes et elle sera rebranchée. */}
+                Les indices sont gratuits : le barème dort côté serveur
+                (backend/src/utils/hintCost.ts, pointsCharged vaut 0). Le jour
+                où il sera rebranché, cette phrase devra annoncer le montant. */}
             {!ouverts && (
               <p className="souffleur-alerte" data-testid="hint-closed" role="status">
                 Les demandes d'indice sont fermées pour cette intrigue. Vous pouvez relire ci-dessous
@@ -257,10 +257,7 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
                 <b>Bloqué sur cette intrigue ?</b> Décrivez où vous en êtes : un indice choisi
                 pour votre situation s'affichera ici, en quelques secondes.
               </p>
-              <p>
-                Chaque indice coûte <b>un quart des points de l'intrigue</b>. C'est toujours
-                plus rentable que de rester bloqué et de n'en marquer aucun.
-              </p>
+              <p>Les indices ne coûtent aucun point.</p>
             </div>
             )}
 
