@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { adminTeamsAPI, adminStatsAPI } from '../services/adminAPI';
+import StatutDuJeu from '../components/StatutDuJeu';
 import './AdminOverview.css';
 
 interface DailyAttempts {
@@ -113,6 +114,9 @@ const AdminOverview: React.FC = () => {
         <p className="admin-page-subtitle">Activité et progression des équipes</p>
       </div>
 
+      {/* Phase du jeu : avant-lancement ou lancé */}
+      <StatutDuJeu />
+
       {/* Timeline Chart - Attempts per day (optimized backend endpoint) */}
       <div data-testid="admin-attempts-timeline" className="timeline-chart-section card">
         <h2>Tentatives de mots de passe (30 derniers jours)</h2>
@@ -164,7 +168,7 @@ const AdminOverview: React.FC = () => {
       <div className="teams-progress-section card">
         <h2>Progression des équipes</h2>
         <p className="section-subtitle">
-          Vert = Résolu/Complété • Gris = Équipe inactive (&gt;7 jours)
+          Vert = Résolu/Complété • Gris = Équipe inactive (&gt;7 jours) • Les préliminaires ne figurent pas dans la grille
         </p>
 
         {teamsProgressLoading ? (

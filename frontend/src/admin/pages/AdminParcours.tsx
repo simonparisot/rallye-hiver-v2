@@ -30,7 +30,11 @@ const AdminParcours: React.FC = () => {
     queryKey: ['adminEnigmas'],
     queryFn: adminEnigmasAPI.listAll,
   });
-  const intrigues = [...(enigmasData?.enigmas || [])].sort((a, b) => a.enigmaNumber - b.enigmaNumber);
+  // Les préliminaires ne se jouent qu'avant le lancement, quand aucune tournée
+  // n'est ouverte : elles ne peuvent pas en ouvrir une (le serveur les refuse).
+  const intrigues = [...(enigmasData?.enigmas || [])]
+    .filter((e) => !e.isPreliminary)
+    .sort((a, b) => a.enigmaNumber - b.enigmaNumber);
   const titreIntrigue = new Map(intrigues.map((e) => [e.enigmaId, `${e.enigmaNumber}. ${e.title}`]));
   // Une intrigue supprimée depuis reste dans la liste enregistrée : on ne la
   // renvoie pas, et on ne la compte pas.

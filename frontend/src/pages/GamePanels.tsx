@@ -1,19 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
-import { teamAPI, gameAPI } from '../services/api';
+import { teamAPI } from '../services/api';
 import EnigmasPanel from '../components/panels/EnigmasPanel';
 import ParcoursPanel from '../components/panels/ParcoursPanel';
 import StatsPanel from '../components/panels/StatsPanel';
 import GeneralInfoPanel from '../components/panels/GeneralInfoPanel';
 import EditionInfoPanel from '../components/panels/EditionInfoPanel';
 import AuthPanel from '../components/panels/AuthPanel';
-import WaitingPanel from '../components/panels/WaitingPanel';
+import { AnnonceLancementParcours } from '../components/panels/AnnonceLancement';
 import CompteMenu from '../components/CompteMenu';
 import MenuMobile from '../components/MenuMobile';
 import ModaleMotDePasse from '../components/ModaleMotDePasse';
 import { Enigma, Parcours } from '../types';
 import { getEnigmasWithProgress, getEnigmasPreview, getParcoursWithAccess, getParcoursPreview } from '../services/gameService';
+import { useStatutJeu, phaseParDefaut } from '../services/statutJeu';
 import './GamePanels.css';
 import { editionOfficielle, useEdition, Vocabulaire } from '../editions';
 
@@ -48,14 +49,10 @@ const GamePanels: React.FC = () => {
   const [parcoursId, setParcoursId] = useState<string | null>(null);
   const [modaleMdp, setModaleMdp] = useState(false);
 
-  const { data: gameStatus } = useQuery({
-    queryKey: ['gameStatus'],
-    queryFn: () => gameAPI.getStatus(),
-    refetchInterval: 60000,
-    refetchOnWindowFocus: true,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
+  // Phase et thème viennent du serveur. Tant qu'il n'a pas répondu, on
+  // n'affiche rien : ni le thème ni le contenu d'une phase qui n'est pas la
+  // bonne (SynchroStatutJeu applique le thème dans la même image).
+  const { data: gameStatus, isLoading: statutEnCours } = useStatutJeu();
 
   const { data: team } = useQuery({
     queryKey: ['team', user?.teamId],
@@ -64,7 +61,10 @@ const GamePanels: React.FC = () => {
   });
 
   const hasAccess = !!user?.teamId && !!team?.hasPaid;
-  const gameStarted = gameStatus?.isStarted ?? false;
+  // Avant le lancement, le jeu est ouvert aux équipes payées, mais réduit aux
+  // énigmes préliminaires (le serveur ne renvoie qu'elles) ; pas de parcours.
+  const lance = (gameStatus?.phase ?? phaseParDefaut()) === 'lance';
+  const launchAt = gameStatus?.launchAt ?? editionOfficielle.startsAt;
 
   // Mêmes clés que les panneaux : React Query sert le cache, aucune requête
   // supplémentaire n'est émise.
@@ -108,7 +108,7 @@ const GamePanels: React.FC = () => {
   const choisirEnigme = (e: Enigma) => { setEnigmeId(e.id); setSection('enigmes'); };
   const choisirParcours = (p: Parcours) => { setParcoursId(p.id); setSection('parcours'); };
 
-  if (loading) {
+  if (loading || statutEnCours) {
     return (
       <div className="scene-container">
         <div data-testid="nav-loading" className="chargement">
@@ -142,26 +142,6 @@ const GamePanels: React.FC = () => {
             <div data-testid="nav-panel-edition-info" className="feuille">
               <EditionInfoPanel isExpanded={true} isCompact={false} />
             </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  /* --- Le rallye n'a pas encore commencé --- */
-  if (!gameStarted) {
-    return (
-      <div data-testid="nav-panels-container" className="scene-container">
-        <header className="barre">
-          <div className="barre-contenu">
-            <img data-testid="nav-logo" src={edition.theme.logo} alt={edition.label} className="rallye-logo" />
-            <span className="marque">Rallye <em>d'Hiver</em> <span className="annee">{edition.year}</span></span>
-          </div>
-        </header>
-        <main className="section-contenu">
-          <div className="feuille"><WaitingPanel /></div>
-          <div data-testid="nav-panel-stats" className="feuille">
-            <StatsPanel isCompact={false} hideStats={true} />
           </div>
         </main>
       </div>
@@ -229,17 +209,22 @@ const GamePanels: React.FC = () => {
         </div>
 
         <div data-testid="nav-panel-parcours" className="section" hidden={section !== 'parcours'}>
-          <ParcoursPanel
-            isExpanded={true}
-            isCompact={false}
-            onExpand={() => setSection('parcours')}
-            selectionId={parcoursId}
-            onSelectionner={choisirParcours}
-          />
+          {lance ? (
+            <ParcoursPanel
+              isExpanded={true}
+              isCompact={false}
+              onExpand={() => setSection('parcours')}
+              selectionId={parcoursId}
+              onSelectionner={choisirParcours}
+            />
+          ) : (
+            <AnnonceLancementParcours launchAt={launchAt} />
+          )}
         </div>
 
         <div data-testid="nav-panel-stats" className="section" hidden={section !== 'equipe'}>
-          <StatsPanel isCompact={false} hideStats={!hasAccess} />
+          {/* Avant le lancement, rien à compter : les préliminaires ne comptent pas. */}
+          <StatsPanel isCompact={false} hideStats={!hasAccess || !lance} />
         </div>
       </main>
 

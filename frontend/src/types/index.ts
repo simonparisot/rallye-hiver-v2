@@ -52,8 +52,25 @@ export interface BackendEnigma {
   points: number;
   difficulty?: 'easy' | 'medium' | 'hard';
   isActive: boolean;
+  /** Préliminaire : jouable avant le lancement seulement, ne compte nulle part. */
+  isPreliminary?: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Phase du jeu, calculée par le serveur (backend/src/utils/gamePhase.ts). */
+export type GamePhase = 'avant-lancement' | 'lance';
+
+/** GET /game/status : public, mais la réponse dépend de l'utilisateur connecté. */
+export interface GameStatus {
+  /** `phase === 'lance'`, gardé pour les écrans qui le lisaient (jeu de l'oie). */
+  isStarted: boolean;
+  startedAt: string | null;
+  phase: GamePhase;
+  /** Heure du lancement officiel, ISO 8601. */
+  launchAt: string;
+  /** Thème officiel débloqué : jeu lancé, ou préliminaire résolue par l'équipe. */
+  themeOfficiel: boolean;
 }
 
 export interface BackendParcours {
@@ -113,6 +130,8 @@ export interface ParcoursListResponse {
 export interface PasswordAttemptResponse {
   success: boolean;
   message: string;
+  /** Bonne réponse à une préliminaire : le thème officiel est débloqué pour l'équipe. */
+  themeOfficiel?: boolean;
   /**
    * Vrai quand la saisie est un « presque bon » prévu par l'orga : l'intrigue
    * n'est pas résolue (`success` faux), `message` est le sien.

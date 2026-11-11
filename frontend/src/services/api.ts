@@ -15,7 +15,8 @@ import {
   ParcoursAccessResponse,
   ParcoursAttemptResponse,
   HintsListResponse,
-  HintRequestResponse
+  HintRequestResponse,
+  GameStatus
 } from '../types';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
@@ -317,9 +318,10 @@ export const hintsAPI = {
   },
 };
 
-// Game Status API (Public - but sends auth token for beta team detection)
+// Game Status API (public, mais le jeton est envoyé : la phase d'une équipe
+// bêta et le thème débloqué dépendent de l'utilisateur)
 export const gameAPI = {
-  getStatus: async (): Promise<{ isStarted: boolean; startedAt: string | null }> => {
+  getStatus: async (): Promise<GameStatus> => {
     const response = await api.get('/game/status');
     return response.data;
   },

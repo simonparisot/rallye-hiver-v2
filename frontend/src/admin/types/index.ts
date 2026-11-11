@@ -68,6 +68,8 @@ export interface CreateEnigmaRequest {
   /** Liste complète : envoyée, elle remplace l'ancienne ; absente, rien ne change. */
   nearMisses?: NearMiss[];
   isActive: boolean;
+  /** Préliminaire : jouable avant le lancement seulement, ne compte nulle part. */
+  isPreliminary?: boolean;
 }
 
 export interface UpdateEnigmaRequest extends Partial<CreateEnigmaRequest> {

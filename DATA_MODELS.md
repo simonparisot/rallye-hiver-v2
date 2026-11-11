@@ -62,9 +62,13 @@ interface Team {
   pendingRequests: string[];   // Array of user IDs requesting to join
   points: number;              // Total points earned (default: 0)
   solvedEnigmasCount: number;  // Count of solved enigmas (default: 0)
-  lastActivityAt: string | null;   // Last password attempt timestamp
+  lastActivityAt: string | null;   // Last password attempt timestamp (hors préliminaires)
   createdAt: string;           // ISO 8601 timestamp
   paidAt: string | null;       // ISO 8601 timestamp when payment completed
+  isBetaTeam?: boolean;        // Accès anticipé : voit le jeu lancé avant le lancement
+  isTestTeam?: boolean;        // Équipe des tests automatiques, hors listes et statistiques
+  themeUnlockedAt?: string;    // Depuis le 2026-11-11 : première préliminaire résolue,
+                               // débloque le thème officiel avant le lancement
 }
 ```
 
@@ -112,6 +116,8 @@ interface Enigma {
   points: number;              // Points awarded when solved
   difficulty?: 'easy' | 'medium' | 'hard';  // Difficulty level
   isActive: boolean;           // Whether enigma is active (default: true)
+  isPreliminary?: boolean;     // Depuis le 2026-11-11 : intrigue préliminaire
+                               // (absent = vraie intrigue ; voir « Phase du jeu »)
   createdAt: string;           // ISO 8601 timestamp
   updatedAt: string;           // ISO 8601 timestamp
   gameId?: string;             // For multi-season support
@@ -541,6 +547,10 @@ interface GameStatus {
   isStarted: boolean;          // Whether the game has been started by admin
   startedAt?: string;          // ISO 8601 timestamp when game was started
   startedBy?: string;          // Admin userId who started the game
+  launchAt?: string;           // Depuis le 2026-11-11 : heure de lancement automatique ;
+                               // absente = 2026-12-21T21:50:00+01:00 (constante backend)
+  resetAt?: string;            // Dernier retour en avant-lancement (POST /admin/game/reset)
+  resetBy?: string;            // Admin userId
   createdAt: string;           // ISO 8601 timestamp
   updatedAt: string;           // ISO 8601 timestamp
 }
@@ -570,9 +580,19 @@ interface GameStatus {
 
 **Access Patterns**:
 - Get game status: GetItem with `gameId: "rallye-2025"`
-- Start game: UpdateItem with condition `isStarted = false`
+- Start game: UpdateItem (`isStarted = true`, `startedAt`, `startedBy`)
+- Retour en avant-lancement : UpdateItem (`isStarted = false`, `resetAt`, `resetBy`, `launchAt` facultatif ; REMOVE `startedAt`, `startedBy`)
 
-**Purpose**: Global flag to control when the Rallye d'Hiver game becomes accessible to players. Admin initiates game start.
+**Purpose**: Global flag to control when the Rallye d'Hiver game becomes accessible to players.
+
+**Phase du jeu** (depuis le 2026-11-11, `backend/src/utils/gamePhase.ts`) :
+`lance` si `isStarted` est vrai **ou** si l'heure `launchAt` (ou la constante
+`DATE_LANCEMENT_PAR_DEFAUT`, `2026-12-21T21:50:00+01:00`) est passée, sinon
+`avant-lancement`. La date est une constante plutôt qu'un réglage : elle ne
+change pas, se relit dans le code, et s'applique sans écriture en base ;
+`launchAt` dans l'item n'est que la soupape pour la repousser (ou rejouer
+l'avant-lancement sur test après la date). Une équipe `isBetaTeam` voit
+toujours `lance`.
 
 ### WrongPasswordMessagesSettings (item de configuration)
 **Table**: la même, `rallye-hiver-backend-game-status`
@@ -648,6 +668,25 @@ Parcours ─── (1:N) TeamParcoursAccess
      - Increment `team.solvedEnigmasCount`
      - Update `team.lastActivityAt`
   4. Check if any parcours should unlock
+
+### Phase du jeu et intrigues préliminaires (depuis le 2026-11-11)
+- **Avant le lancement** : seules les intrigues `isPreliminary` publiées sont
+  visibles et jouables (équipe payée) ; aucune tournée, aucun PDF de tournée,
+  pas de plateau de l'oie, pas d'indice.
+- **Après le lancement** : les préliminaires disparaissent (404 / 403), les
+  vraies intrigues et les tournées apparaissent.
+- **Préliminaire résolue** : `TeamEnigmaProgress` et `PasswordAttemptLog` sont
+  écrits comme d'habitude (journal, « Résolue » à l'écran), et
+  `Team.themeUnlockedAt` est posé une fois. Rien d'autre : ni
+  `solvedEnigmasCount`, ni `lastActivityAt`, ni déblocage de tournée.
+- **Ne comptent nulle part** : `/teams/stats` (total, résolues, tentatives,
+  classement), `totalSolved` de `/progress`, difficulté, grille de
+  progression, vue d'ensemble et chronologie admin, comptes d'équipes admin.
+- **Tournées** : une préliminaire ne peut pas figurer dans `requiredEnigmaIds`
+  (400), et une intrigue requise par une tournée ne peut pas devenir
+  préliminaire (400).
+- **Thème officiel** (`themeOfficiel` de `GET /game/status`) : phase `lance`,
+  ou `Team.themeUnlockedAt` posé.
 
 ### Parcours Unlocking
 - Une tournée sans intrigue requise (`requiredEnigmaIds` vide ou absent) est

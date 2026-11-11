@@ -92,17 +92,25 @@ Il n'y a pas de fournisseur de contexte : l'état vit dans le module et
 redessine tout l'arbre à la bascule, y compris les composants qui lisent
 encore `edition`.
 
-**La règle de déblocage** n'est pas encore écrite : elle appellera
-`setThemeOfficiel(true)` quand l'équipe connectée a débloqué le thème, et
-`setThemeOfficiel(false)` sinon et à la déconnexion. Le point d'entrée est
-commenté dans `index.ts`.
+**La règle de déblocage** (tâches 6 et 15) est décidée par le serveur :
+`themeOfficiel` de `GET /game/status` vaut vrai une fois le jeu lancé, ou,
+avant, pour une équipe qui a résolu une énigme préliminaire. Le frontend
+l'applique par `setThemeOfficiel()` : au chargement et à chaque relecture du
+statut (`SynchroStatutJeu`, dans `services/statutJeu.ts`, monté dans `App`),
+juste après la bonne réponse à une préliminaire (`EnigmasPanel`), et avec
+`false` à la déconnexion avant le lancement (`AuthContext`). Le dernier verdict
+est mémorisé (`localStorage`, clé `rallye-theme-officiel`) pour que le
+chargement suivant parte du bon habillage, et l'écran attend la réponse du
+statut avant de rien afficher : ni flash du thème officiel pour qui n'y a pas
+droit, ni flash de l'habillage neutre pour qui l'a débloqué.
 
-**L'interrupteur provisoire.** En attendant, `?theme=officiel` dans l'URL
+**L'interrupteur provisoire.** `?theme=officiel` dans l'URL
 affiche le thème officiel pour la session de l'onglet (`sessionStorage`), et
 `?theme=neutre` revient à l'habillage neutre. Il n'est protégé par rien :
 quiconque connaît le paramètre voit le thème. **Il est à retirer avant le
 lancement du 21 décembre 2026** (décision de Simon : on le garde d'ici là pour
-les aperçus).
+les aperçus). Depuis que la règle existe, la réponse du serveur l'écrase dès
+qu'elle arrive : il ne tient plus qu'en l'absence de réponse.
 
 **Le vocabulaire suit l'habillage.** Les mots du jeu trahissent le thème
 autant que les couleurs : en 2027, on résout des *intrigues*, on fait des

@@ -355,20 +355,38 @@ export const adminAttemptsAPI = {
   },
 };
 
+/** Phase du jeu vue par l'orga (GET /admin/game/status, backend/src/utils/gamePhase.ts). */
+export interface AdminGameStatus {
+  phase: 'avant-lancement' | 'lance';
+  launchAt: string;
+  launchAtIsDefault: boolean;
+  launchAtPassed: boolean;
+  isStarted: boolean;
+  startedAt: string | null;
+  startedBy: string | null;
+  resetAt: string | null;
+  resetBy: string | null;
+}
+
 // Admin Game Control API
 export const adminGameAPI = {
-  startGame: async (): Promise<{
-    message: string;
-    gameStatus: {
-      gameId: string;
-      isStarted: boolean;
-      startedAt: string;
-      startedBy: string;
-      createdAt: string;
-      updatedAt: string;
-    };
-  }> => {
+  getStatus: async (): Promise<AdminGameStatus> => {
+    const response = await adminApi.get('/game/status');
+    return response.data;
+  },
+
+  /** Lance le jeu maintenant, sans attendre l'heure de lancement. */
+  startGame: async (): Promise<AdminGameStatus & { message: string }> => {
     const response = await adminApi.post('/game/start');
+    return response.data;
+  },
+
+  /**
+   * Revient en avant-lancement. Sans effet sur la phase si l'heure de
+   * lancement est passée, sauf à en donner une nouvelle (`launchAt`, future).
+   */
+  resetGame: async (launchAt?: string): Promise<AdminGameStatus & { message: string }> => {
+    const response = await adminApi.post('/game/reset', launchAt ? { launchAt } : {});
     return response.data;
   },
 };

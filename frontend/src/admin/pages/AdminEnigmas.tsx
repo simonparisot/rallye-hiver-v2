@@ -105,6 +105,7 @@ const AdminEnigmas: React.FC = () => {
       hintsAvailableFrom: '',
       nearMisses: [],
       isActive: true,
+      isPreliminary: false,
     });
     setEditingEnigma(null);
     setShowForm(false);
@@ -123,6 +124,7 @@ const AdminEnigmas: React.FC = () => {
       hintsAvailableFrom: enigma.hintsAvailableFrom || '',
       nearMisses: enigma.nearMisses ? enigma.nearMisses.map((n) => ({ ...n })) : [],
       isActive: enigma.isActive,
+      isPreliminary: enigma.isPreliminary === true,
     });
     setShowForm(true);
   };
@@ -622,6 +624,31 @@ const AdminEnigmas: React.FC = () => {
               </div>
             </div>
 
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="enigma-preliminary">Intrigue préliminaire</label>
+                <div className="toggle-container">
+                  <label className="toggle-switch">
+                    <input data-testid="admin-enigmas-preliminary-toggle"
+                      id="enigma-preliminary"
+                      type="checkbox"
+                      checked={!!formData.isPreliminary}
+                      onChange={(e) => setFormData({ ...formData, isPreliminary: e.target.checked })}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                  <span className={`toggle-label ${formData.isPreliminary ? 'active' : 'inactive'}`}>
+                    {formData.isPreliminary ? '✓ Préliminaire' : '✗ Intrigue du rallye'}
+                  </span>
+                </div>
+                <small className="form-help">
+                  Une préliminaire n'est jouable qu'avant le lancement, par les équipes payées, sous l'habillage neutre.
+                  La résoudre débloque le thème officiel pour l'équipe. Elle disparaît au lancement et ne compte nulle
+                  part : ni score, ni statistiques, ni tournées, ni indices.
+                </small>
+              </div>
+            </div>
+
             {editingEnigma && (
               <div className="form-note">
                 <strong>Note:</strong> Le numéro de l'intrigue (#{formData.enigmaNumber}) est géré automatiquement via le glisser-déposer.
@@ -708,6 +735,11 @@ const AdminEnigmas: React.FC = () => {
                           <td>
                             <div className="enigma-title">
                               {enigma.title}
+                              {enigma.isPreliminary && (
+                                <span className="preliminary-label" data-testid={`admin-enigmas-preliminary-${enigma.enigmaId}`}>
+                                  préliminaire
+                                </span>
+                              )}
                               {!enigma.isActive && <span className="unpublished-label">non publiée</span>}
                             </div>
                           </td>

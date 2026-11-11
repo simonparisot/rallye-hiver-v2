@@ -51,24 +51,26 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 
 ### GET /game/status
 
-**Status**: ✅ Implemented (2025-12-02)
-**Purpose**: Check if the Rallye d'Hiver game has started
-**Authentication**: None required (public endpoint)
+**Status**: ✅ Implemented (2025-12-02, updated 2026-11-11)
+**Purpose**: Phase du jeu et thème débloqué pour l'appelant
+**Authentication**: Aucune (route publique) ; le jeton `Authorization: Bearer <accessToken>` est facultatif et vérifié dans la lambda
 
 **Response** (200):
 ```json
 {
-  "isStarted": boolean,
-  "startedAt": "ISO 8601 timestamp | null"
+  "isStarted": boolean,          // = phase === "lance" (compatibilité)
+  "startedAt": "ISO 8601 | null",// lancement à la main par l'orga, sinon null
+  "phase": "avant-lancement" | "lance",
+  "launchAt": "ISO 8601",        // heure du lancement officiel
+  "themeOfficiel": boolean       // thème officiel débloqué pour l'appelant
 }
 ```
 
-**Notes**:
-- Public endpoint accessible without authentication
-- Frontend should poll this endpoint or check it on app load
-- If `isStarted: false`, frontend should display a waiting/countdown state
-- If `isStarted: true`, frontend allows normal game interaction
-- `startedAt` is null if game hasn't started yet
+**Règles** (backend/src/utils/gamePhase.ts, seule source de vérité) :
+- `phase` vaut `lance` si l'orga a lancé le jeu (`isStarted` dans l'item de statut) **ou** si l'heure `launchAt` est passée. `launchAt` vaut par défaut `2026-12-21T21:50:00+01:00` (constante `DATE_LANCEMENT_PAR_DEFAUT`) ; l'item peut la remplacer (voir `POST /admin/game/reset`).
+- Une équipe bêta (`isBetaTeam`) voit toujours `phase: "lance"` (accès anticipé, équipe des tests automatiques).
+- `themeOfficiel` vaut `true` si `phase` est `lance`, ou si l'équipe de l'appelant a résolu une intrigue préliminaire (`Team.themeUnlockedAt`), qu'elle soit payée ou non. Visiteur ou jeton invalide : `phase === "lance"`.
+- Après le lancement, la réponse est la même pour tous (l'équipe n'est pas lue).
 
 ---
 
@@ -668,6 +670,11 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 - Ne renvoie que les intrigues publiées (`isActive !== false`) depuis le
   2026-11-11. Les intrigues non publiées ne sont visibles que par
   `GET /admin/enigmas`
+- **Phase du jeu (depuis le 2026-11-11)** : avant le lancement, seules les
+  intrigues préliminaires publiées (`isPreliminary: true`) sont rendues ; après,
+  seules les vraies intrigues. `GET /enigmas/{id}` répond 404 pour une intrigue
+  fermée dans la phase de l'appelant. Les préliminaires ont `hintsCount: 0`. La
+  réponse porte aussi `phase`. Voir `GET /game/status`
 
 #### GET /enigmas/{enigmaId}
 
@@ -1474,37 +1481,61 @@ qui rend le prompt hacking sans objet.
 
 #### Admin Game Control
 
-##### POST /admin/game/start
+##### GET /admin/game/status
 
-**Status**: ✅ Implemented (2025-12-02)
-**Purpose**: Start the Rallye d'Hiver game (admin only)
-**Authentication**: Required (admin only)
+**Status**: ✅ Implemented (2026-11-11)
+**Purpose**: Phase du jeu vue par l'orga, sans passe-droit bêta
+**Authentication**: Required (admin only) — 401 sans jeton, 403 pour un joueur
 
 **Response** (200):
 ```json
 {
-  "message": "Game started successfully",
-  "gameStatus": {
-    "gameId": "rallye-2025",
-    "isStarted": true,
-    "startedAt": "ISO 8601 timestamp",
-    "startedBy": "uuid (admin userId)",
-    "createdAt": "ISO 8601 timestamp",
-    "updatedAt": "ISO 8601 timestamp"
-  }
+  "phase": "avant-lancement" | "lance",
+  "launchAt": "ISO 8601",
+  "launchAtIsDefault": boolean,   // true : date de l'édition (constante backend)
+  "launchAtPassed": boolean,      // l'heure de lancement est-elle passée ?
+  "isStarted": boolean,           // lancé à la main
+  "startedAt": "ISO 8601 | null",
+  "startedBy": "userId | null",
+  "resetAt": "ISO 8601 | null",   // dernier retour en avant-lancement
+  "resetBy": "userId | null"
 }
 ```
 
+##### POST /admin/game/start
+
+**Status**: ✅ Implemented (2025-12-02, updated 2026-11-11)
+**Purpose**: Lancer le jeu maintenant, sans attendre `launchAt` (admin only)
+**Authentication**: Required (admin only)
+
+**Response** (200): `{ "message": "Game started successfully", "gameStatus": { …item… }, …champs de GET /admin/game/status }`
+
 **Errors**:
-- `400`: Game has already been started
+- `400`: Game has already been started (`isStarted` déjà vrai)
 - `401`: Authentication required
 - `403`: Admin access required
 
 **Notes**:
-- Once started, the game **cannot** be stopped (`isStarted` cannot be reverted to `false`)
-- If game status doesn't exist, it will be initialized automatically
-- Only one admin needs to start the game for all users
-- After starting, frontend clients will detect game is active via `GET /game/status`
+- Depuis le 2026-11-11, le jeu peut revenir en avant-lancement (`POST /admin/game/reset`).
+- Sans clic, le jeu se lance tout seul à l'heure `launchAt`.
+
+##### POST /admin/game/reset
+
+**Status**: ✅ Implemented (2026-11-11)
+**Purpose**: Revenir en avant-lancement (indispensable pour essayer les préliminaires sur test)
+**Authentication**: Required (admin only) — 401 sans jeton, 403 pour un joueur
+
+**Request** (facultatif): `{ "launchAt": "ISO 8601, dans le futur" }`
+
+**Response** (200): `{ "message": "Game back to pre-launch", …champs de GET /admin/game/status }`
+
+**Errors**:
+- `400`: `launchAt` qui n'est pas une date ISO, ou qui est dans le passé ; corps invalide
+- `401`, `403`
+
+**Notes**:
+- Passe `isStarted` à `false`, retire `startedAt`/`startedBy`, pose `resetAt`/`resetBy`. Sans `launchAt`, l'heure en vigueur est gardée : si elle est passée, la phase reste `lance` (la réponse le dit). Avec `launchAt`, l'heure est repoussée.
+- Rien d'autre n'est effacé : progressions, tentatives et `themeUnlockedAt` des équipes restent.
 
 #### Admin Settings
 
@@ -2705,6 +2736,7 @@ L'opération est tracée dans le journal du plateau.
 
 | Date | Endpoint | Change | Type | Impact |
 |------|----------|--------|------|--------|
+| 2026-11-11 | GET /game/status, GET /admin/game/status, POST /admin/game/start, POST /admin/game/reset, GET /enigmas, GET /enigmas/{id}, POST /progress/attempt, GET /progress, GET /hints/{id}, POST /hints/{id}/request, GET /parcours, GET /parcours/{id}, GET /parcours/{id}/access, POST /parcours/{id}/attempt, GET /progress/parcours, /oie, POST et PUT /enigmas, PUT /admin/enigmas/{id}, POST et PUT /parcours, GET /teams/stats, routes de statistiques admin | **Phase du jeu et intrigues préliminaires** (tâches 6 et 15). La phase (`avant-lancement` / `lance`) est calculée par le serveur : lancé si l'orga l'a lancé ou si `launchAt` (21/12/2026 21 h 50 par défaut) est passé ; équipes bêta toujours lancées. `GET /game/status` rend `phase`, `launchAt`, `themeOfficiel`. Nouveau champ `isPreliminary` sur l'intrigue. Avant le lancement : `/enigmas` ne rend que les préliminaires publiées (sans indice), `/progress/attempt` refuse une vraie intrigue (403), aucune tournée (listes vides, 404 / 403 sinon), plateau de l'oie fermé (403), indices refusés. Après : préliminaires 404 / 403. Une préliminaire résolue pose `Team.themeUnlockedAt` et la réponse porte `themeOfficiel: true` ; elle n'incrémente pas `solvedEnigmasCount`, ne touche pas `lastActivityAt`, n'ouvre aucune tournée, et sort de `totalSolved`, `/teams/stats`, de la difficulté, de la grille, de la vue d'ensemble, de la chronologie et des comptes d'équipes admin (ses tentatives restent journalisées). `requiredEnigmaIds` qui contient une préliminaire : 400 ; une intrigue requise par une tournée ne peut pas devenir préliminaire (400). Nouvelles routes `GET /admin/game/status`, `POST /admin/game/reset` | Feature + **Breaking** | **Breaking** : un joueur non bêta ne voit plus aucune vraie intrigue ni tournée avant le lancement (le serveur ne contrôlait rien jusqu'ici) ; `isStarted` de `GET /game/status` reflète désormais aussi l'heure de lancement. Sur test, `isStarted` vaut `true` : rien ne change tant que l'orga ne revient pas en avant-lancement. Le bloc `caching` de `GET /enigmas` et `GET /parcours` (sans effet faute de plugin) est retiré |
 | 2026-11-11 | GET /parcours/{id}/access, GET /progress/parcours, POST /parcours/{id}/attempt | Une tournée s'ouvre dès que l'équipe a résolu **une** des intrigues requises encore existantes (et non plus toutes) ; `requiredEnigmasCount` n'est plus que le nombre d'intrigues cochées. Messages de `POST /parcours/{id}/attempt` neutres (sans « tournée ») ; corps invalide en 400 « Corps invalide ». `GET /parcours/{id}` renvoie 404 pour une tournée non publiée ; `GET /admin/parcours` renvoie `hasPassword` | **Breaking** | Des tournées verrouillées s'ouvrent pour les équipes qui ont résolu une partie de leurs intrigues ; `isUnlocked` ne se déduit plus de `requiredEnigmas.every(solved)` mais de `some(solved)` |
 | 2026-11-11 | POST /enigmas (= POST /admin/enigmas), PUT /enigmas/{id}, PUT /admin/enigmas/{id}, GET /admin/enigmas, POST /progress/attempt, GET /admin/attempts | « Presques bons » mots de passe par intrigue : champ `nearMisses` (`{ password, message }[]`, sans limite de nombre) saisi dans l'admin. Une saisie qui en égale un (même normalisation que le vrai mot de passe) reçoit le message de l'orga avec `nearMiss: true`, sans résoudre l'intrigue ; la tentative est journalisée `success: false, nearMiss: true` | Feature | Aucun changement pour les autres réponses. `nearMisses` n'est jamais renvoyé par `GET /enigmas` ni `GET /enigmas/{id}`. Validation en 400 : vide, trop long (100 / 500), égal au vrai mot de passe, doublon. Absent d'une mise à jour, il est conservé |
 | 2026-11-11 | GET /enigmas, GET /enigmas/{enigmaId}, GET /hints/{enigmaId} | Les intrigues non publiées disparaissent côté joueur : `GET /enigmas` ne les liste plus, `GET /enigmas/{id}` et `GET /hints/{id}` répondent 404. `hintsAvailableFrom` est retiré des réponses joueur | Bug Fix + Breaking | **Breaking** : un client qui comptait sur les intrigues non publiées dans `GET /enigmas` ne les voit plus (le frontend joueur les filtrait déjà, l'admin passe par `/admin/enigmas`). Côté worker, une demande en attente sur une intrigue dont les indices ont été fermés entre-temps est conclue `failed` (« Indices fermés ») |

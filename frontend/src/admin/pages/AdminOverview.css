@@ -394,3 +394,35 @@
     padding: var(--spacing-md);
   }
 }
+
+/* Statut du jeu (components/StatutDuJeu.tsx) */
+.statut-jeu {
+  padding: var(--spacing-md, 16px);
+  margin-bottom: var(--spacing-lg, 24px);
+}
+.statut-jeu h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0;
+}
+.statut-jeu-aide {
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+.statut-jeu-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+.statut-jeu-repousser {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.statut-jeu-repousser label {
+  flex-basis: 100%;
+  font-size: 0.9rem;
+}

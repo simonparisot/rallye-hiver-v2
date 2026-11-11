@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Enigma } from '../../types';
-import { accorder, editionOfficielle, useEdition } from '../../editions';
+import { accorder, editionOfficielle, setThemeOfficiel, useEdition } from '../../editions';
 import { getEnigmasWithProgress, getEnigmasPreview, submitPasswordAttempt } from '../../services/gameService';
 import { teamAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,6 +10,8 @@ import PDFViewer from '../PDFViewer';
 import HintRequestSection from './HintRequestSection';
 import './EnigmasPanel.css';
 import ResultatTentative from '../ResultatTentative';
+import { AnnonceLancementEnigmes } from './AnnonceLancement';
+import { CLE_STATUT_JEU, useStatutJeu, phaseParDefaut } from '../../services/statutJeu';
 
 interface EnigmasPanelProps {
   isExpanded: boolean;
@@ -68,6 +70,11 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
 
   const hasAccess = !!user?.teamId && !!team?.hasPaid;
 
+  // Avant le lancement, la liste ne contient que les énigmes préliminaires
+  // (c'est le serveur qui filtre) : on annonce la date du lancement.
+  const { data: statut } = useStatutJeu();
+  const avantLancement = (statut?.phase ?? phaseParDefaut()) === 'avant-lancement';
+
   // Get enigmas with progress if team has paid, otherwise get preview
   const { data: enigmas = [], isLoading, error } = useQuery({
     queryKey: hasAccess ? ['enigmas-with-progress'] : ['enigmas-preview'],
@@ -90,6 +97,13 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
     mutationFn: ({ enigmaId, password }: { enigmaId: string; password: string }) =>
       submitPasswordAttempt(enigmaId, password),
     onSuccess: (data) => {
+      // Bonne réponse à une préliminaire : le thème officiel est débloqué pour
+      // l'équipe. Il s'affiche tout de suite, sans attendre la relecture du
+      // statut, qui le confirmera (et le donnera aux autres membres).
+      if (data.success && data.data?.themeOfficiel === true) {
+        setThemeOfficiel(true);
+        queryClient.invalidateQueries({ queryKey: CLE_STATUT_JEU });
+      }
       if (data.success) {
         // Refresh enigmas and progress
         queryClient.invalidateQueries({ queryKey: ['enigmas-with-progress'] });
@@ -190,6 +204,9 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
         <h2>{v.enigme.Pluriel}</h2>
       </div>
       <div className="panel-content">
+        {hasAccess && avantLancement && (
+          <AnnonceLancementEnigmes launchAt={statut?.launchAt ?? editionOfficielle.startsAt} />
+        )}
         {!hasAccess && (
           <div className="access-blocked-message" data-testid="enigma-access-blocked">
             Pour accéder aux {v.enigme.pluriel}, rejoignez ou créez une équipe depuis « {v.monEquipe} », puis réglez les frais d'inscription.

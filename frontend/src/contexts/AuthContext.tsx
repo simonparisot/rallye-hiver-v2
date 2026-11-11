@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { jwtDecode } from 'jwt-decode';
-import { User } from '../types';
+import { GameStatus, User } from '../types';
 import { authAPI } from '../services/api';
+import { setThemeOfficiel } from '../editions';
 
 interface AuthContextType {
   user: User | null;
@@ -122,6 +123,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
+    // Avant le lancement, le thème officiel n'appartient qu'aux équipes qui
+    // l'ont débloqué : il quitte l'écran avec elles, sans attendre la relecture
+    // du statut. Après le lancement, il est à tous et reste.
+    const statut = queryClient.getQueryData<GameStatus>(['gameStatus']);
+    if (statut?.phase !== 'lance') setThemeOfficiel(false);
+
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('idToken');

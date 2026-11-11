@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import GamePanels from './pages/GamePanels';
 import { edition, useEdition } from './editions';
+import { SynchroStatutJeu } from './services/statutJeu';
 import './App.css';
 
 // Lazy load admin code only when needed
@@ -56,6 +57,7 @@ function App() {
               path={edition.enigmeOie.route}
               element={
                 <AuthProvider>
+                  <SynchroStatutJeu />
                   <Suspense fallback={<div>Chargement...</div>}>
                     <OiePage />
                   </Suspense>
@@ -69,6 +71,8 @@ function App() {
             path="*"
             element={
               <AuthProvider>
+                {/* Phase du jeu et thème débloqué, tels que le serveur les donne */}
+                <SynchroStatutJeu />
                 <GamePanels />
               </AuthProvider>
             }

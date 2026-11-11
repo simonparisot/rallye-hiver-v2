@@ -478,3 +478,19 @@
 .enigmas-list > .admin-form-error {
   margin: 0 0 var(--spacing-md);
 }
+
+/* Intrigue préliminaire : jouable avant le lancement seulement. Bien visible,
+   pour qu'on ne la confonde pas avec une des vingt intrigues du rallye. */
+.preliminary-label {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6d28d9;
+  padding: 2px 6px;
+  background: #ede9fe;
+  border: 1px solid #c4b5fd;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}

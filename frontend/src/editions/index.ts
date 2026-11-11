@@ -53,7 +53,9 @@ const editionNeutre: Edition | null = editionOfficielle.habillageNeutre
  * `?theme=officiel` dans l'URL affiche le thème officiel pour le reste de la
  * session de l'onglet (sessionStorage) ; `?theme=neutre` revient à l'habillage
  * neutre. Il n'est protégé par rien : n'importe qui connaissant le paramètre
- * voit le thème. Il sert à prévisualiser en attendant la règle réelle.
+ * voit le thème. Il servait à prévisualiser en attendant la règle réelle ;
+ * depuis qu'elle existe (setThemeOfficiel plus bas), la réponse du serveur
+ * l'écrase dès qu'elle arrive.
  */
 const CLE_INTERRUPTEUR = 'rallye-theme-apercu';
 
@@ -69,7 +71,33 @@ function lireInterrupteurProvisoire(): boolean {
   }
 }
 
-let themeOfficiel = lireInterrupteurProvisoire();
+/*
+ * Mémoire du dernier verdict de la règle de déblocage (localStorage), pour que
+ * le chargement suivant parte du bon habillage sans attendre le serveur : sans
+ * elle, une équipe qui a débloqué le thème verrait l'habillage neutre à chaque
+ * rechargement, le temps que GET /game/status réponde. Elle n'est écrite que
+ * par setThemeOfficiel ; le serveur la corrige dès sa réponse.
+ */
+const CLE_MEMOIRE = 'rallye-theme-officiel';
+
+function lireMemoire(): boolean {
+  try {
+    return window.localStorage.getItem(CLE_MEMOIRE) === 'oui';
+  } catch {
+    return false;
+  }
+}
+
+function memoriser(officiel: boolean): void {
+  try {
+    if (officiel) window.localStorage.setItem(CLE_MEMOIRE, 'oui');
+    else window.localStorage.removeItem(CLE_MEMOIRE);
+  } catch {
+    // Stockage bloqué : le chargement suivant attendra le serveur.
+  }
+}
+
+let themeOfficiel = lireInterrupteurProvisoire() || lireMemoire();
 const abonnes = new Set<() => void>();
 
 /** Édition telle qu'elle doit s'afficher en ce moment. */
@@ -87,14 +115,21 @@ export function estThemeOfficiel(): boolean {
  * attribut data-edition, polices, puis tous les composants abonnés via
  * useEdition() se redessinent (logo, textes).
  *
- * POINT D'ENTRÉE DE LA RÈGLE DE DÉBLOCAGE (tâche 6, à spécifier) : c'est cette
- * fonction que la règle appellera, avec true quand l'équipe connectée a
- * débloqué le thème officiel et false sinon — y compris à la déconnexion, pour
- * qu'un poste partagé ne garde pas le thème. Tant qu'elle n'existe pas, seul
- * l'interrupteur provisoire ci-dessus l'appelle, au chargement. Attention : un
- * appel avec false écrase cet interrupteur pour la page en cours.
+ * POINT D'ENTRÉE DE LA RÈGLE DE DÉBLOCAGE (tâches 6 et 15). Le serveur décide
+ * (`themeOfficiel` de GET /game/status : jeu lancé, ou préliminaire résolue
+ * par l'équipe) et le frontend l'applique ici :
+ * - au chargement et à chaque relecture du statut, et au changement
+ *   d'utilisateur ou d'équipe (SynchroStatutJeu, services/statutJeu.ts) ;
+ * - juste après la bonne réponse à une préliminaire (EnigmasPanel) ;
+ * - à la déconnexion avant le lancement, avec false (AuthContext), pour qu'un
+ *   poste partagé ne garde pas le thème.
+ * Le verdict est mémorisé pour le chargement suivant. Attention : un appel avec
+ * false écrase l'interrupteur provisoire pour la page en cours ; comme le
+ * statut est lu à chaque chargement, l'interrupteur ne tient donc plus
+ * qu'en l'absence de réponse du serveur.
  */
 export function setThemeOfficiel(officiel: boolean): void {
+  memoriser(officiel);
   if (officiel === themeOfficiel) return;
   themeOfficiel = officiel;
   applyEditionTheme();
