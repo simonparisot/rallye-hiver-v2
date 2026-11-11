@@ -5,8 +5,14 @@ import { hasUsablePassword } from './password';
  * Déblocage des tournées par les intrigues.
  *
  * Une tournée sans intrigue requise est ouverte à toutes les équipes. Sinon,
- * elle s'ouvre quand l'équipe a résolu toutes les intrigues que l'organisateur
- * a cochées.
+ * elle s'ouvre dès que l'équipe a résolu AU MOINS UNE des intrigues que
+ * l'organisateur a cochées (demande de Simon, 2026-11-11 : il n'est pas
+ * nécessaire de les avoir toutes résolues).
+ *
+ * Les intrigues supprimées depuis sont ignorées : si toutes les intrigues
+ * cochées ont disparu, la tournée est ouverte, comme avec une liste vide.
+ * `requiredEnigmasCount` n'est que le nombre d'intrigues cochées ; il ne joue
+ * aucun rôle dans la règle.
  *
  * L'accès est recalculé à chaque lecture depuis la progression de l'équipe,
  * plutôt que lu dans les enregistrements de déblocage : si l'organisateur
@@ -68,7 +74,8 @@ export function evaluateParcoursAccess(parcours: any, context: AccessContext): P
     .sort((a: RequiredEnigmaStatus, b: RequiredEnigmaStatus) => a.enigmaNumber - b.enigmaNumber);
 
   return {
-    isUnlocked: requiredEnigmas.every((e: RequiredEnigmaStatus) => e.solved),
+    isUnlocked:
+      requiredEnigmas.length === 0 || requiredEnigmas.some((e: RequiredEnigmaStatus) => e.solved),
     requiredEnigmas,
   };
 }

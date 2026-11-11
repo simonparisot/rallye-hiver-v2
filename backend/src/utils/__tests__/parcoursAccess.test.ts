@@ -30,11 +30,20 @@ describe('evaluateParcoursAccess', () => {
     expect(evaluateParcoursAccess({}, context([])).isUnlocked).toBe(true);
   });
 
-  test('toutes les intrigues cochées doivent être résolues', () => {
+  test('une seule intrigue cochée résolue suffit à ouvrir la tournée', () => {
     const parcours = { requiredEnigmaIds: ['e3', 'e1'] };
 
-    expect(evaluateParcoursAccess(parcours, context(['e1'])).isUnlocked).toBe(false);
+    expect(evaluateParcoursAccess(parcours, context([])).isUnlocked).toBe(false);
+    expect(evaluateParcoursAccess(parcours, context(['e2'])).isUnlocked).toBe(false);
+    expect(evaluateParcoursAccess(parcours, context(['e1'])).isUnlocked).toBe(true);
+    expect(evaluateParcoursAccess(parcours, context(['e3'])).isUnlocked).toBe(true);
     expect(evaluateParcoursAccess(parcours, context(['e1', 'e3'])).isUnlocked).toBe(true);
+  });
+
+  test('requiredEnigmasCount ne joue aucun rôle dans la règle', () => {
+    const parcours = { requiredEnigmaIds: ['e1', 'e2', 'e3'], requiredEnigmasCount: 3 };
+
+    expect(evaluateParcoursAccess(parcours, context(['e2'])).isUnlocked).toBe(true);
   });
 
   test('détaille les intrigues requises, dans l\'ordre du rallye', () => {
@@ -49,17 +58,27 @@ describe('evaluateParcoursAccess', () => {
     ]);
   });
 
-  test('une intrigue supprimée ne verrouille pas la tournée pour toujours', () => {
-    const access = evaluateParcoursAccess({ requiredEnigmaIds: ['e1', 'disparue'] }, context(['e1']));
+  test('une intrigue supprimée est ignorée, et ne compte pas comme résolue', () => {
+    const parcours = { requiredEnigmaIds: ['e1', 'disparue'] };
 
+    expect(evaluateParcoursAccess(parcours, context([])).isUnlocked).toBe(false);
+    const access = evaluateParcoursAccess(parcours, context(['e1']));
     expect(access.isUnlocked).toBe(true);
     expect(access.requiredEnigmas.map((e) => e.enigmaId)).toEqual(['e1']);
+  });
+
+  test('si toutes les intrigues cochées ont été supprimées, la tournée est ouverte', () => {
+    const access = evaluateParcoursAccess({ requiredEnigmaIds: ['disparue', 'partie'] }, context([]));
+
+    expect(access.isUnlocked).toBe(true);
+    expect(access.requiredEnigmas).toEqual([]);
   });
 
   test('ne révèle pas le titre d\'une intrigue non publiée', () => {
     const access = evaluateParcoursAccess({ requiredEnigmaIds: ['e4', 'e1'] }, context(['e1']));
 
-    expect(access.isUnlocked).toBe(false);
+    // e1 résolue suffit à ouvrir ; le titre de e4 reste caché.
+    expect(access.isUnlocked).toBe(true);
     expect(access.requiredEnigmas).toEqual([
       { enigmaId: 'e1', enigmaNumber: 1, title: 'Une', solved: true },
       { enigmaId: 'e4', enigmaNumber: 4, title: 'Intrigue à venir', solved: false },

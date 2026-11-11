@@ -12,6 +12,7 @@ import { success, error } from '../../utils/response';
 import { ParcoursAttemptLog } from '../../types';
 import { loadAccessContext, evaluateParcoursAccess } from '../../utils/parcoursAccess';
 import { normalizePassword, hasUsablePassword } from '../../utils/password';
+import { getWrongPasswordMessages, pickWrongPasswordMessage } from '../../utils/wrongPasswordMessages';
 
 /**
  * POST /parcours/{parcoursId}/attempt — { password }
@@ -40,8 +41,18 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error('Missing parcoursId', 400);
     }
 
-    const body = JSON.parse(event.body || '{}');
-    const password = body.password;
+    // Corps absent, mal formé ou qui n'est pas un objet : 400 sans détail
+    // interne (le message de JSON.parse ne regarde pas le joueur).
+    let body: unknown;
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch {
+      return error('Corps invalide', 400);
+    }
+    if (body === null || typeof body !== 'object' || Array.isArray(body)) {
+      return error('Corps invalide', 400);
+    }
+    const password = (body as { password?: unknown }).password;
     if (typeof password !== 'string' || !password.trim()) {
       return error('Missing required field: password', 400);
     }
@@ -68,10 +79,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     if (!hasUsablePassword(parcours.correctPassword)) {
-      return error(
-        "Le mot de passe de cette tournée n'est pas encore disponible : elle ne peut pas encore être validée.",
-        409
-      );
+      return error("Ce mot de passe n'est pas encore disponible.", 409);
     }
 
     const now = new Date().toISOString();
@@ -95,7 +103,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     if (!isCorrect) {
       return success({
         success: false,
-        message: "Ce n'est pas le mot de passe de cette tournée. Vérifiez-le et réessayez.",
+        // Mêmes messages que pour une intrigue, modifiables par l'organisation.
+        message: pickWrongPasswordMessage(await getWrongPasswordMessages()),
       });
     }
 
@@ -109,8 +118,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     return success({
       success: true,
       message: alreadyCompleted
-        ? "C'est le bon mot de passe ! (Cette tournée était déjà validée par votre équipe)"
-        : 'Bravo ! Tournée validée.',
+        ? "C'est le bon mot de passe ! (Il était déjà validé par votre équipe.)"
+        : 'Bravo ! Mot de passe validé.',
       alreadyCompleted,
     });
   } catch (err: any) {

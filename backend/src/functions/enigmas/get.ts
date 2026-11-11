@@ -18,8 +18,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     // Ni le mot de passe, ni la demarche de resolution, ni le texte des indices,
-    // ni la date d'ouverture des indices ne doivent atteindre un client.
-    const { correctPassword, solution, hints, hintsAvailableFrom, ...rest } = enigma as any;
+    // ni la date d'ouverture des indices, ni les « presques bons » mots de passe
+    // ne doivent atteindre un client.
+    const { correctPassword, solution, hints, hintsAvailableFrom, nearMisses, ...rest } = enigma as any;
     const sanitizedEnigma = {
       ...rest,
       hintsCount: Array.isArray(hints) ? hints.length : 0,

@@ -5,6 +5,7 @@ import { getTestTeamIds, excludeTestTeamRows } from '../../../utils/testTeams';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
+import { hasUsablePassword } from '../../../utils/password';
 
 /**
  * Admin list parcours endpoint with statistics
@@ -46,6 +47,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const parcoursWithStats = allParcours.map((parcours: any) => ({
       ...parcours,
       teamsUnlocked: unlocksMap.get(parcours.parcoursId) || 0,
+      // Même règle que la route de validation : un mot de passe vide une fois
+      // normalisé compte comme absent.
+      hasPassword: hasUsablePassword(parcours.correctPassword),
     }));
 
     // Sort by parcoursNumber

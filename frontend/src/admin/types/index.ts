@@ -1,7 +1,7 @@
 // Admin-specific types extending base types
-import { BackendEnigma, BackendParcours, Team, TeamEnigmaProgress, EnigmaHint } from '../../types';
+import { BackendEnigma, BackendParcours, Team, TeamEnigmaProgress, EnigmaHint, NearMiss } from '../../types';
 
-export type { EnigmaHint };
+export type { EnigmaHint, NearMiss };
 
 export interface AdminUser {
   userId: string;
@@ -35,12 +35,16 @@ export interface AttemptRecord {
   enigmaTitle: string;
   password: string;
   success: boolean;
+  /** Mauvaise tentative qui correspondait à un « presque bon » de l'intrigue. */
+  nearMiss?: boolean;
   attemptedAt: string;
   attemptedBy: string;
   attemptedByName: string;
 }
 
 export interface EnigmaWithStats extends BackendEnigma {
+  /** « Presques bons » mots de passe : renvoyés par /admin/enigmas seulement. */
+  nearMisses?: NearMiss[];
   totalAttempts: number;
   successfulAttempts: number;
   teamsSolved: number;
@@ -48,6 +52,8 @@ export interface EnigmaWithStats extends BackendEnigma {
 
 export interface ParcoursWithStats extends BackendParcours {
   teamsUnlocked: number;
+  /** Calculé par le serveur, avec la même règle que la validation. */
+  hasPassword: boolean;
 }
 
 export interface CreateEnigmaRequest {
@@ -59,6 +65,8 @@ export interface CreateEnigmaRequest {
   hints?: EnigmaHint[];   // Indices pre-ecrits, du plus precoce au plus tardif
   hintsEnabled?: boolean;            // Indices ouverts aux équipes
   hintsAvailableFrom?: string | null; // AAAA-MM-JJ ; vide = dès l'ouverture
+  /** Liste complète : envoyée, elle remplace l'ancienne ; absente, rien ne change. */
+  nearMisses?: NearMiss[];
   isActive: boolean;
 }
 

@@ -3,6 +3,7 @@ import { updateEnigma, getEnigmaById } from '../../../utils/dynamodb';
 import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
 import { lireReglageIndices } from '../../../utils/hintAvailability';
+import { lireNearMisses, conflitAvecMotDePasse } from '../../../utils/nearMisses';
 
 /**
  * Admin update enigma endpoint
@@ -52,6 +53,20 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const reglage = lireReglageIndices(body);
     if (reglage.erreur) return error(reglage.erreur, 400);
     Object.assign(updates, reglage.valeurs);
+
+    // « Presque bons » : absents du corps, ceux qui existent restent (une
+    // bascule des indices n'envoie que `hintsEnabled`). Présents, ils
+    // remplacent la liste entière. Dans les deux cas, aucun ne doit égaler le
+    // mot de passe tel qu'il sera après l'écriture.
+    const motDePasse = updates.correctPassword ?? existingEnigma.correctPassword;
+    if (body.nearMisses !== undefined) {
+      const presqueBons = lireNearMisses(body.nearMisses, motDePasse);
+      if (presqueBons.erreur) return error(presqueBons.erreur, 400);
+      updates.nearMisses = presqueBons.valeur;
+    } else if (updates.correctPassword !== undefined) {
+      const conflit = conflitAvecMotDePasse(existingEnigma.nearMisses, motDePasse);
+      if (conflit) return error(conflit, 400);
+    }
 
     const updatedEnigma = await updateEnigma(enigmaId, updates);
 

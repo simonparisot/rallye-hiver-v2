@@ -34,6 +34,9 @@
 /* L'issue se lit à la couleur du filet, pas seulement au texte. */
 .resultat-reussi { border-top-color: var(--theatre-fait); }
 .resultat-manque { border-top-color: var(--theatre-tragedie, #A9503F); }
+/* « Presque bon » : la réponse est refusée, mais l'équipe brûle. Le jaune
+   d'affiche dit « encore un effort », sans le rouge du refus. */
+.resultat-presque { border-top: 6px solid var(--theatre-dorure, #FFC53D); }
 
 .resultat-titre {
   font-family: var(--font-display);
@@ -43,6 +46,9 @@
 }
 .resultat-reussi .resultat-titre { color: var(--theatre-fait); }
 .resultat-manque .resultat-titre { color: var(--theatre-tragedie, #A9503F); }
+.resultat-presque .resultat-titre { color: var(--theatre-dorure-encre, #5A3E00); }
+/* Le message de l'orga est le cœur de l'annonce : il passe en texte principal. */
+.resultat-presque .resultat-message { color: var(--theatre-salle, #1B1720); }
 
 .resultat-message {
   font-family: var(--font-body);

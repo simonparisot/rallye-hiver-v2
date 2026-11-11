@@ -152,7 +152,7 @@ const AdminAttempts: React.FC = () => {
                 </td>
                 <td>
                   <span className={`attempt-status ${attempt.success ? 'success' : 'failed'}`}>
-                    {attempt.success ? '✓ Réussi' : '✗ Échoué'}
+                    {attempt.success ? '✓ Réussi' : attempt.nearMiss ? '✗ Presque bon' : '✗ Échoué'}
                   </span>
                 </td>
                 <td className="user-info">
