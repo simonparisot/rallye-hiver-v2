@@ -114,7 +114,7 @@
 }
 
 .oie-bouton-panneau-titre {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -207,7 +207,7 @@
   flex-direction: column;
   gap: 16px;
   width: min(440px, 100vw);
-  padding: 52px 16px 24px;
+  padding: 60px 16px 24px;
   overflow-y: auto;
   background: var(--theatre-programme);
   border-left: var(--border-width-thick) var(--border-style) var(--theatre-salle);
@@ -220,8 +220,9 @@
   position: absolute;
   top: 10px;
   right: 12px;
-  width: 36px;
-  height: 36px;
+  /* 44 px : la taille minimale d'une cible au doigt. */
+  width: 44px;
+  height: 44px;
   border: var(--border-width-thin) var(--border-style) var(--theatre-filet);
   border-radius: 50%;
   background: var(--theatre-scene);
@@ -300,8 +301,8 @@
 
 @media (min-width: 901px) {
   .oie-case-illustree .oie-case-numero { font-size: 1rem; }
-  .oie-case-illustree .oie-case-libelle { font-size: 0.68rem; }
-  .oie-case-illustree .oie-pion { font-size: 0.72rem; }
+  .oie-case-illustree .oie-case-libelle { font-size: 0.75rem; }
+  .oie-case-illustree .oie-pion { font-size: 0.75rem; }
 }
 
 .oie-case-illustration {
@@ -346,7 +347,7 @@
 }
 
 .oie-case-libelle {
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--theatre-coulisse);
@@ -442,7 +443,7 @@
   border-radius: 999px;
   background: var(--theatre-programme-2);
   color: var(--theatre-salle);
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -549,7 +550,9 @@
 }
 
 .oie-question-saisie input {
-  flex: 1 1 180px;
+  /* Assez étroit pour que « Répondre » tienne à côté, même en 360 px : le
+     clavier virtuel ne le cache plus sous le champ. */
+  flex: 1 1 120px;
   min-width: 0;
   padding: 10px 12px;
   border: 1px solid var(--theatre-filet);
@@ -699,7 +702,7 @@
 }
 
 .oie-chiffres dt {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--theatre-coulisse);
@@ -724,8 +727,11 @@
 
 .oie-resultat-fermer {
   position: absolute;
-  top: 6px;
-  right: 8px;
+  top: 0;
+  right: 0;
+  /* La croix est petite, sa zone de toucher ne l'est pas. */
+  width: 44px;
+  height: 44px;
   border: none;
   background: transparent;
   color: var(--theatre-dorure-claire);
@@ -839,7 +845,7 @@
 }
 
 .oie-fil-heure {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--theatre-coulisse-pale);
 }
 
@@ -855,13 +861,24 @@
   .oie-case { min-height: 54px; }
 }
 
-@media (max-width: 420px) {
+/* Téléphone : le plateau tient dans la largeur, sans défilement de côté. Une
+   colonne coupée ne se devinait pas, et la languette la recouvrait encore. */
+@media (max-width: 600px) {
   .oie-page { padding: 16px 12px 40px; }
-  .oie-plateau-cadre { padding: 10px; }
-  /* Sous cette largeur le libellé ne tient plus : la couleur et l'info-bulle
-     portent seules la nature de la case. */
+  /* La languette, collée au bord droit, garde sa gouttière : elle ne cache
+     plus ni le bouton du haut ni la dernière colonne du plateau. */
+  .oie-scene { margin-right: 18px; }
+  .oie-languette { width: 30px; padding: 12px 0; }
+  .oie-languette:hover { padding-right: 0; }
+  .oie-plateau-cadre { padding: 6px; }
+  /* Le libellé ne tient plus : la couleur et l'info-bulle portent seules la
+     nature de la case. */
   .oie-case-libelle { display: none; }
-  .oie-plateau { min-width: 340px; --oie-joint: 7px; }
-  .oie-case { min-height: 46px; }
-  .oie-case-illustree { min-height: 50px; }
+  .oie-plateau { min-width: 0; --oie-joint: 6px; }
+  .oie-case { min-height: 46px; padding: 3px; }
+  /* Si étroite, la case ne peut plus garder la proportion de l'image : sa
+     hauteur minimale élargissait la dernière colonne hors du cadre. */
+  .oie-case-illustree { min-height: 46px; aspect-ratio: auto; }
+  .oie-case-illustree .oie-case-numero { padding: 0 3px; }
+  .oie-pion { padding: 0 3px; letter-spacing: 0; }
 }
