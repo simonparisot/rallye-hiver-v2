@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './Layout.css';
-import { edition } from '../../editions';
+import { useEdition } from '../../editions';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,6 +11,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const edition = useEdition();
 
   const handleLogout = () => {
     logout();

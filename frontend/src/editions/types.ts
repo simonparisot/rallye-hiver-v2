@@ -47,6 +47,26 @@ export interface Edition {
    * ignore tout de `src/oie/`.
    */
   enigmeOie?: EnigmeOie;
+
+  /**
+   * Habillage neutre, affiché tant que le thème de l'édition doit rester
+   * secret — avant le lancement, puis pour une équipe qui ne l'a pas encore
+   * débloqué. Il remplace le thème, les textes et le titre du jeu de l'oie ;
+   * tout ce qui relève du jeu (gameId, dates, route du plateau) reste celui
+   * de l'édition.
+   *
+   * Sans ce champ, l'édition s'affiche toujours avec son thème officiel.
+   * La bascule entre les deux est décrite dans editions/index.ts.
+   */
+  habillageNeutre?: Habillage;
+}
+
+/** Ce qui change entre l'habillage officiel d'une édition et son habillage neutre. */
+export interface Habillage {
+  theme: Edition['theme'];
+  copy: Edition['copy'];
+  /** Titre de la page du jeu de l'oie, quand l'édition en a un. */
+  titreOie?: string;
 }
 
 /** Configuration de l'intrigue jouée sur un plateau de jeu de l'oie partagé. */

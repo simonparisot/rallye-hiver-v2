@@ -1,4 +1,5 @@
 import { Edition } from './types';
+import { habillageNeutre2027 } from './2027-neutre';
 
 /**
  * Édition 2027 — thème « Le théâtre », direction « L'Affiche ».
@@ -41,4 +42,7 @@ export const edition2027: Edition = {
     route: '/oie',
     titre: "Le jeu de l'oie du théâtre",
   },
+  // Le thème reste secret jusqu'à ce que l'équipe l'ait débloqué : d'ici là,
+  // le site s'affiche sous cet habillage. Voir editions/index.ts.
+  habillageNeutre: habillageNeutre2027,
 };

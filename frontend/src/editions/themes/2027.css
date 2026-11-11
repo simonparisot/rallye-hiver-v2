@@ -21,11 +21,11 @@
    franchement reviendrait à peindre la page en vert en noyant les huit qui
    demandent encore du travail. Ce qui est fait s'efface, ce qui reste ressort.
 
-   Ce thème est posé sur :root sans attendre l'attribut data-edition : c'est
-   l'édition servie par défaut, et l'attendre provoquerait un flash au
-   chargement.
+   Ce thème n'est plus posé sur :root sans attribut : jusqu'à ce qu'une équipe
+   l'ait débloqué, c'est l'habillage neutre (themes/2027-neutre.css) qui
+   s'affiche par défaut, pour ne pas trahir le thème. Celui-ci ne s'applique
+   que sous data-edition='2027', posé par setThemeOfficiel(true).
    --------------------------------------------------------------------------- */
-:root,
 :root[data-edition='2027'] {
   /* --- Les deux masques, en version affiche ---
      Les teintes du logo, franches et non plus patinées : une affiche est

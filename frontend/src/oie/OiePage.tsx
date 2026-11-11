@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { gameAPI, teamAPI } from '../services/api';
-import { edition } from '../editions';
+import { useEdition } from '../editions';
 import { oieAPI } from './api';
 import { OieMyView, OieRollResponse } from './types';
 import Plateau from './components/Plateau';
@@ -47,6 +47,8 @@ function resumeEquipe(me: OieMyView): { texte: string; aAgir: boolean } {
  */
 const OiePage: React.FC = () => {
   const { user, loading } = useAuth();
+  // Le titre suit l'habillage affiché : celui du thème officiel le trahirait.
+  const edition = useEdition();
   const queryClient = useQueryClient();
 
   const [resultat, setResultat] = useState<OieRollResponse | null>(null);

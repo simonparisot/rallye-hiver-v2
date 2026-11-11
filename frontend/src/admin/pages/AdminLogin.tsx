@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
 import { adminAuthAPI } from '../services/adminAPI';
 import { getErrorMessage } from '../../utils/errorMessages';
-import { edition } from '../../editions';
+import { useEdition } from '../../editions';
 import './AdminLogin.css';
 
 const AdminLogin: React.FC = () => {
+  // Page publique : elle suit l'habillage affiché, comme le reste du site.
+  const edition = useEdition();
   const [mode, setMode] = useState<'login' | 'forgot-password' | 'reset-password'>('login');
   const [formData, setFormData] = useState({
     email: '',

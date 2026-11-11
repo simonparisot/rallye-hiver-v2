@@ -1,6 +1,6 @@
 import React from 'react';
 import './InfoPanel.css';
-import { edition } from '../../editions';
+import { useEdition } from '../../editions';
 
 interface GeneralInfoPanelProps {
   isExpanded: boolean;
@@ -8,6 +8,7 @@ interface GeneralInfoPanelProps {
 }
 
 const GeneralInfoPanel: React.FC<GeneralInfoPanelProps> = ({ isExpanded, isCompact }) => {
+  const edition = useEdition();
   return (
     <div data-testid="general-info-panel" className={`info-panel ${isCompact ? 'panel-compact' : ''}`}>
       <div className="panel-header">

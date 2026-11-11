@@ -1,9 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './Landing.css';
-import { edition } from '../editions';
+import { useEdition } from '../editions';
 
 const Landing: React.FC = () => {
+  const edition = useEdition();
   return (
     <div className="landing">
       <div className="landing-hero">

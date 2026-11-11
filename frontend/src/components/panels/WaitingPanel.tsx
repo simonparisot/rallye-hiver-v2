@@ -1,8 +1,9 @@
 import React from 'react';
 import './WaitingPanel.css';
-import { edition } from '../../editions';
+import { useEdition } from '../../editions';
 
 const WaitingPanel: React.FC = () => {
+  const edition = useEdition();
   return (
     <div data-testid="waiting-panel" className="waiting-panel">
       <div className="waiting-content">
