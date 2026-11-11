@@ -14,6 +14,7 @@ export const TEAM_PARCOURS_ACCESS_TABLE = process.env.TEAM_PARCOURS_ACCESS_TABLE
 export const GAME_STATUS_TABLE = process.env.GAME_STATUS_TABLE || '';
 export const ENIGMA_DIFFICULTY_CACHE_TABLE = process.env.ENIGMA_DIFFICULTY_CACHE_TABLE || '';
 export const HINT_REQUESTS_TABLE = process.env.HINT_REQUESTS_TABLE || '';
+export const PARCOURS_ATTEMPTS_TABLE = process.env.PARCOURS_ATTEMPTS_TABLE || '';
 
 export async function getUserByCognitoSub(cognitoSub: string) {
   const result = await dynamoDb.send(
@@ -388,6 +389,9 @@ export async function getAllTeamProgress(teamId: string) {
     new QueryCommand({
       TableName: TEAM_ENIGMA_PROGRESS_TABLE,
       KeyConditionExpression: 'teamId = :teamId',
+      // Relue juste après une résolution pour recalculer l'accès aux
+      // tournées : une lecture éventuellement cohérente la laisserait fermée.
+      ConsistentRead: true,
       ExpressionAttributeValues: {
         ':teamId': teamId,
       },
@@ -583,6 +587,50 @@ export async function updateTeamParcoursAccess(teamId: string, parcoursId: strin
   );
 
   return result.Attributes;
+}
+
+/**
+ * Marque une tournée réalisée pour l'équipe, en créant l'enregistrement
+ * d'accès s'il manque. Une seule écriture, sans lecture préalable : deux
+ * membres qui valident en même temps ne s'écrasent pas, et la première date
+ * de réalisation est conservée.
+ */
+export async function markTeamParcoursCompleted(teamId: string, parcoursId: string, now: string) {
+  const result = await dynamoDb.send(
+    new UpdateCommand({
+      TableName: TEAM_PARCOURS_ACCESS_TABLE,
+      Key: { teamId, parcoursId },
+      UpdateExpression:
+        'SET completed = :true, completedAt = if_not_exists(completedAt, :now), ' +
+        'hasAccess = :true, unlockedAt = if_not_exists(unlockedAt, :now), ' +
+        'unlockedBy = if_not_exists(unlockedBy, :none), createdAt = if_not_exists(createdAt, :now)',
+      ExpressionAttributeValues: {
+        ':true': true,
+        ':now': now,
+        ':none': [],
+      },
+      ReturnValues: 'ALL_NEW',
+    })
+  );
+  return result.Attributes;
+}
+
+// ==================== PARCOURS ATTEMPT LOG FUNCTIONS ====================
+
+/**
+ * Tentatives de mot de passe de fin de tournée. Table à part de celle des
+ * intrigues : les statistiques de difficulté, la chronologie et les écrans
+ * d'administration des intrigues lisent toute la table PasswordAttempts et
+ * supposent que chaque ligne porte une intrigue.
+ */
+export async function logParcoursAttempt(attempt: any) {
+  await dynamoDb.send(
+    new PutCommand({
+      TableName: PARCOURS_ATTEMPTS_TABLE,
+      Item: attempt,
+    })
+  );
+  return attempt;
 }
 
 // ==================== GAME STATUS FUNCTIONS ====================

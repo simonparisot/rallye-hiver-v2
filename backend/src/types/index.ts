@@ -89,6 +89,12 @@ export interface Parcours {
   pdfUrl: string;
   requiredEnigmaIds: string[];
   requiredEnigmasCount: number;
+  /**
+   * Mot de passe que l'équipe trouve à la fin de la tournée et saisit pour la
+   * valider. Comparé comme celui des intrigues (utils/password). Jamais
+   * renvoyé aux joueurs, qui ne voient que `hasPassword`.
+   */
+  correctPassword?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -123,14 +129,26 @@ export interface PasswordAttemptLog {
   ipAddress?: string;
 }
 
+/** Tentative de mot de passe de fin de tournée (table ParcoursAttempts). */
+export interface ParcoursAttemptLog {
+  attemptId: string;
+  teamId: string;
+  parcoursId: string;
+  password: string;
+  success: boolean;
+  attemptedAt: string;
+  attemptedBy?: string; // userId
+  ipAddress?: string;
+}
+
 export interface TeamParcoursAccess {
   teamId: string;
   parcoursId: string;
   hasAccess: boolean;
   unlockedAt: string;
   unlockedBy: string[]; // Array of enigmaIds that triggered unlock
-  completed?: boolean; // Set by frontend when user marks parcours as completed
-  completedAt?: string; // Timestamp when parcours was marked as completed
+  completed?: boolean; // Vrai quand l'équipe a saisi le mot de passe de fin de tournée
+  completedAt?: string; // Première validation de la tournée
   createdAt: string;
 }
 

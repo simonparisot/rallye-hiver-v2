@@ -1,4 +1,5 @@
 import { getAllEnigmasForAdmin, getAllTeamProgress } from './dynamodb';
+import { hasUsablePassword } from './password';
 
 /**
  * Déblocage des tournées par les intrigues.
@@ -26,7 +27,7 @@ export interface ParcoursAccess {
 }
 
 export interface AccessContext {
-  enigmasById: Map<string, { enigmaNumber: number; title: string }>;
+  enigmasById: Map<string, { enigmaNumber: number; title: string; isActive: boolean }>;
   solvedEnigmaIds: Set<string>;
 }
 
@@ -38,7 +39,10 @@ export async function loadAccessContext(teamId: string): Promise<AccessContext> 
 
   return {
     enigmasById: new Map(
-      enigmas.map((e: any) => [e.enigmaId, { enigmaNumber: e.enigmaNumber, title: e.title }])
+      enigmas.map((e: any) => [
+        e.enigmaId,
+        { enigmaNumber: e.enigmaNumber, title: e.title, isActive: e.isActive === true },
+      ])
     ),
     solvedEnigmaIds: new Set(
       progress.filter((p: any) => p.solved).map((p: any) => p.enigmaId)
@@ -56,7 +60,8 @@ export function evaluateParcoursAccess(parcours: any, context: AccessContext): P
       return {
         enigmaId: id,
         enigmaNumber: enigma.enigmaNumber,
-        title: enigma.title,
+        // Le titre d'une intrigue pas encore publiée ne doit pas fuiter.
+        title: enigma.isActive ? enigma.title : 'Intrigue à venir',
         solved: context.solvedEnigmaIds.has(id),
       };
     })
@@ -69,26 +74,53 @@ export function evaluateParcoursAccess(parcours: any, context: AccessContext): P
 }
 
 /**
- * Ce qu'un joueur peut voir d'une tournée sans y avoir accès : tout sauf
- * l'adresse de son PDF, qui suffirait à l'ouvrir.
+ * Ce qu'un joueur peut voir d'une tournée.
+ *
+ * Jamais le mot de passe de fin de tournée : seulement `hasPassword`, pour
+ * savoir s'il peut déjà la valider. L'adresse du PDF, qui suffit à l'ouvrir,
+ * seulement si `withPdf` (tournée ouverte pour son équipe).
  */
-export function withoutPdf(parcours: any) {
-  const { pdfUrl, ...rest } = parcours;
-  return rest;
+export function forPlayers(parcours: any, { withPdf = false }: { withPdf?: boolean } = {}) {
+  const { pdfUrl, correctPassword, ...rest } = parcours;
+  return {
+    ...rest,
+    ...(withPdf && pdfUrl !== undefined ? { pdfUrl } : {}),
+    hasPassword: hasUsablePassword(correctPassword),
+  };
 }
 
 /**
- * Valide la liste d'intrigues envoyée par l'administration. Renvoie un message
- * d'erreur, ou null si la liste est acceptable.
+ * Valide la liste d'intrigues envoyée par l'administration et renvoie celle à
+ * enregistrer, ou un message d'erreur.
+ *
+ * Un identifiant inconnu est refusé s'il est nouveau. S'il figurait déjà dans
+ * la liste enregistrée (`previousIds`), c'est une intrigue supprimée depuis :
+ * il est retiré sans erreur, sinon la tournée ne pourrait plus être modifiée,
+ * même pour la dépublier.
  */
-export async function validateRequiredEnigmaIds(ids: unknown): Promise<string | null> {
+export async function resolveRequiredEnigmaIds(
+  ids: unknown,
+  previousIds: string[] = []
+): Promise<{ error: string; ids?: undefined } | { error: null; ids: string[] }> {
   if (!Array.isArray(ids) || ids.some((id) => typeof id !== 'string')) {
-    return 'requiredEnigmaIds doit être une liste d\'identifiants d\'intrigues';
+    return { error: 'requiredEnigmaIds doit être une liste d\'identifiants d\'intrigues' };
   }
-  if (ids.length === 0) return null;
+  if (ids.length === 0) return { error: null, ids: [] };
 
   const enigmas = await getAllEnigmasForAdmin();
   const known = new Set(enigmas.map((e: any) => e.enigmaId));
-  const unknown = ids.filter((id) => !known.has(id));
-  return unknown.length > 0 ? `Intrigues inconnues : ${unknown.join(', ')}` : null;
+  const previous = new Set(previousIds);
+  const unknown = ids.filter((id) => !known.has(id) && !previous.has(id));
+  if (unknown.length > 0) {
+    return { error: `Intrigues inconnues : ${unknown.join(', ')}` };
+  }
+  return { error: null, ids: Array.from(new Set(ids.filter((id) => known.has(id)))) };
+}
+
+/**
+ * Valide une liste d'intrigues pour une nouvelle tournée. Renvoie un message
+ * d'erreur, ou null si la liste est acceptable.
+ */
+export async function validateRequiredEnigmaIds(ids: unknown): Promise<string | null> {
+  return (await resolveRequiredEnigmaIds(ids)).error;
 }

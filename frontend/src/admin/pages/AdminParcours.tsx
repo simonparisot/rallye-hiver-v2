@@ -15,6 +15,7 @@ const AdminParcours: React.FC = () => {
     title: '',
     pdfUrl: '',
     requiredEnigmaIds: [],
+    correctPassword: '',
     isActive: true,
   });
   const [erreurFormulaire, setErreurFormulaire] = useState('');
@@ -31,6 +32,11 @@ const AdminParcours: React.FC = () => {
   });
   const intrigues = [...(enigmasData?.enigmas || [])].sort((a, b) => a.enigmaNumber - b.enigmaNumber);
   const titreIntrigue = new Map(intrigues.map((e) => [e.enigmaId, `${e.enigmaNumber}. ${e.title}`]));
+  // Une intrigue supprimée depuis reste dans la liste enregistrée : on ne la
+  // renvoie pas, et on ne la compte pas.
+  const intriguesRequises = enigmasData
+    ? formData.requiredEnigmaIds.filter((id) => titreIntrigue.has(id))
+    : formData.requiredEnigmaIds;
 
   // Un enregistrement refusé doit le dire : l'échec silencieux du bouton
   // « Créer » est ce qui a empêché de mettre les tournées en ligne.
@@ -68,6 +74,7 @@ const AdminParcours: React.FC = () => {
       title: '',
       pdfUrl: '',
       requiredEnigmaIds: [],
+      correctPassword: '',
       isActive: true,
     });
     setErreurFormulaire('');
@@ -82,6 +89,9 @@ const AdminParcours: React.FC = () => {
       title: parcours.title,
       pdfUrl: parcours.pdfUrl,
       requiredEnigmaIds: parcours.requiredEnigmaIds || [],
+      // L'administration reçoit le mot de passe : il est affiché pour être
+      // vérifié ou corrigé.
+      correctPassword: parcours.correctPassword || '',
       isActive: parcours.isActive,
     });
     setErreurFormulaire('');
@@ -107,7 +117,8 @@ const AdminParcours: React.FC = () => {
       await adminUploadAPI.uploadPdf(uploadUrl, file);
 
       setUploadProgress('Upload terminé !');
-      setFormData({ ...formData, pdfUrl: fileUrl });
+      // Mise à jour fonctionnelle : le formulaire a pu changer pendant l'envoi.
+      setFormData((f) => ({ ...f, pdfUrl: fileUrl }));
 
       setTimeout(() => {
         setUploadProgress('');
@@ -138,10 +149,15 @@ const AdminParcours: React.FC = () => {
     setErreurFormulaire('');
     // Le numéro n'est pas envoyé : à la création le serveur place la tournée
     // en dernier, à la modification elle garde sa place dans la liste.
+    const data = {
+      ...formData,
+      requiredEnigmaIds: intriguesRequises,
+      correctPassword: (formData.correctPassword || '').trim(),
+    };
     if (editingParcours) {
-      updateMutation.mutate({ parcoursId: editingParcours.parcoursId, data: formData });
+      updateMutation.mutate({ parcoursId: editingParcours.parcoursId, data });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(data);
     }
   };
 
@@ -253,15 +269,33 @@ const AdminParcours: React.FC = () => {
               )}
             </div>
 
+            <div className="form-group">
+              <label htmlFor="parcours-password">Mot de passe de fin de tournée</label>
+              <input data-testid="admin-parcours-password-input"
+                id="parcours-password"
+                type="text"
+                value={formData.correctPassword || ''}
+                onChange={(e) => setFormData({ ...formData, correctPassword: e.target.value.toUpperCase() })}
+                placeholder="Ex: MOLIERE1673"
+                autoComplete="off"
+                style={{ fontFamily: 'monospace', textTransform: 'uppercase' }}
+              />
+              <p className="admin-form-help">
+                Les équipes le trouvent à la fin de la tournée et le saisissent pour la valider.
+                Casse, accents, espaces et ponctuation sont ignorés, comme pour les intrigues.
+                Vide : la tournée ne peut pas encore être validée.
+              </p>
+            </div>
+
             <fieldset className="form-group intrigues-requises" data-testid="admin-parcours-required-enigmas">
               <legend>Intrigues qui débloquent la tournée</legend>
               <p className="admin-form-help">
-                {formData.requiredEnigmaIds.length === 0
+                {intriguesRequises.length === 0
                   ? 'Aucune intrigue cochée : la tournée est accessible à toutes les équipes.'
                   : `La tournée s'ouvre quand l'équipe a résolu ${
-                      formData.requiredEnigmaIds.length === 1
+                      intriguesRequises.length === 1
                         ? "l'intrigue cochée"
-                        : `les ${formData.requiredEnigmaIds.length} intrigues cochées`
+                        : `les ${intriguesRequises.length} intrigues cochées`
                     }.`}
               </p>
               {enigmasLoading ? (
@@ -305,7 +339,7 @@ const AdminParcours: React.FC = () => {
             </div>
 
             <div className="form-actions">
-              <button data-testid="admin-parcours-submit" type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || uploadingPdf}>
+              <button data-testid="admin-parcours-submit" type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || uploadingPdf || enigmasLoading}>
                 {editingParcours ? 'Mettre à jour' : 'Créer'}
               </button>
               <button data-testid="admin-parcours-cancel" type="button" className="btn btn-secondary" onClick={resetForm}>
@@ -380,6 +414,15 @@ const AdminParcours: React.FC = () => {
                             <div className="parcours-title">
                               {parcours.title}
                               {!parcours.isActive && <span className="unpublished-label">non publiée</span>}
+                              {!(parcours.correctPassword || '').trim() && (
+                                <span
+                                  className="admin-badge admin-badge--warning parcours-sans-mot-de-passe"
+                                  data-testid={`admin-parcours-no-password-${parcours.parcoursId}`}
+                                  title="Les équipes ne peuvent pas encore valider cette tournée"
+                                >
+                                  ⚠ sans mot de passe
+                                </span>
+                              )}
                             </div>
                             <div className="parcours-deblocage" data-testid={`admin-parcours-unlock-${parcours.parcoursId}`}>
                               {(parcours.requiredEnigmaIds || []).length === 0

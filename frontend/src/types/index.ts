@@ -64,6 +64,10 @@ export interface BackendParcours {
   pdfUrl: string;
   requiredEnigmaIds: string[];
   requiredEnigmasCount: number;
+  /** Réponses joueurs : la tournée a-t-elle un mot de passe de fin ? */
+  hasPassword?: boolean;
+  /** Réponses d'administration seulement : jamais envoyé aux joueurs. */
+  correctPassword?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -118,6 +122,14 @@ export interface PasswordAttemptResponse {
     parcoursNumber: number;
   }>;
   alreadySolved?: boolean;
+}
+
+/** Réponse de POST /parcours/{parcoursId}/attempt. */
+export interface ParcoursAttemptResponse {
+  success: boolean;
+  message: string;
+  /** Présent sur une bonne réponse : la tournée était déjà validée. */
+  alreadyCompleted?: boolean;
 }
 
 export interface TeamProgressResponse {
@@ -191,6 +203,8 @@ export interface Parcours {
   requiredEnigmasDetail?: RequiredEnigma[];
   isCompleted?: boolean;
   completedAt?: string;
+  /** Faux tant que l'organisateur n'a pas saisi le mot de passe de fin de tournée. */
+  hasPassword?: boolean;
 }
 
 export interface RequiredEnigma {

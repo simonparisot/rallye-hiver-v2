@@ -13,6 +13,7 @@ import {
   TeamProgressResponse,
   AccessibleParcoursResponse,
   ParcoursAccessResponse,
+  ParcoursAttemptResponse,
   HintsListResponse,
   HintRequestResponse
 } from '../types';
@@ -268,13 +269,9 @@ export const parcoursAPI = {
     return response.data;
   },
 
-  markCompleted: async (parcoursId: string): Promise<{ message: string; parcoursId: string; completedAt: string }> => {
-    const response = await api.post(`/parcours/${parcoursId}/complete`);
-    return response.data;
-  },
-
-  unmarkCompleted: async (parcoursId: string): Promise<{ message: string; parcoursId: string }> => {
-    const response = await api.delete(`/parcours/${parcoursId}/complete`);
+  /** Valide la tournée avec le mot de passe trouvé à sa fin. */
+  submitAttempt: async (parcoursId: string, password: string): Promise<ParcoursAttemptResponse> => {
+    const response = await api.post(`/parcours/${parcoursId}/attempt`, { password });
     return response.data;
   },
 };

@@ -92,8 +92,8 @@ This document describes the access control for all API endpoints in the Rallye d
 | `/parcours` | GET | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | Lists all active parcours |
 | `/parcours` | POST | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ **SECURITY ISSUE**: Should be admin-only |
 | `/parcours/{parcoursId}` | GET | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | Get parcours details |
-| `/parcours/{parcoursId}/access` | GET | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | Always returns true (all parcours unlocked) |
-| `/parcours/{parcoursId}/complete` | POST | ❌ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | Mark parcours complete - requires team membership |
+| `/parcours/{parcoursId}/access` | GET | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | Unlocked when the team has solved all required enigmas (recomputed on each read) |
+| `/parcours/{parcoursId}/attempt` | POST | ❌ | ❌ | ✅ | ✅ | ❌ | ⚠️ | End-of-parcours password (2026-11-11) - team member, parcours published and unlocked for the team, else 403 |
 
 ---
 

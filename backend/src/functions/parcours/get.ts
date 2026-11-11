@@ -1,7 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getParcoursById } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
-import { withoutPdf } from '../../utils/parcoursAccess';
+import { forPlayers } from '../../utils/parcoursAccess';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -19,9 +19,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     // Métadonnées seulement : le PDF passe par /progress/parcours, qui
-    // vérifie le déblocage.
+    // vérifie le déblocage ; le mot de passe n'est jamais donné.
     return success({
-      parcours: withoutPdf(parcours),
+      parcours: forPlayers(parcours),
     });
   } catch (err: any) {
     console.error('Error getting parcours:', err);

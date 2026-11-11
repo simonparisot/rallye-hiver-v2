@@ -30,6 +30,13 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error(invalid, 400);
     }
 
+    // Mot de passe de fin de tournée : facultatif à la création. Sans lui,
+    // les équipes ne peuvent pas encore valider la tournée.
+    if (body.correctPassword !== undefined && typeof body.correctPassword !== 'string') {
+      return error('correctPassword doit être une chaîne', 400);
+    }
+    const correctPassword = (body.correctPassword || '').trim();
+
     // Le formulaire ne demande pas de numéro : la tournée prend la place
     // suivant la dernière.
     let parcoursNumber = body.parcoursNumber;
@@ -50,6 +57,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       pdfUrl: body.pdfUrl,
       requiredEnigmaIds,
       requiredEnigmasCount: requiredEnigmaIds.length,
+      correctPassword,
       isActive: body.isActive !== undefined ? body.isActive : true,
       createdAt: now,
       updatedAt: now,

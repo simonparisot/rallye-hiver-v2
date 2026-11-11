@@ -2,7 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { updateParcours, getParcoursById } from '../../utils/dynamodb';
 import { requireAdmin } from '../../utils/adminAuth';
 import { success, error } from '../../utils/response';
-import { validateRequiredEnigmaIds } from '../../utils/parcoursAccess';
+import { resolveRequiredEnigmaIds } from '../../utils/parcoursAccess';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -45,13 +45,25 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     if (body.description !== undefined) updates.description = body.description;
     if (body.pdfUrl !== undefined) updates.pdfUrl = body.pdfUrl;
     if (body.requiredEnigmaIds !== undefined) {
-      const invalid = await validateRequiredEnigmaIds(body.requiredEnigmaIds);
-      if (invalid) return error(invalid, 400);
+      // Les intrigues supprimées depuis sont retirées sans erreur ; seul un
+      // identifiant inconnu et nouveau est refusé.
+      const resolved = await resolveRequiredEnigmaIds(
+        body.requiredEnigmaIds,
+        existingParcours.requiredEnigmaIds || []
+      );
+      if (resolved.error !== null) return error(resolved.error, 400);
       // Toutes les intrigues cochées sont requises : le compte suit la liste.
-      updates.requiredEnigmaIds = body.requiredEnigmaIds;
-      updates.requiredEnigmasCount = body.requiredEnigmaIds.length;
+      updates.requiredEnigmaIds = resolved.ids;
+      updates.requiredEnigmasCount = resolved.ids.length;
     }
     if (body.isActive !== undefined) updates.isActive = body.isActive;
+    if (body.correctPassword !== undefined) {
+      if (typeof body.correctPassword !== 'string') {
+        return error('correctPassword doit être une chaîne', 400);
+      }
+      // Chaîne vide : la tournée n'a plus de mot de passe.
+      updates.correctPassword = body.correctPassword.trim();
+    }
 
     const updatedParcours = await updateParcours(parcoursId, updates);
 
