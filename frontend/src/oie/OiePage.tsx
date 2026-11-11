@@ -1,16 +1,42 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { gameAPI, teamAPI } from '../services/api';
 import { edition } from '../editions';
 import { oieAPI } from './api';
-import { OieRollResponse } from './types';
+import { OieMyView, OieRollResponse } from './types';
 import Plateau from './components/Plateau';
 import CarteAction from './components/CarteAction';
 import ResultatLancer from './components/ResultatLancer';
 import FilEvenements from './components/FilEvenements';
 import './OiePage.css';
+
+/**
+ * Ce que le bouton du panneau annonce, panneau fermé : la carte d'action vit
+ * désormais derrière lui, il doit donc dire s'il y a quelque chose à faire.
+ */
+function resumeEquipe(me: OieMyView): { texte: string; aAgir: boolean } {
+  if (me.finishedAt) return { texte: 'Intrigue résolue', aAgir: false };
+  switch (me.status) {
+    case 'question_finale':
+      return { texte: 'Question finale', aAgir: true };
+    case 'question_en_attente':
+      return { texte: `Question en case ${me.position}`, aAgir: true };
+    case 'relance_oie':
+      return { texte: 'Relancez les dés', aAgir: true };
+    case 'peut_lancer':
+      return { texte: 'À vous de lancer', aAgir: true };
+    case 'dans_le_puits':
+      return { texte: 'Au fond du puits', aAgir: false };
+    case 'tour_passe':
+      return { texte: me.inPrison ? 'En prison' : 'Vous passez un tour', aAgir: false };
+    case 'quota_epuise':
+      return { texte: 'Lancers du jour épuisés', aAgir: false };
+    default:
+      return { texte: `Case ${me.position}`, aAgir: false };
+  }
+}
 
 /**
  * Page du jeu de l'oie, route /oie.
@@ -26,6 +52,28 @@ const OiePage: React.FC = () => {
   const [resultat, setResultat] = useState<OieRollResponse | null>(null);
   const [messageReponse, setMessageReponse] = useState<{ texte: string; correct: boolean } | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+
+  // Le panneau de l'équipe est masqué par défaut : le plateau prend toute la
+  // largeur, et le panneau s'ouvre par-dessus quand on veut agir.
+  const [panneauOuvert, setPanneauOuvert] = useState(false);
+  const boutonPanneauRef = useRef<HTMLButtonElement>(null);
+  const fermerPanneauRef = useRef<HTMLButtonElement>(null);
+
+  const fermerPanneau = useCallback(() => {
+    setPanneauOuvert(false);
+    // Le focus revient là d'où l'on a ouvert, pour le clavier.
+    boutonPanneauRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!panneauOuvert) return undefined;
+    fermerPanneauRef.current?.focus();
+    const echap = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') fermerPanneau();
+    };
+    document.addEventListener('keydown', echap);
+    return () => document.removeEventListener('keydown', echap);
+  }, [panneauOuvert, fermerPanneau]);
 
   const { data: gameStatus } = useQuery({
     queryKey: ['gameStatus'],
@@ -62,7 +110,8 @@ const OiePage: React.FC = () => {
       setMessageReponse(null);
       setResultat(data);
       queryClient.setQueryData(['oie-board'], data);
-      // L'arrivee resout l'intrigue : les listes du jeu doivent le refleter.
+      // Un plateau sans question finale configuree resout encore l'intrigue
+      // des l'arrivee ; sinon c'est la reponse finale qui le fera, plus bas.
       if (data.finished) {
         queryClient.invalidateQueries({ queryKey: ['enigmas-with-progress'] });
         queryClient.invalidateQueries({ queryKey: ['team-stats'] });
@@ -80,6 +129,12 @@ const OiePage: React.FC = () => {
       setErreur(null);
       setMessageReponse({ texte: data.message, correct: data.correct });
       queryClient.setQueryData(['oie-board'], data);
+      // La question finale repondue juste resout l'enigme : les listes du jeu
+      // doivent le refleter, exactement comme un mot de passe trouve.
+      if (data.finished) {
+        queryClient.invalidateQueries({ queryKey: ['enigmas-with-progress'] });
+        queryClient.invalidateQueries({ queryKey: ['team-stats'] });
+      }
     },
     onError: (err: any) => {
       setErreur(err?.response?.data?.error || 'La réponse n\'a pas pu être enregistrée.');
@@ -146,7 +201,8 @@ const OiePage: React.FC = () => {
           <h1 data-testid="oie-titre">{edition.enigmeOie?.titre || "Le jeu de l'oie"}</h1>
           <p className="oie-sous-titre">
             Toutes les équipes jouent sur le même plateau. Répondez à la question de votre case
-            pour retrouver le droit de lancer les dés.
+            pour retrouver le droit de lancer les dés. En case 63, une dernière question décide
+            de l'intrigue.
           </p>
         </div>
         <Link className="oie-bouton-secondaire" to="/" data-testid="oie-retour">Retour au jeu</Link>
@@ -167,16 +223,71 @@ const OiePage: React.FC = () => {
       )}
 
       {plateau && (
-        <div className="oie-grille">
-          <div className="oie-colonne-plateau">
-            <Plateau
-              squares={plateau.board.squares}
-              teams={plateau.teams}
-              caseSurlignee={plateau.me.position}
-            />
+        <div className="oie-scene">
+          {/* La barre reste en haut de l'écran pendant qu'on parcourt le
+              plateau : c'est par elle que l'on rejoint la carte d'action. */}
+          <div className="oie-barre">
+            <button
+              type="button"
+              ref={boutonPanneauRef}
+              className={`oie-bouton-panneau ${resumeEquipe(plateau.me).aAgir ? 'oie-bouton-panneau-a-agir' : ''}`}
+              onClick={() => (panneauOuvert ? fermerPanneau() : setPanneauOuvert(true))}
+              aria-expanded={panneauOuvert}
+              aria-controls="oie-panneau"
+              data-testid="oie-bouton-panneau"
+            >
+              <span className="oie-chevron" aria-hidden="true">‹</span>
+              <span className="oie-bouton-panneau-textes">
+                <span className="oie-bouton-panneau-titre">Votre équipe</span>
+                <span className="oie-bouton-panneau-etat" data-testid="oie-etat-equipe">
+                  {resumeEquipe(plateau.me).texte}
+                </span>
+              </span>
+            </button>
           </div>
 
-          <div className="oie-colonne-action">
+          {/* La languette, collée au bord droit de l'écran, dit d'un coup d'œil
+              qu'un panneau se déplie de ce côté-là. */}
+          <button
+            type="button"
+            className={`oie-languette ${resumeEquipe(plateau.me).aAgir ? 'oie-languette-a-agir' : ''}`}
+            onClick={() => setPanneauOuvert(true)}
+            hidden={panneauOuvert}
+            aria-expanded={panneauOuvert}
+            aria-controls="oie-panneau"
+            aria-label={`Ouvrir le panneau de votre équipe : ${resumeEquipe(plateau.me).texte}`}
+            data-testid="oie-languette"
+          >
+            <span className="oie-chevron" aria-hidden="true">‹</span>
+            <span className="oie-languette-texte" aria-hidden="true">Votre équipe</span>
+          </button>
+
+          <Plateau
+            squares={plateau.board.squares}
+            teams={plateau.teams}
+            caseSurlignee={plateau.me.position}
+          />
+
+          {/* Toujours monté, seulement masqué : refermer le panneau ne doit
+              pas effacer une réponse en cours de saisie. */}
+          <aside
+            id="oie-panneau"
+            className="oie-panneau"
+            hidden={!panneauOuvert}
+            aria-label="Votre équipe, le classement et ce qui se passe"
+            data-testid="oie-panneau"
+          >
+            <button
+              type="button"
+              ref={fermerPanneauRef}
+              className="oie-panneau-fermer"
+              onClick={fermerPanneau}
+              aria-label="Fermer le panneau"
+              data-testid="oie-panneau-fermer"
+            >
+              ×
+            </button>
+
             {resultat && <ResultatLancer resultat={resultat} onFermer={() => setResultat(null)} />}
 
             <CarteAction
@@ -189,7 +300,7 @@ const OiePage: React.FC = () => {
             />
 
             <FilEvenements evenements={plateau.events} teams={plateau.teams} />
-          </div>
+          </aside>
         </div>
       )}
     </div>

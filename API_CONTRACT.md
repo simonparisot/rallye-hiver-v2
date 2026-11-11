@@ -1,7 +1,7 @@
 # API Contract
 
 **Last updated by**: backend agent
-**Last updated**: 2026-09-12
+**Last updated**: 2026-10-10
 **Base URL**: `https://rpg0alko8b.execute-api.eu-west-1.amazonaws.com/prod`
 
 ---
@@ -2174,7 +2174,9 @@ le plateau se charge, mais rien dans l'application n'y mène.
     "flavor": "Le souffleur tousse discrètement.",
     "status": "question_en_attente",
     "questionPending": true,
+    "finalQuestionPending": false,
     "question": "Quelle pièce de Rostand met en scène un nez célèbre ?",
+    "bonusRolls": 0,
     "hintAvailable": true,
     "hintRequested": false,
     "hint": null,
@@ -2212,8 +2214,29 @@ le plateau se charge, mais rien dans l'application n'y mène.
 - l'indice d'une case du souffleur tant qu'il n'a pas été demandé ;
 - les questions et les réponses des autres équipes.
 
-`status` vaut `question_en_attente`, `peut_lancer`, `quota_epuise`,
-`tour_passe`, `dans_le_puits` ou `arrivee`.
+`status` vaut `question_en_attente`, `question_finale`, `relance_oie`,
+`peut_lancer`, `quota_epuise`, `tour_passe`, `dans_le_puits` ou `arrivee`.
+L'ordre de priorité est celui de `rollRefusal` : arrivée, question (finale ou
+non), lancer dû par une oie, pénalité en cours, quota.
+
+- `question_finale` : l'équipe est en case 63 et doit répondre à la question
+  finale ; c'est sa réponse, pas l'arrivée, qui emporte l'intrigue.
+- `relance_oie` : l'équipe est tombée sur une oie et a `bonusRolls > 0`. Ce
+  lancer ne coûte rien au quota du jour (`rollsRemainingToday` n'en tient pas
+  compte) et passe outre le quota épuisé.
+- `dans_le_puits` : pénalité de trois jours en cours (`blockedDaysLeft`), levée
+  plus tôt si une autre équipe tombe à son tour dans le puits.
+- `arrivee` : question finale répondue, `finishedAt` et `finishRank` posés.
+
+`rollRefusal`, pendant une pénalité, donne le **jour de reprise** (« vous
+pourrez relancer le mercredi 29 octobre ») et non un nombre de jours :
+`blockedDaysLeft` compte les jours jusqu'à la reprise, aujourd'hui compris, et
+vaut donc 4 le jour de la chute dans le puits, qui ne coûte que trois tours.
+
+`events` ne contient que ce qui bouge sur le plateau (`lancer`, `deplacement`,
+`case_speciale`, `liberation`, `arrivee`, `reinitialisation`), les 100 plus
+récents. Les réponses et les appels au souffleur restent au journal mais n'y
+figurent plus : ils chassaient du fil les déplacements des autres équipes.
 
 Les équipes de test sont exclues de `teams`, comme partout ailleurs, sauf
 lorsqu'il s'agit de l'équipe appelante.
@@ -2230,7 +2253,7 @@ réponse n'est pas bonne, l'équipe ne peut pas relancer.
 { "answer": "Cyrano de Bergerac" }
 ```
 
-**Response** (200): `{ "correct": boolean, "message": string, ...GET /oie }`
+**Response** (200): `{ "correct": boolean, "finished": boolean, "message": string, ...GET /oie }`
 
 La réponse embarque le plateau complet, dans la forme de `GET /oie` : l'interface
 n'a pas à recharger.
@@ -2239,8 +2262,16 @@ Les tentatives sont **illimitées** et toutes journalisées. La comparaison igno
 la casse, les accents, les ligatures, les espaces et la ponctuation, exactement
 comme les mots de passe d'énigme.
 
+**Question finale (case 63)** : quand l'équipe est en case 63, la question en
+attente est la question finale. Une bonne réponse pose `finishedAt` et
+`finishRank`, marque l'intrigue associée (`enigmaId` du plateau) comme résolue
+dans `TeamEnigmaProgress` et incrémente `solvedEnigmasCount` : c'est désormais
+ici, et non plus au lancer, que la partie se gagne. `finished` vaut alors
+`true`. Les tentatives restent illimitées, et chacune est journalisée avec
+`detail.finalQuestion = true`.
+
 **Errors**:
-- `400` réponse vide, aucune question en attente, ou équipe déjà arrivée
+- `400` réponse vide, aucune question en attente, ou équipe ayant déjà gagné
 - `409` la case n'a pas encore de question configurée
 - `409` une autre écriture a eu lieu entre-temps (deux membres simultanés)
 
@@ -2253,33 +2284,63 @@ comme les mots de passe d'énigme.
 **Response** (200):
 ```json
 {
-  "dice": [4, 5],
-  "total": 9,
+  "dice": [1, 3],
+  "total": 4,
   "from": 5,
-  "to": 14,
+  "to": 9,
+  "reachedFinish": false,
+  "awaitsFinalQuestion": false,
   "finished": false,
+  "bonusRoll": true,
   "effects": [
     { "kind": "avance", "from": 5, "to": 9 },
-    { "kind": "oie", "at": 9, "total": 9 },
-    { "kind": "avance", "from": 9, "to": 14 }
+    { "kind": "oie", "at": 9 }
   ],
-  "journal": ["Les Bachibouzouks tombent sur l'acteur et son oie en case 9 et rejouent"],
-  "releases": ["Les Bachibouzouks repêchent Les Orcades du puits"],
+  "journal": ["Les Bachibouzouks tombent sur l'acteur et son oie en case 9 et relance les dés"],
+  "releases": [],
   "...": "puis tout le contenu de GET /oie"
 }
 ```
 
-`kind` vaut `avance`, `oie`, `rebond`, `metteur_en_scene`, `mort`, `puits`,
-`prison`, `loge`, `souffleur` ou `arrivee`.
+`kind` vaut `avance`, `oie`, `pont`, `rebond`, `metteur_en_scene`, `mort`, `puits`,
+`prison`, `loge`, `souffleur` ou `arrivee`. Un lancer produit **une seule
+avance** (ou un rebond), puis l'effet de la case atteinte : plus aucun
+enchaînement.
 
-Arriver en case 63 marque l'énigme associée (`enigmaId` du plateau) comme
-résolue dans `TeamEnigmaProgress`, avec `solvedAt`, et incrémente
-`solvedEnigmasCount` de l'équipe : le classement et les statistiques existants
-la comptent sans modification.
+- **Oie** (9, 18, 27, 36, 45, 54) : l'équipe s'arrête sur l'oie, sans question,
+  et gagne un lancer gratuit (`bonusRoll: true`, `me.bonusRolls` incrémenté).
+  Le lancer suivant consomme ce bonus au lieu du quota du jour. L'ancienne
+  règle (rejouer le même total) et son correctif du premier neuf (6-3 → 26,
+  5-4 → 53) sont supprimés. L'effet `oie` ne porte plus de champ `total`.
+- **Pont** (6, 23, 47) : on ne s'y arrête pas, l'équipe passe directement en
+  face (12, 30, 53), dont la question l'attend. `to` est la case d'en face ;
+  l'effet `pont` suit l'`avance`. Une équipe délogée envoyée sur un pont le
+  traverse aussi.
+- **Puits** (31) : trois jours sans lancer (`nextRollAllowedDay` = J+4), levés
+  plus tôt si une autre équipe y tombe. Il ne bloque plus sans échéance.
+- **Rebond** : l'effet porte `manques`, le nombre d'essais manqués au 63 celui-ci
+  compris. Chaque dépassement compte, y compris un rebond bien avant la fin :
+  au troisième, c'est `metteur_en_scene` au lieu d'un rebond.
+- **Case occupée** : si une ou plusieurs équipes se trouvent sur la case
+  d'arrivée, elles partent sur la case d'où vient l'équipe qui lance (`from`),
+  et l'effet de cette case s'applique à elles (puits, prison, loge, oie...).
+  Elles doivent répondre à la question de leur nouvelle case, perdent un lancer
+  d'oie en attente, et sont libérées de toute pénalité liée à la case quittée :
+  c'est ainsi qu'une équipe sort du puits ou de la prison. Pas de réaction en
+  chaîne. Ni la case 0 ni la case 63 ne délogent personne, une équipe ayant
+  gagné non plus, ni un rebond qui ramène l'équipe sur sa propre case.
+  `releases` raconte ces délogements et leurs suites, en phrases prêtes à
+  afficher ; chacun est journalisé (`deplacement`, ou `liberation` pour le
+  puits et la prison).
+- **Case 63** : `reachedFinish: true`. Si la case 63 porte une question
+  (le cas normal), `awaitsFinalQuestion: true`, `finished: false`, et la
+  question finale passe en attente : voir `POST /oie/answer`. Sur un plateau
+  sans question finale configurée, `finished: true` et l'intrigue est résolue
+  dès l'arrivée, comme avant. Les lancers dus par une oie sont remis à zéro.
 
-**Errors** (`400`, le message dit lequel) : question en attente, quota du jour
-épuisé, tour passé (loge ou prison), équipe dans le puits, équipe déjà arrivée.
-`409` si un autre membre de l'équipe a lancé au même instant.
+**Errors** (`400`, le message dit lequel) : question en attente (ou question
+finale), quota du jour épuisé, tour passé (loge, prison ou puits), équipe ayant
+déjà gagné. `409` si un autre membre de l'équipe a lancé au même instant.
 
 ### POST /oie/prompter
 
@@ -2354,6 +2415,7 @@ hors de 1..20. `403` sans droits d'administration.
       "inPrison": false,
       "nextRollAllowedDay": "2027-01-15",
       "rollsRemainingToday": 1,
+      "bonusRolls": 0,
       "totalRolls": 7,
       "wrongAnswers": 4,
       "hintsUsed": 1,
@@ -2385,6 +2447,9 @@ L'opération est tracée dans le journal du plateau.
 | 2026-11-11 | GET /hints/{enigmaId}, POST /hints/{enigmaId}/request, POST /enigmas, PUT /enigmas/{id}, PUT /admin/enigmas/{id} | Ouverture des indices par énigme : deux champs sur l'énigme, `hintsEnabled` (booléen, fermé par défaut) et `hintsAvailableFrom` (AAAA-MM-JJ, jour de Paris, `null` ou `""` pour l'effacer). `GET /hints` renvoie `hintsAvailable` ; la demande d'indice répond 403 tant que c'est fermé | Feature + Breaking | **Breaking** : une énigme sans réglage n'offre plus d'indice. Les énigmes existantes doivent être ouvertes depuis l'admin. Une date mal formée est refusée en 400 |
 | 2026-09-12 | GET /oie, POST /oie/answer, POST /oie/roll, POST /oie/prompter | Énigme du jeu de l'oie : plateau partagé par toutes les équipes (édition 2027) | Feature | Une des vingt énigmes se joue sur un plateau commun ; arriver en case 63 marque l'énigme résolue dans `TeamEnigmaProgress`, donc le classement existant la compte |
 | 2026-09-12 | GET/PUT /admin/oie/board, GET /admin/oie/teams, POST /admin/oie/teams/{teamId}/reset | Administration du plateau : 63 questions, quota de lancers, état des équipes | Feature | Le quota `rollsPerDay` est modifiable à tout moment, sans déploiement |
+| 2026-10-10 | GET /oie, POST /oie/roll, POST /oie/answer, GET /admin/oie/teams | Règles v2 après les essais des organisateurs : l'oie fait relancer les dés (lancer gratuit, `bonusRolls`), règle du premier neuf supprimée, puits à trois tours, question finale en case 63 | **Breaking** | Effet `oie` sans `total` ; `finished` d'un lancer ne signifie plus « en 63 » mais « intrigue gagnée » (voir `reachedFinish`, `awaitsFinalQuestion`) ; la victoire passe par `POST /oie/answer` ; nouveaux statuts `question_finale` et `relance_oie` |
+| 2026-10-25 | GET /oie, POST /oie/roll | Deuxième série d'essais : règle de la case occupée, fil limité aux mouvements (100 lignes), jour de reprise dans les messages de pénalité, compte des essais manqués au 63 | Feature | Effet `rebond` avec `manques` ; `releases` couvre désormais tous les délogements, pas seulement puits et prison |
+| 2026-10-25 | GET /oie, POST /oie/roll | Les ponts : 6 vers 12, 23 vers 30, 47 vers 53 | Feature | Nouveau type de case `pont` et nouvel effet `pont` ; les cases 6, 23 et 47 ne portent plus de question |
 | 2026-09-12 | POST /hints/{enigmaId}/request, GET /hints/{enigmaId} | Mode `queue` : la demande part en attente (202) et un worker extérieur la traite via `claude -p`, faute de clé d'API pour l'essai. Ajout de `status` et `failureReason` aux demandes. Le coût en points passe à 0 et n'affecte plus `totalPoints` | Feature + Breaking | **Breaking** : `POST /hints/.../request` peut désormais répondre 202 sans indice ; le client doit lire `status` et interroger `GET /hints/{enigmaId}`. `hintsPenalty` disparaît de GET /teams/stats |
 | 2026-09-12 | POST /hints/{enigmaId}/request, GET /hints/{enigmaId}, GET /admin/hints/requests | Nouvelle récupération d'indices : l'équipe décrit son avancement, un modèle choisit l'indice pré-écrit adapté. Remplace POST /hints/{enigmaId}/use et GET /admin/hints/usage, supprimés | Feature + Breaking | **Breaking** : les deux anciens endpoints n'existent plus ; `hintPdfUrl` et `hasHint` disparaissent de l'énigme au profit de `hintsCount`, `hintUsed`/`hintUsedAt` de la progression au profit de `hintsRequested`/`lastHintAt`. La pénalité de points, jusqu'ici annoncée mais jamais appliquée, est désormais déduite de `totalPoints` dans GET /teams/stats |
 | 2026-01-02 | GET /admin/attempts | Fixed pagination bug (Scan → Query) + added stats object + removed legacy count/total fields | Bug Fix + Breaking | **Critical fix**: Now returns ALL attempts (not just 1MB), shows correct success counts; **Breaking**: Removed `count` and `total` root fields - use `stats.totalAttempts` instead; **Frontend must use stats object for all statistics** |

@@ -11,7 +11,9 @@ import { dynamoDb, TEAMS_TABLE } from '../../utils/dynamodb';
 import { isTestTeam } from '../../utils/testTeams';
 import { OieBoardConfig, OieTeamState } from '../../types/oie';
 import {
+  bonusRolls,
   daysBetween,
+  FINISH_SQUARE,
   findSquare,
   rollsRemaining,
   rollRefusal,
@@ -19,7 +21,7 @@ import {
   squareHasQuestion,
   teamStatus,
 } from './rules';
-import { getAllTeamStates, getRecentEvents } from './store';
+import { getAllTeamStates, getFeedEvents } from './store';
 
 /** Board as the players see it: no question, no answer, no hint. */
 export function publicBoard(board: OieBoardConfig) {
@@ -53,9 +55,13 @@ export function myView(
     flavor: square.flavor,
     status: teamStatus(state, today, board.rollsPerDay),
     questionPending: state.questionPending,
+    /** La question en attente est la derniere du plateau, celle qui fait gagner. */
+    finalQuestionPending: state.questionPending && state.position === FINISH_SQUARE,
     // La question n'est envoyee que tant qu'elle est en attente : une fois
     // repondue, elle n'a plus de raison de circuler.
     question: state.questionPending ? square.question : undefined,
+    /** Lancers dus par les oies, qui ne coutent rien au quota du jour. */
+    bonusRolls: bonusRolls(state),
     hintAvailable,
     hintRequested,
     hint: hintRequested ? square.hint : undefined,
@@ -113,7 +119,7 @@ export async function buildBoardView(
   const [states, names, events] = await Promise.all([
     getAllTeamStates(),
     getTeamNames(),
-    getRecentEvents(30),
+    getFeedEvents(100),
   ]);
 
   // L'etat que l'appelant vient de calculer prime sur celui relu par le scan.

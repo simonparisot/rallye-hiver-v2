@@ -92,8 +92,18 @@ describe('Jeu de l\'oie', () => {
 
       expect(reponse.data.me.position).toBeGreaterThanOrEqual(0);
       expect(reponse.data.me.position).toBeLessThanOrEqual(63);
-      expect(['question_en_attente', 'peut_lancer', 'quota_epuise', 'tour_passe', 'dans_le_puits', 'arrivee'])
-        .toContain(reponse.data.me.status);
+      expect([
+        'question_en_attente',
+        'question_finale',
+        'relance_oie',
+        'peut_lancer',
+        'quota_epuise',
+        'tour_passe',
+        'dans_le_puits',
+        'arrivee',
+      ]).toContain(reponse.data.me.status);
+      expect(reponse.data.me.bonusRolls).toEqual(expect.any(Number));
+      expect(reponse.data.me.finalQuestionPending).toEqual(expect.any(Boolean));
     });
 
     test('montre la position des équipes et le fil d\'événements', async () => {
@@ -214,6 +224,14 @@ describe('Jeu de l\'oie', () => {
 
     avecAdmin('un second lancer est refusé, et pour le motif annoncé', async () => {
       const plateau = await joueur.get('/oie');
+
+      // Un premier lancer de 9 depuis la case 0 tombe sur l'oie, qui doit un
+      // lancer gratuit : le second est alors autorisé, et c'est la règle.
+      if (plateau.data.me.bonusRolls > 0) {
+        expect(plateau.data.me.status).toBe('relance_oie');
+        expect(plateau.data.me.canRoll).toBe(true);
+        return;
+      }
 
       // Après le lancer précédent, deux motifs de refus peuvent s'appliquer :
       // la question de la case d'arrivée, et le quota du jour. Plutôt que de

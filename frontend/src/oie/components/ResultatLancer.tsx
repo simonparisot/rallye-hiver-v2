@@ -49,6 +49,18 @@ const ResultatLancer: React.FC<ResultatLancerProps> = ({ resultat, onFermer }) =
       </ul>
     )}
 
+    {resultat.bonusRoll && (
+      <p className="oie-resultat-relance" data-testid="oie-resultat-relance">
+        L'acteur sur son oie vous rend la main : relancez les dés.
+      </p>
+    )}
+
+    {resultat.awaitsFinalQuestion && (
+      <p className="oie-resultat-arrivee" data-testid="oie-resultat-question-finale">
+        Vous êtes en case 63. Une dernière question vous sépare de l'intrigue.
+      </p>
+    )}
+
     {resultat.finished && (
       <p className="oie-resultat-arrivee" data-testid="oie-resultat-arrivee">
         Vous êtes arrivés en case 63. Rideau.

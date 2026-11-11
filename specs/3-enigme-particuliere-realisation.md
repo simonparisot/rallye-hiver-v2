@@ -13,12 +13,13 @@ production.
 
 Une des vingt énigmes de l'édition 2027 se joue sur un plateau de jeu de l'oie
 de 63 cases, **commun à toutes les équipes**. C'est ce partage qui fait exister
-les interactions du jeu : celle qui tombe dans le puits y reste jusqu'à ce
-qu'une autre l'y rejoigne et la repêche.
+les interactions du jeu : celle qui tombe dans le puits ou en prison peut en
+être délivrée plus tôt par une autre qui l'y rejoint.
 
 Chaque équipe lance deux dés une fois par jour, répond à la question de la case
 où elle arrive, et ne retrouve le droit de lancer qu'une fois la bonne réponse
-donnée. Arriver en case 63 résout l'énigme.
+donnée. En case 63 l'attend une dernière question : c'est sa réponse, celle de
+l'énigme, qui résout l'énigme.
 
 Le thème est celui de l'édition : le théâtre. L'oie devient l'acteur sur son
 oie, l'hôtel devient la loge, la mort devient la répétition.
@@ -46,13 +47,14 @@ sont acceptés indifféremment.
 
 | Case | Nom | Effet |
 |---|---|---|
-| 9, 18, 27, 36, 45, 54 | L'acteur sur son oie | On avance à nouveau du même total, immédiatement, sans consommer de lancer et sans question sur la case oie |
+| 9, 18, 27, 36, 45, 54 | L'acteur sur son oie | On s'y arrête, sans question, et on relance les dés : un lancer gratuit, qui ne coûte rien au quota du jour |
+| 6, 23, 47 | Le pont | Pas de question sur le pont : on passe directement en 12, 30 ou 53, dont la question attend l'équipe (ajouté le 2026-10-25) |
 | 14, 39, 50, 60 | Le souffleur | La question dispose d'un indice, que l'équipe peut demander |
 | 19 | La loge | On passe un tour |
-| 31 | Le puits | On y reste jusqu'à ce qu'une autre équipe y tombe |
-| 52 | La prison | On passe deux tours, sauf si une autre équipe y tombe |
+| 31 | Le puits | On passe trois tours, sauf si une autre équipe y tombe et vous en déloge |
+| 52 | La prison | On passe deux tours, sauf si une autre équipe y tombe et vous en déloge |
 | 58 | La répétition | Retour à la case 0 |
-| 63 | Rideau | Arrivée, à atteindre pile |
+| 63 | Rideau | Arrivée, à atteindre pile ; la question finale y attend |
 
 ### La fin de partie
 
@@ -61,11 +63,27 @@ depuis la 63, et les règles de la case d'arrivée s'appliquent. À la **troisi�
 fois qu'une équipe rate la 63 pile, le metteur en scène la place directement en
 63.
 
+Chaque dépassement compte, même un rebond survenu bien avant d'approcher de la
+fin. Aux essais du 2026-10-25, une équipe en 61 a été placée en 63 dès son
+« premier » essai, ce qui a été pris pour un bug. Le journal du plateau de test
+l'a confirmé : c'était son troisième dépassement, après deux rebonds dans la
+minute précédente (retour en 59, puis en 61). Même chose pour une équipe venue
+de la 57. Sans ces rebonds, 61 + 7 recule en 58, la répétition, et renvoie en
+case 0. Le fil et la carte de l'équipe affichent désormais le compte (« 63
+manqué 2 fois sur 3 »).
+
+Arriver en 63, pile ou par le metteur en scène, ne gagne rien par soi-même : la
+**question finale** de la case 63 passe en attente. Sa réponse est celle de
+l'énigme. Les tentatives sont illimitées et toutes journalisées, comme sur le
+reste du plateau.
+
 ### Le classement
 
-Arriver en 63 écrit un `TeamEnigmaProgress` `solved: true` avec `solvedAt` sur
-l'énigme désignée, et incrémente `solvedEnigmasCount` de l'équipe : le classement
-et les statistiques existants la comptent sans traitement particulier.
+La bonne réponse à la question finale écrit un `TeamEnigmaProgress`
+`solved: true` avec `solvedAt` sur l'énigme désignée, et incrémente
+`solvedEnigmasCount` de l'équipe : le classement et les statistiques existants
+la comptent sans traitement particulier. Le rang d'arrivée est celui de la
+bonne réponse finale, pas celui de l'arrivée en 63.
 
 Le mode d'attribution des points n'étant pas défini, il n'est pas inventé. Tout
 ce qui permettra d'appliquer n'importe quelle règle plus tard est enregistré :
@@ -81,27 +99,26 @@ complet reste dans `oie-events`.
 La spécification ne tranche pas ces points. Voici ce qui est implémenté ; tout
 est modifiable, la plupart en une ligne du module de règles.
 
-### 1. La case de l'oie fait rejouer du même total
+### 1. La case de l'oie fait relancer les dés — tranché le 2026-10-10
 
-Règle classique : on avance à nouveau de la même somme, tout de suite, sans
-consommer de lancer, et la question posée est celle de la case d'arrivée finale.
-Aucune question n'est jamais posée sur une case oie, puisqu'on ne s'y arrête pas.
+Première version : la règle classique, on avançait à nouveau du même total, tout
+de suite. Aux essais, les organisateurs attendaient autre chose de « rejouer » :
+un nouveau lancer. C'est désormais la règle. L'équipe s'arrête sur l'oie, sans
+question, et gagne un lancer (`bonusRolls`) qui ne coûte rien au quota du jour
+et qu'elle joue quand elle veut. Un lancer ne fait donc plus qu'un seul
+déplacement, jamais une chaîne.
 
-### 2. Le premier neuf ne s'enchaîne pas (ajout par rapport au brief)
+### 2. La règle du premier neuf est supprimée — tranché le 2026-10-10
 
-Depuis la case 0, un total de 9 tombe sur l'oie de la case 9, qui renvoie neuf
-cases plus loin, sur une autre oie, et ainsi de suite jusqu'à la 63. **L'énigme
-était gagnée au premier lancer, une fois sur neuf.** Constaté au tout premier
-essai sur le bac à sable : dés 4 et 5, arrivée immédiate.
+Avec l'ancienne règle de l'oie, un 9 depuis la case 0 enchaînait 9, 18, 27, 36,
+45, 54 puis 63 : l'énigme était gagnée au premier lancer, une fois sur neuf. La
+première version reprenait le correctif classique (un premier 9 fait de 6 et 3
+mène en 26, de 5 et 4 en 53). Aux essais, ce saut sans explication vers la case
+26 a été pris pour un bug.
 
-Le jeu de l'oie classique porte depuis toujours la règle qui répare cela : un
-premier neuf fait de 6 et 3 mène en case 26, un premier neuf fait de 5 et 4 mène
-en case 53, et la chaîne des oies ne s'applique pas. Elle est reprise ici,
-attachée à la case 0 plutôt qu'au nombre de lancers, pour qu'un retour à la case
-0 par la répétition ne rouvre pas le raccourci.
-
-**À valider :** c'est une règle que le brief ne demandait pas. La seule autre
-issue serait d'accepter qu'une équipe sur neuf gagne l'énigme du premier coup.
+Avec l'oie qui fait relancer, l'enchaînement n'existe plus : un 9 depuis la
+case 0 s'arrête sur l'oie de la case 9 et donne un nouveau lancer, quelconque.
+Le correctif n'a plus d'objet et a été retiré.
 
 ### 3. La loge fait perdre un jour de lancer, la prison deux
 
@@ -118,22 +135,28 @@ les lancers restants du jour plus ceux du lendemain, soit plus qu'un tour. Il
 faudra choisir entre garder la journée comme unité de peine, ou compter en
 lancers.
 
-### 4. Le puits laisse répondre mais pas lancer
+### 4. Le puits fonctionne comme la prison, en trois tours — tranché le 2026-10-10
 
-Une équipe dans le puits peut répondre à la question de sa case ; elle ne peut
-pas lancer tant qu'une autre équipe n'y est pas tombée. Celle qui arrive libère
-celle qui s'y trouvait et prend sa place. Même mécanique pour la prison, qui a
-en plus une durée.
+Première version : une équipe dans le puits y restait jusqu'à ce qu'une autre y
+tombe, sans échéance. Les organisateurs ont relevé qu'avec peu d'équipes en jeu,
+c'était condamner quelqu'un. Le puits retient désormais trois jours (D+4), et
+une autre équipe qui y tombe libère toujours celle qui s'y trouvait. Pendant la
+peine, l'équipe peut répondre à la question de sa case, pas lancer.
 
 Quand plusieurs motifs de refus s'appliquent en même temps (une question en
 attente et le puits, par exemple), c'est la question qui est annoncée en premier :
 c'est la seule chose que l'équipe puisse faire avancer.
 
-### 5. Ni la case 0, ni la 63, ni la 58 ne portent de question
+### 5. Ni la case 0, ni la 58, ni les oies ne portent de question ; la 63 si
 
-On ne s'arrête sur aucune des trois : la 0 est le départ, la 63 termine la
-partie, la 58 renvoie aussitôt à la 0. Les six cases oie non plus, pour la même
-raison. Il reste **55 questions** à écrire.
+On ne s'arrête ni sur la 0 (départ) ni sur la 58 (qui renvoie aussitôt à la 0).
+Sur une oie on s'arrête, mais seulement pour relancer : pas de question non plus.
+La 63 porte la **question finale**, ajoutée le 2026-10-10 à la demande des
+organisateurs : sa réponse est celle de l'énigme. Les trois ponts (6, 23, 47),
+ajoutés le 2026-10-25, n'en portent pas non plus. Il y a **53 questions** à
+écrire, dont celle-là. Celle du plateau d'essai est une devinette dont la
+réponse est « le souffleur » : le seul personnage du plateau qu'aucune autre
+question ne nomme, et celui qui a aidé l'équipe sur quatre cases.
 
 ### 6. Le souffleur est gratuit
 
@@ -141,15 +164,34 @@ Un bouton « Demander au souffleur », sans coût ni contrepartie. La demande es
 enregistrée (`hintedSquares`, et une ligne dans le journal), de sorte qu'un mode
 d'attribution des points pourra en tenir compte plus tard.
 
-### 7. L'arrivée ne pose pas de question
+### 7. La case occupée renvoie l'occupant d'où vient l'arrivant — ajouté le 2026-10-25
 
-Atteindre la 63 termine la partie immédiatement.
+Règle du jeu oubliée par la première version, relevée aux essais : quand une
+équipe arrive sur une case occupée, case spéciale ou non, l'équipe qui s'y
+trouvait part sur la case d'où vient l'arrivante. Choix faits pour les cas que
+la remarque laissait ouverts :
 
-### 8. Le rang d'arrivée est figé à l'arrivée
+- la case où part l'équipe délogée garde ses pouvoirs : le puits, la prison ou
+  la loge la retiennent, une oie lui donne un lancer ;
+- elle doit répondre à la question de sa nouvelle case, comme sur toute case où
+  l'on arrive ;
+- quitter sa case la libère de ce qui l'y retenait : c'est ainsi qu'on sort du
+  puits ou de la prison, désormais vers la case de l'arrivante plutôt que sur
+  place, ce qui est la règle classique du puits ; un lancer d'oie en attente
+  est perdu avec l'oie ;
+- toutes les équipes présentes partent, pas seulement la première ;
+- pas de réaction en chaîne : arriver délogée sur une case occupée ne déloge
+  personne à son tour ;
+- ni la case 0, d'où tout le monde part, ni la 63, où attendent les équipes
+  face à la question finale, ne délogent personne ; une équipe ayant gagné non
+  plus, ni un rebond qui ramène l'équipe sur sa propre case.
 
-`finishRank` est calculé au moment où l'équipe atteint la 63, en comptant celles
-déjà arrivées. Deux équipes qui arriveraient dans la même seconde pourraient en
-théorie recevoir le même rang ; `finishedAt` permet de le recalculer.
+### 8. Le rang d'arrivée est figé à la bonne réponse finale
+
+`finishRank` est calculé au moment où l'équipe répond juste à la question
+finale, en comptant celles qui l'ont fait avant elle. Deux équipes qui
+répondraient dans la même seconde pourraient en théorie recevoir le même rang ;
+`finishedAt` permet de le recalculer.
 
 ### 9. Les équipes de test sont masquées, sauf à elles-mêmes
 

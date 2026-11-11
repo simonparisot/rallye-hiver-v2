@@ -16,20 +16,36 @@ import {
 /** Last square of the board; it must be reached exactly. */
 export const FINISH_SQUARE = 63;
 
-/** L'acteur sur son oie: every 9 squares, one plays again. */
+/** L'acteur sur son oie: every 9 squares, one rolls the dice again. */
 export const OIE_SQUARES = [9, 18, 27, 36, 45, 54];
 
 /** Le souffleur: these questions come with a hint on request. */
 export const SOUFFLEUR_SQUARES = [14, 39, 50, 60];
+
+/**
+ * Les ponts : on ne s'y arrete pas, on passe directement sur la case d'en
+ * face, sans question sur le pont. C'est la question de la case d'arrivee qui
+ * attend l'equipe.
+ */
+export const BRIDGES: Record<number, number> = { 6: 12, 23: 30, 47: 53 };
 
 export const LOGE_SQUARE = 19;
 export const PUITS_SQUARE = 31;
 export const PRISON_SQUARE = 52;
 export const MORT_SQUARE = 58;
 
-/** Days of roll forfeited by the loge and by the prison. */
+/**
+ * Days of roll forfeited by the loge, the prison and the puits.
+ *
+ * The puits used to hold a team until another one fell on square 31. With few
+ * teams playing, that is not a setback, it is an elimination: nothing in the
+ * team's own hands could ever free it. It now works like the prison, three
+ * days instead of two, and the rescue by another team remains as a way out
+ * sooner rather than as the only way out.
+ */
 export const LOGE_SKIPPED_DAYS = 1;
 export const PRISON_SKIPPED_DAYS = 2;
+export const PUITS_SKIPPED_DAYS = 3;
 
 /**
  * At the third failure to land exactly on 63, "le metteur en scene" places the
@@ -37,32 +53,12 @@ export const PRISON_SKIPPED_DAYS = 2;
  */
 export const MAX_OVERSHOOTS = 3;
 
-/** Guards the oie chain: a roll can never resolve for ever. */
-const MAX_MOVE_ITERATIONS = 32;
-
-/**
- * Historical exception of the very first roll.
- *
- * From square 0, a total of 9 lands on an oie, which sends nine squares
- * further, onto another oie, and so on: 9, 18, 27, 36, 45, 54, 63. The game
- * would be won on the first throw, and a total of 9 comes up once in nine.
- * Verified on the sandbox before this exception existed: one roll, 4 and 5,
- * straight to square 63.
- *
- * The classic game has always carried the rule that fixes it: a first 9 made
- * of 6 and 3 goes to 26, a first 9 made of 5 and 4 goes to 53, and the oie
- * chain does not apply. It is kept here, keyed on the square rather than on
- * the number of rolls so that coming back to 0 through la mort cannot reopen
- * the same shortcut.
- */
-export const PREMIER_NEUF_6_3 = 26;
-export const PREMIER_NEUF_5_4 = 53;
-
 /** Type of a square, derived from its number alone. */
 export function squareType(squareNumber: number): OieSquareType {
   if (squareNumber === 0) return 'depart';
   if (squareNumber === FINISH_SQUARE) return 'arrivee';
   if (OIE_SQUARES.includes(squareNumber)) return 'oie';
+  if (BRIDGES[squareNumber] !== undefined) return 'pont';
   if (squareNumber === LOGE_SQUARE) return 'loge';
   if (squareNumber === PUITS_SQUARE) return 'puits';
   if (squareNumber === PRISON_SQUARE) return 'prison';
@@ -100,6 +96,26 @@ export function addDays(day: string, count: number): string {
   return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, '0')}-${String(
     shifted.getUTCDate()
   ).padStart(2, '0')}`;
+}
+
+/**
+ * A playing day as players read it, e.g. "mercredi 29 octobre".
+ *
+ * Penalty messages give the day the team rolls again rather than a count of
+ * days: "encore 4 jours" on the day of the fall into the puits, which costs
+ * three turns, read as a fourth turn. A date cannot be miscounted.
+ */
+const DAY_LABEL_FORMAT = new Intl.DateTimeFormat('fr-FR', {
+  timeZone: 'UTC',
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+});
+
+export function dayLabel(day: string): string {
+  const [year, month, date] = day.split('-').map((value) => parseInt(value, 10));
+  // Midi UTC, comme addDays : le jour affiche est celui de la chaine, partout.
+  return DAY_LABEL_FORMAT.format(new Date(Date.UTC(year, month - 1, date, 12)));
 }
 
 /** Whole days between two playing days (negative if `to` is in the past). */
@@ -146,123 +162,221 @@ export function rollDice(random: () => number = Math.random): [number, number] {
 // ==================== MOVE ====================
 
 /**
- * Resolves a roll from a position, chaining the oie squares and the rebound on
- * the finish square. Nothing here touches the other teams: the puits and the
- * prison are only reported, the handler decides who gets released.
+ * Resolves one roll from one position: the move, the rebound on the finish
+ * square, then the rule of the square landed on. Exactly one roll, never a
+ * chain.
+ *
+ * L'acteur sur son oie grants another roll rather than replaying the same
+ * total. That is what the organisers expect from "rejouer", and it also closes
+ * a hole the traditional rule carries: with the same total replayed, a nine
+ * from square 0 walks the six oies, 9, 18, 27, 36, 45, 54, and wins the game
+ * on the first throw, once in nine games. The classic game patches that with
+ * two arbitrary destinations (a first nine of 6-3 goes to 26, of 5-4 to 53);
+ * rolling again makes the patch pointless, so it is gone, and with it the
+ * unexplainable jump to square 26.
+ *
+ * Nothing here touches the other teams: who stands on the square landed on,
+ * and where it goes, is decided by teamsToDislodge and resolveDislodge below.
  *
  * @param startPosition where the team stands before the roll
  * @param total sum of the two dice
  * @param overshootCount failures to land exactly on 63 so far
- * @param dice the two dice, needed only for the first-nine exception
  */
 export function resolveMove(
   startPosition: number,
   total: number,
-  overshootCount: number,
-  dice?: [number, number]
+  overshootCount: number
 ): OieMoveResult {
   const effects: OieMoveEffect[] = [];
-  let position = startPosition;
-  let step = total;
-  let overshoots = overshootCount;
-  let finished = false;
-  let inPuits = false;
-  let inPrison = false;
-  let skippedDays = 0;
+  const result: OieMoveResult = {
+    position: startPosition,
+    finished: false,
+    overshootCount,
+    inPuits: false,
+    inPrison: false,
+    skippedDays: 0,
+    bonusRoll: false,
+    effects,
+  };
 
-  // Exception du premier neuf : sans elle, un lancer sur neuf gagne la partie
-  // d'un coup depuis la case 0, en enchainant les six cases de l'oie.
-  if (startPosition === 0 && total === 9) {
-    const arrivee = dice && (dice[0] === 6 || dice[0] === 3) ? PREMIER_NEUF_6_3 : PREMIER_NEUF_5_4;
-    effects.push({ kind: 'avance', from: 0, to: arrivee });
-    return {
-      position: arrivee,
-      finished: false,
-      overshootCount: overshoots,
-      inPuits: false,
-      inPrison: false,
-      skippedDays: 0,
-      effects,
-    };
+  const target = startPosition + total;
+
+  if (target > FINISH_SQUARE) {
+    result.overshootCount += 1;
+
+    if (result.overshootCount >= MAX_OVERSHOOTS) {
+      // Le metteur en scene met fin a l'agonie de la fin de partie.
+      effects.push({ kind: 'metteur_en_scene', from: startPosition, to: FINISH_SQUARE });
+      result.position = FINISH_SQUARE;
+      result.finished = true;
+      return result;
+    }
+
+    result.position = 2 * FINISH_SQUARE - target;
+    effects.push({
+      kind: 'rebond',
+      from: startPosition,
+      to: result.position,
+      depassement: target - FINISH_SQUARE,
+      // Le compte est dans le message : un rebond est un essai manque, et
+      // sans le dire, le metteur en scene du troisieme semble tomber du ciel.
+      manques: result.overshootCount,
+    });
+  } else {
+    result.position = target;
+    effects.push({ kind: 'avance', from: startPosition, to: result.position });
   }
 
-  for (let iteration = 0; iteration < MAX_MOVE_ITERATIONS; iteration += 1) {
-    const target = position + step;
+  // La regle de la case atteinte s'applique aussi bien a une avance qu'a un
+  // rebond : reculer sur le puits y fait tomber tout autant.
+  applySquare(result);
+  return result;
+}
 
-    if (target > FINISH_SQUARE) {
-      overshoots += 1;
+/**
+ * Applies the rule of the square `result.position`, in place: effect, penalty,
+ * extra roll, return to square 0. Shared by the team that rolls and by the
+ * team it dislodges, so that a square behaves the same whoever lands on it.
+ */
+function applySquare(result: OieMoveResult): void {
+  const { effects } = result;
 
-      if (overshoots >= MAX_OVERSHOOTS) {
-        // Le metteur en scene met fin a l'agonie de la fin de partie.
-        effects.push({ kind: 'metteur_en_scene', from: position, to: FINISH_SQUARE });
-        position = FINISH_SQUARE;
-        finished = true;
-        break;
-      }
+  switch (squareType(result.position)) {
+    case 'arrivee':
+      effects.push({ kind: 'arrivee', at: result.position });
+      result.finished = true;
+      break;
 
-      const rebound = 2 * FINISH_SQUARE - target;
-      effects.push({
-        kind: 'rebond',
-        from: position,
-        to: rebound,
-        depassement: target - FINISH_SQUARE,
-      });
-      position = rebound;
-    } else {
-      effects.push({ kind: 'avance', from: position, to: target });
-      position = target;
-    }
+    case 'oie':
+      // On relance les des, sans consommer de lancer du quota et sans question
+      // sur la case oie elle meme.
+      effects.push({ kind: 'oie', at: result.position });
+      result.bonusRoll = true;
+      break;
 
-    const type = squareType(position);
+    case 'mort':
+      effects.push({ kind: 'mort', from: result.position, to: 0 });
+      result.position = 0;
+      break;
 
-    if (type === 'arrivee') {
-      effects.push({ kind: 'arrivee', at: position });
-      finished = true;
+    case 'pont': {
+      // On traverse sans s'arreter, puis la case d'en face s'applique comme si
+      // on y etait arrive directement. Les trois arrivees (12, 30, 53) sont des
+      // cases ordinaires : l'appel ne peut pas boucler.
+      const from = result.position;
+      result.position = BRIDGES[from];
+      effects.push({ kind: 'pont', from, to: result.position });
+      applySquare(result);
       break;
     }
 
-    if (type === 'oie') {
-      // On rejoue du meme total, tout de suite, sans consommer de lancer et
-      // sans question sur la case oie elle meme.
-      effects.push({ kind: 'oie', at: position, total });
-      step = total;
-      continue;
-    }
-
-    if (type === 'mort') {
-      effects.push({ kind: 'mort', from: position, to: 0 });
-      position = 0;
+    case 'puits':
+      effects.push({ kind: 'puits', at: result.position });
+      result.inPuits = true;
+      result.skippedDays = PUITS_SKIPPED_DAYS;
       break;
-    }
 
-    if (type === 'puits') {
-      effects.push({ kind: 'puits', at: position });
-      inPuits = true;
+    case 'prison':
+      effects.push({ kind: 'prison', at: result.position });
+      result.inPrison = true;
+      result.skippedDays = PRISON_SKIPPED_DAYS;
       break;
-    }
 
-    if (type === 'prison') {
-      effects.push({ kind: 'prison', at: position });
-      inPrison = true;
-      skippedDays = PRISON_SKIPPED_DAYS;
+    case 'loge':
+      effects.push({ kind: 'loge', at: result.position });
+      result.skippedDays = LOGE_SKIPPED_DAYS;
       break;
-    }
 
-    if (type === 'loge') {
-      effects.push({ kind: 'loge', at: position });
-      skippedDays = LOGE_SKIPPED_DAYS;
+    case 'souffleur':
+      effects.push({ kind: 'souffleur', at: result.position });
       break;
-    }
 
-    if (type === 'souffleur') {
-      effects.push({ kind: 'souffleur', at: position });
+    default:
       break;
-    }
-
-    break;
   }
+}
 
-  return { position, finished, overshootCount: overshoots, inPuits, inPrison, skippedDays, effects };
+// ==================== CASE OCCUPEE ====================
+
+/**
+ * Squares where any number of teams may stand together. Square 0 is where
+ * every team starts; square 63 holds the teams facing the final question and
+ * the winners, and nobody is sent back from the finish.
+ */
+export function isSharedSquare(squareNumber: number): boolean {
+  return squareNumber === 0 || squareNumber === FINISH_SQUARE;
+}
+
+/**
+ * Teams dislodged by a team that has just landed on `to` coming from `from`.
+ *
+ * Rule of the game: whoever stood on the square is sent to the square the
+ * newcomer came from. That covers the puits and the prison too: the team held
+ * there is freed by being sent away, which is the classic rule of the puits.
+ * Nothing happens when the newcomer did not actually move (a rebound can bring
+ * it back to its own square), nor on a shared square.
+ */
+export function teamsToDislodge(
+  states: OieTeamState[],
+  arrivingTeamId: string,
+  from: number,
+  to: number
+): OieTeamState[] {
+  if (from === to || isSharedSquare(to)) return [];
+  return states.filter(
+    (other) => other.teamId !== arrivingTeamId && other.position === to && !other.finishedAt
+  );
+}
+
+/**
+ * Where a dislodged team ends up, and what the square does to it.
+ *
+ * The square it is sent to keeps all its powers: sent onto the puits, it falls
+ * in; onto an oie, it gets the extra roll. It never sets off a chain, though:
+ * a dislodged team that lands where another one stands does not dislodge it in
+ * turn, otherwise one roll could reshuffle the whole board.
+ */
+export function resolveDislodge(to: number): OieMoveResult {
+  const result: OieMoveResult = {
+    position: to,
+    finished: false,
+    overshootCount: 0, // sans objet ici, l'appelant garde celui de l'equipe
+    inPuits: false,
+    inPrison: false,
+    skippedDays: 0,
+    bonusRoll: false,
+    effects: [],
+  };
+  applySquare(result);
+  return result;
+}
+
+/**
+ * New state of a dislodged team.
+ *
+ * Leaving its square ends whatever held it there (puits, prison, loge): only
+ * the square it is sent to counts from now on. Its pending oie roll goes too,
+ * since it belonged to the oie it has left. And it must answer the question of
+ * its new square, as on any square a team arrives on.
+ */
+export function dislodgedState(
+  state: OieTeamState,
+  outcome: OieMoveResult,
+  hasQuestion: boolean,
+  today: string,
+  now: string
+): OieTeamState {
+  return {
+    ...state,
+    position: outcome.position,
+    questionPending: hasQuestion,
+    inPuits: outcome.inPuits,
+    inPrison: outcome.inPrison,
+    bonusRolls: outcome.bonusRoll ? 1 : 0,
+    nextRollAllowedDay:
+      outcome.skippedDays > 0 ? addDays(today, outcome.skippedDays + 1) : today,
+    updatedAt: now,
+  };
 }
 
 // ==================== TEAM STATE ====================
@@ -275,6 +389,7 @@ export function initialTeamState(teamId: string, today: string, now: string): Oi
     questionPending: false,
     inPuits: false,
     inPrison: false,
+    bonusRolls: 0,
     nextRollAllowedDay: today,
     rollsUsedToday: 0,
     rollsDay: today,
@@ -298,6 +413,11 @@ export function rollsRemaining(state: OieTeamState, today: string, rollsPerDay: 
   return Math.max(0, rollsPerDay - rollsUsedOn(state, today));
 }
 
+/** Rolls owed by the oie squares, never negative whatever is stored. */
+export function bonusRolls(state: OieTeamState): number {
+  return Math.max(0, state.bonusRolls || 0);
+}
+
 /** Why the team cannot roll right now, or null when it can. */
 export function rollRefusal(
   state: OieTeamState,
@@ -305,19 +425,28 @@ export function rollRefusal(
   rollsPerDay: number
 ): string | null {
   if (state.finishedAt) {
-    return 'Votre équipe est déjà arrivée en case 63.';
+    return 'Votre équipe a déjà remporté le jeu de l\'oie.';
   }
   if (state.questionPending) {
-    return 'Répondez d\'abord à la question de votre case.';
+    return state.position === FINISH_SQUARE
+      ? 'Répondez d\'abord à la question finale.'
+      : 'Répondez d\'abord à la question de votre case.';
   }
-  if (state.inPuits) {
-    return 'Vous êtes dans le puits : attendez qu\'une autre équipe y tombe pour vous repêcher.';
+  // Le lancer dû par une oie passe avant tout le reste : il est déjà gagné, ni
+  // le quota du jour ni une pénalité ne peuvent le reprendre. Une équipe ne
+  // peut d'ailleurs pas être sur une oie et punie en même temps, puisque c'est
+  // le lancer qui vient de l'amener sur l'oie qui le lui doit.
+  if (bonusRolls(state) > 0) {
+    return null;
   }
   if (daysBetween(today, state.nextRollAllowedDay) > 0) {
-    const remaining = daysBetween(today, state.nextRollAllowedDay);
+    const reprise = dayLabel(state.nextRollAllowedDay);
+    if (state.inPuits) {
+      return `Vous êtes au fond du puits : vous pourrez relancer le ${reprise}, ou plus tôt si une autre équipe y tombe et vous repêche.`;
+    }
     return state.inPrison
-      ? `Vous êtes en prison : encore ${remaining} jour(s) sans lancer.`
-      : `Vous passez un tour : encore ${remaining} jour(s) sans lancer.`;
+      ? `Vous êtes en prison : vous pourrez relancer le ${reprise}, ou plus tôt si une autre équipe s'y fait enfermer.`
+      : `Vous passez un tour : vous pourrez relancer le ${reprise}.`;
   }
   if (rollsRemaining(state, today, rollsPerDay) <= 0) {
     return 'Vous avez utilisé tous vos lancers du jour. Revenez demain.';
@@ -336,10 +465,16 @@ export function teamStatus(
   today: string,
   rollsPerDay: number
 ): OieTeamStatus {
+  // Le meme ordre que rollRefusal, pour que le statut affiche et le message de
+  // refus ne racontent jamais deux histoires differentes.
   if (state.finishedAt) return 'arrivee';
-  if (state.inPuits) return 'dans_le_puits';
-  if (state.questionPending) return 'question_en_attente';
-  if (daysBetween(today, state.nextRollAllowedDay) > 0) return 'tour_passe';
+  if (state.questionPending) {
+    return state.position === FINISH_SQUARE ? 'question_finale' : 'question_en_attente';
+  }
+  if (bonusRolls(state) > 0) return 'relance_oie';
+  if (daysBetween(today, state.nextRollAllowedDay) > 0) {
+    return state.inPuits ? 'dans_le_puits' : 'tour_passe';
+  }
   if (rollsRemaining(state, today, rollsPerDay) <= 0) return 'quota_epuise';
   return 'peut_lancer';
 }
@@ -358,8 +493,10 @@ export function findSquare(squares: OieSquare[], squareNumber: number): OieSquar
 
 /**
  * A question only awaits an answer when the square actually carries one.
- * Square 0 and square 63 have none, and an unconfigured square must not block
- * a team for ever.
+ * Square 0 has none, the oie squares and la mort are never stopped on, and an
+ * unconfigured square must not block a team for ever. Square 63 is the one
+ * exception worth naming: its question is the final one, and a board saved
+ * without it simply hands the enigma over on arrival, as before.
  */
 export function squareHasQuestion(square: OieSquare): boolean {
   return !!square.question && square.acceptedAnswers.length > 0;

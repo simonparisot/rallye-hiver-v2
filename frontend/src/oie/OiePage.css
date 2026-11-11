@@ -65,23 +65,170 @@
 
 /* ==================== Mise en page ==================== */
 
-.oie-grille {
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 1fr);
-  gap: 24px;
+/* Le plateau prend toute la largeur ; la carte de l'équipe, le classement et
+   le fil vivent dans un panneau masqué par défaut, ouvert par-dessus. */
+.oie-scene {
   max-width: 1280px;
   margin: 0 auto;
-  align-items: start;
 }
 
-.oie-colonne-action {
+/* La barre suit le défilement : le bouton du panneau, qui annonce ce que
+   l'équipe a à faire, ne quitte jamais l'écran. */
+.oie-barre {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  background: linear-gradient(var(--theatre-programme) 70%, transparent);
+}
+
+.oie-bouton-panneau {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border: var(--border-width-thin) var(--border-style) var(--theatre-salle);
+  border-radius: 6px;
+  background: var(--theatre-scene);
+  color: var(--theatre-salle);
+  font: inherit;
+  cursor: pointer;
+  box-shadow: var(--ombre-affiche);
+}
+
+.oie-bouton-panneau-textes {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+/* La flèche dit dans quel sens le panneau se déplie. */
+.oie-chevron {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.oie-bouton-panneau-titre {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--theatre-coulisse);
+}
+
+.oie-bouton-panneau-etat {
+  font-weight: 600;
+}
+
+/* Une action attend l'équipe : le bouton prend le rouge des gestes du jeu. */
+.oie-bouton-panneau-a-agir {
+  background: var(--theatre-tragedie);
+  border-color: var(--theatre-tragedie-sombre);
+  color: #fff;
+}
+
+.oie-bouton-panneau-a-agir .oie-bouton-panneau-titre { color: #fff; }
+
+/* Languette sur le bord droit de l'écran : toujours visible, elle montre
+   qu'un panneau se déplie de ce côté. */
+.oie-languette {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px;
+  border: var(--border-width-thin) var(--border-style) var(--theatre-salle);
+  border-right: none;
+  border-radius: 10px 0 0 10px;
+  background: var(--theatre-scene);
+  color: var(--theatre-salle);
+  font: inherit;
+  cursor: pointer;
+  box-shadow: -4px 0 14px rgba(0, 0, 0, 0.18);
+  transform: translateY(-50%);
+  transition: padding-right 0.15s ease;
+}
+
+.oie-languette[hidden] { display: none; }
+
+.oie-languette:hover { padding-right: 14px; }
+
+.oie-languette-texte {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.oie-languette-a-agir {
+  background: var(--theatre-tragedie);
+  border-color: var(--theatre-tragedie-sombre);
+  color: #fff;
+  animation: oie-appel 2.4s ease-in-out infinite;
+}
+
+@keyframes oie-appel {
+  0%, 100% { box-shadow: -4px 0 14px rgba(0, 0, 0, 0.18); }
+  50% { box-shadow: -4px 0 0 6px rgba(200, 40, 40, 0.25); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oie-languette-a-agir { animation: none; }
+  .oie-languette { transition: none; }
+}
+
+.oie-bouton-panneau:focus-visible,
+.oie-languette:focus-visible,
+.oie-panneau-fermer:focus-visible {
+  outline: 3px solid var(--theatre-dorure);
+  outline-offset: 2px;
+}
+
+/* Le panneau glisse par-dessus la droite du plateau, qui reste visible à
+   gauche : on voit son pion bouger après un lancer. */
+.oie-panneau {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  /* La carte d'action reste sous les yeux pendant qu'on parcourt le plateau :
-     c'est le seul endroit où l'on agit. */
-  position: sticky;
-  top: 16px;
+  width: min(440px, 100vw);
+  padding: 52px 16px 24px;
+  overflow-y: auto;
+  background: var(--theatre-programme);
+  border-left: var(--border-width-thick) var(--border-style) var(--theatre-salle);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.18);
+}
+
+.oie-panneau[hidden] { display: none; }
+
+.oie-panneau-fermer {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: var(--border-width-thin) var(--border-style) var(--theatre-filet);
+  border-radius: 50%;
+  background: var(--theatre-scene);
+  color: var(--theatre-salle);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
 }
 
 /* ==================== Plateau ==================== */
@@ -95,11 +242,34 @@
   overflow-x: auto;
 }
 
+/* Huit pistes de cases séparées par sept pistes de joints. Les joints entre
+   deux cases qui se suivent portent le chemin de la spirale ; les autres
+   restent vides, comme des murs, pour qu'on lise le sens du parcours. */
 .oie-plateau {
+  --oie-joint: 18px;
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  gap: 5px;
+  grid-template-columns: repeat(7, minmax(0, 1fr) var(--oie-joint)) minmax(0, 1fr);
+  grid-template-rows: repeat(7, auto var(--oie-joint)) auto;
   min-width: 360px;
+}
+
+/* Le chemin : une bande dorée qui relie deux cases consécutives par-dessus
+   le joint, et déborde un peu sous chacune pour paraître continue. */
+.oie-lien {
+  align-self: center;
+  justify-self: center;
+  background: var(--theatre-dorure);
+  border-radius: 2px;
+}
+
+.oie-lien-horizontal {
+  width: calc(100% + 4px);
+  height: 46%;
+}
+
+.oie-lien-vertical {
+  width: 46%;
+  height: calc(100% + 4px);
 }
 
 .oie-case {
@@ -116,6 +286,56 @@
   font-size: 0.68rem;
   line-height: 1.15;
   overflow: hidden;
+}
+
+/* Illustrations des cases. L'image remplit la case ; le numéro et le libellé
+   passent dans une pastille qui hérite du fond de la case, si bien que les
+   contrastes réglés plus bas pour chaque nature de case restent valables, et
+   que la couleur des cases spéciales reste lisible malgré l'image. */
+/* Le plateau a toute la largeur : la case garde la proportion des images. */
+.oie-case-illustree {
+  aspect-ratio: 4 / 3;
+  min-height: 72px;
+}
+
+@media (min-width: 901px) {
+  .oie-case-illustree .oie-case-numero { font-size: 1rem; }
+  .oie-case-illustree .oie-case-libelle { font-size: 0.68rem; }
+  .oie-case-illustree .oie-pion { font-size: 0.72rem; }
+}
+
+.oie-case-illustration {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.oie-case-illustree > :not(.oie-case-illustration) {
+  position: relative;
+  z-index: 1;
+}
+
+.oie-case-illustree .oie-case-numero,
+.oie-case-illustree .oie-case-libelle {
+  align-self: flex-start;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: inherit;
+}
+
+/* Le surlignage de ma case est une ombre intérieure : l'image la couvrirait.
+   Une couche au-dessus de tout la reprend telle quelle. */
+.oie-case-illustree::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  box-shadow: inherit;
+  pointer-events: none;
 }
 
 .oie-case-numero {
@@ -177,6 +397,14 @@
 .oie-case-oie .oie-case-libelle {
   color: var(--etat-resolu-texte);
 }
+
+/* Le pont fait avancer aussi : l'or, mais en pointillés, pour qu'on ne le
+   confonde pas avec l'oie. */
+.oie-case-pont {
+  border: 2px dashed var(--theatre-dorure);
+}
+
+.oie-case-pont .oie-case-libelle { color: var(--theatre-dorure-encre); }
 
 .oie-case-souffleur {
   background: var(--color-primary-green);
@@ -286,6 +514,25 @@
   font-size: 1.05rem;
   font-weight: 600;
   line-height: 1.4;
+}
+
+/* La derniere question du plateau : celle dont la reponse emporte l'enigme. */
+.oie-question-finale {
+  padding: 12px;
+  border: 1px solid var(--theatre-dorure-claire);
+  border-radius: 6px;
+}
+
+.oie-question-finale-annonce {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: var(--display-taille-mini, 22px);
+  font-weight: 400;
+  color: var(--theatre-dorure-claire);
+}
+
+.oie-question-finale .oie-question-texte {
+  font-size: 1.12rem;
 }
 
 .oie-question-saisie {
@@ -411,6 +658,16 @@
   font-size: 0.88rem;
 }
 
+/* Lancer du par une oie : une bonne nouvelle, pas un blocage. */
+.oie-relance-due {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--theatre-dorure-claire);
+  border-radius: 4px;
+  background: var(--etat-vierge-fond);
+  font-size: 0.88rem;
+}
+
 .oie-attente {
   margin: 0;
   font-size: 0.9rem;
@@ -523,6 +780,13 @@
   color: var(--theatre-dorure-claire);
 }
 
+.oie-resultat-relance {
+  margin: 12px 0 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--theatre-dorure-claire);
+}
+
 /* ==================== Classement et fil ==================== */
 
 .oie-colonne-laterale {
@@ -587,9 +851,7 @@
 /* ==================== Téléphone ==================== */
 
 @media (max-width: 900px) {
-  .oie-grille { grid-template-columns: minmax(0, 1fr); }
-  .oie-colonne-action { position: static; }
-  .oie-plateau { min-width: 420px; }
+  .oie-plateau { min-width: 420px; --oie-joint: 12px; }
   .oie-case { min-height: 54px; }
 }
 
@@ -599,6 +861,7 @@
   /* Sous cette largeur le libellé ne tient plus : la couleur et l'info-bulle
      portent seules la nature de la case. */
   .oie-case-libelle { display: none; }
-  .oie-plateau { min-width: 340px; gap: 4px; }
+  .oie-plateau { min-width: 340px; --oie-joint: 7px; }
   .oie-case { min-height: 46px; }
+  .oie-case-illustree { min-height: 50px; }
 }
