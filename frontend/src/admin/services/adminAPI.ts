@@ -468,6 +468,34 @@ export const adminHintsAPI = {
   },
 };
 
+// Messages servis au hasard après un mauvais mot de passe
+export interface WrongPasswordMessagesSettings {
+  messages: string[];
+  isDefault: boolean;
+  updatedAt: string | null;
+  updatedBy: string | null;
+  defaults: string[];
+  limits: { maxMessages: number; maxLength: number };
+}
+
+export const adminWrongPasswordMessagesAPI = {
+  get: async (): Promise<WrongPasswordMessagesSettings> => {
+    const response = await adminApi.get('/settings/wrong-password-messages');
+    return response.data;
+  },
+
+  save: async (messages: string[]): Promise<WrongPasswordMessagesSettings> => {
+    const response = await adminApi.put('/settings/wrong-password-messages', { messages });
+    return response.data;
+  },
+
+  /** Supprime la liste enregistrée : les messages par défaut reprennent la main. */
+  reset: async (): Promise<WrongPasswordMessagesSettings> => {
+    const response = await adminApi.delete('/settings/wrong-password-messages');
+    return response.data;
+  },
+};
+
 // Admin Upload API
 export const adminUploadAPI = {
   generateUploadUrl: async (): Promise<{

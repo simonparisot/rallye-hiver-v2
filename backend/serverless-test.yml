@@ -611,6 +611,75 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
+  # Messages servis au hasard quand une equipe donne un mauvais mot de passe.
+  # Item gameId = settings#wrong-password-messages de la table game-status,
+  # deja couverte par les droits IAM du role (GetItem, PutItem, DeleteItem).
+  adminGetWrongPasswordMessages:
+    handler: src/functions/admin/settings/wrongPasswordMessages.getHandler
+    events:
+      - http:
+          path: /admin/settings/wrong-password-messages
+          method: get
+          cors:
+            origin: ${ssm:/rallye-hiver/${self:provider.stage}/cors-origin}
+            headers:
+              - Content-Type
+              - Authorization
+              - X-Amz-Date
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Requested-With
+            allowCredentials: true
+            maxAge: 3600
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminPutWrongPasswordMessages:
+    handler: src/functions/admin/settings/wrongPasswordMessages.putHandler
+    events:
+      - http:
+          path: /admin/settings/wrong-password-messages
+          method: put
+          cors:
+            origin: ${ssm:/rallye-hiver/${self:provider.stage}/cors-origin}
+            headers:
+              - Content-Type
+              - Authorization
+              - X-Amz-Date
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Requested-With
+            allowCredentials: true
+            maxAge: 3600
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminResetWrongPasswordMessages:
+    handler: src/functions/admin/settings/wrongPasswordMessages.deleteHandler
+    events:
+      - http:
+          path: /admin/settings/wrong-password-messages
+          method: delete
+          cors:
+            origin: ${ssm:/rallye-hiver/${self:provider.stage}/cors-origin}
+            headers:
+              - Content-Type
+              - Authorization
+              - X-Amz-Date
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Requested-With
+            allowCredentials: true
+            maxAge: 3600
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
   adminLogin:
     handler: src/functions/admin/auth/login.handler
     events:

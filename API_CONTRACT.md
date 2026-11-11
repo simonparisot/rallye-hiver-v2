@@ -1017,6 +1017,7 @@ Same handlers as `POST /admin/parcours`, `PUT /admin/parcours/{parcoursId}` and 
 - "Incorrect ! Peut-être qu'une petite pause café vous aidera ?"
 - "Nope ! Retour à l'énigme, détective !"
 - _(20 different humorous messages total, selected randomly)_
+- Depuis le 2026-11-11, la liste est modifiable par l'orga (`/admin/settings/wrong-password-messages`) ; ces 20 messages restent la liste par défaut.
 
 **Response** (200) - Already Solved:
 ```json
@@ -1440,6 +1441,62 @@ qui rend le prompt hacking sans objet.
 - If game status doesn't exist, it will be initialized automatically
 - Only one admin needs to start the game for all users
 - After starting, frontend clients will detect game is active via `GET /game/status`
+
+#### Admin Settings
+
+##### GET /admin/settings/wrong-password-messages
+
+**Status**: ✅ Implemented (2026-11-11)
+**Purpose**: Lire les messages servis au hasard quand une équipe donne un mauvais mot de passe
+**Authentication**: Required (admin only)
+
+**Response** (200) — même forme pour GET, PUT et DELETE :
+```json
+{
+  "messages": ["Raté ! Mais ne vous découragez pas !", "..."],
+  "isDefault": false,
+  "updatedAt": "ISO 8601 timestamp | null",
+  "updatedBy": "uuid (admin userId) | null",
+  "defaults": ["Oups ! Ce n'est pas le bon code. Essayez encore !", "..."],
+  "limits": { "maxMessages": 100, "maxLength": 300 }
+}
+```
+- `messages` : la liste en vigueur. Sans liste enregistrée (ou liste vide), ce sont les 20 messages par défaut et `isDefault` vaut `true`.
+- `defaults` : la liste par défaut, toujours renvoyée.
+
+**Errors**: `401` Authentication required, `403` Admin access required, `500`.
+
+##### PUT /admin/settings/wrong-password-messages
+
+**Status**: ✅ Implemented (2026-11-11)
+**Purpose**: Remplacer la liste
+**Authentication**: Required (admin only)
+
+**Request**:
+```json
+{ "messages": ["string", "..."] }
+```
+
+**Validation** (400 `{ "error": "..." }` sinon, rien n'est écrit) :
+- `messages` est un tableau ; chaque entrée est une chaîne, non vide une fois trimée, d'au plus 300 caractères ;
+- les messages sont trimés et les doublons supprimés (première occurrence gardée, ordre conservé) ;
+- après dédoublonnage : au moins 1 message, au plus 100.
+
+**Response** (200) : la liste enregistrée (forme du GET, `isDefault: false`).
+
+**Errors**: `400` validation ou JSON invalide, `401`, `403`, `500`.
+
+##### DELETE /admin/settings/wrong-password-messages
+
+**Status**: ✅ Implemented (2026-11-11)
+**Purpose**: Revenir aux messages par défaut (supprime la liste enregistrée)
+**Authentication**: Required (admin only)
+
+**Response** (200) : forme du GET, avec `isDefault: true` et `messages` = `defaults`.
+
+**Notes**:
+- Effet immédiat, sans cache : chaque mot de passe faux (`POST /progress/attempt`) relit la liste (un GetItem sur la table game-status).
+- Si la lecture échoue, la tentative répond quand même avec un message par défaut.
 
 #### Admin Statistics
 
@@ -2570,6 +2627,7 @@ L'opération est tracée dans le journal du plateau.
 
 | Date | Endpoint | Change | Type | Impact |
 |------|----------|--------|------|--------|
+| 2026-11-11 | GET/PUT/DELETE /admin/settings/wrong-password-messages, POST /progress/attempt | Messages de mauvais mot de passe modifiables par l'orga : la liste est stockée en base (item `settings#wrong-password-messages` de la table game-status), les 20 messages historiques restent la liste par défaut | Feature | Aucun changement de forme pour `POST /progress/attempt` : `message` est tiré de la liste configurée. Nouvelle page admin « Mauvais mots de passe » |
 | 2026-11-11 | POST /parcours/{parcoursId}/attempt, POST et DELETE /parcours/{parcoursId}/complete, GET /parcours, GET /parcours/{id}, GET /progress/parcours, GET/POST/PUT /admin/parcours | Tournées validées par un mot de passe de fin de tournée (`correctPassword`, saisi dans l'admin, comparé comme celui des intrigues) ; nouvelle route `POST /parcours/{id}/attempt` ; `hasPassword` dans les réponses joueurs ; tentatives journalisées dans la nouvelle table `ParcoursAttempts` | Feature + **Breaking** | **Breaking** : `POST` et `DELETE /parcours/{id}/complete` sont supprimés, le joueur ne peut plus marquer ni démarquer une tournée à la main (les tournées déjà réalisées le restent). `correctPassword` n'est jamais renvoyé aux joueurs |
 | 2026-11-11 | GET /parcours, GET /parcours/{id}, GET /parcours/{id}/access, GET /progress/parcours, POST/PUT /admin/parcours | Tournées débloquées par des intrigues : toutes les intrigues requises encore existantes, recalculé à chaque lecture ; `requiredEnigmaIds` facultatif à la création (vide = libre) ; numéro automatique ; le PDF n'est plus donné que pour une tournée ouverte ; une intrigue requise non publiée est titrée « Intrigue à venir » ; la mise à jour retire sans erreur les intrigues supprimées | Feature + **Breaking** | **Breaking** : `pdfUrl` disparaît de `GET /parcours` et `GET /parcours/{id}` ; `GET /progress/parcours` liste toutes les tournées dans `parcours`, avec `isUnlocked` et `requiredEnigmas` ; `GET /parcours/{id}/access` renvoie 404 pour une tournée non publiée |
 | 2026-11-11 | GET /hints/{enigmaId}, POST /hints/{enigmaId}/request, POST /enigmas, PUT /enigmas/{id}, PUT /admin/enigmas/{id} | Ouverture des indices par énigme : deux champs sur l'énigme, `hintsEnabled` (booléen, fermé par défaut) et `hintsAvailableFrom` (AAAA-MM-JJ, jour de Paris, `null` ou `""` pour l'effacer). `GET /hints` renvoie `hintsAvailable` ; la demande d'indice répond 403 tant que c'est fermé | Feature + Breaking | **Breaking** : une énigme sans réglage n'offre plus d'indice. Les énigmes existantes doivent être ouvertes depuis l'admin. Une date mal formée est refusée en 400 |
