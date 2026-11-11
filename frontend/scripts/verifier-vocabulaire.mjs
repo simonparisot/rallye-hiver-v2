@@ -17,8 +17,9 @@
  * (« la phrase.Troupe », « ...souffleur ») reste signalé.
  *
  * Exclus : src/oie/ (inaccessible avant le lancement), src/admin/ (réservé
- * aux organisateurs), src/editions/ (c'est là que vit le vocabulaire), les
- * types, et provisoirement ParcoursPanel.tsx (en cours de réécriture).
+ * aux organisateurs), src/editions/ (c'est là que vit le vocabulaire) et les
+ * types. Aucune exclusion provisoire : un composant visible se migre, il ne
+ * s'exclut pas.
  *
  * Usage, depuis frontend/ :  node scripts/verifier-vocabulaire.mjs
  * Code de sortie 1 si un mot est trouvé.
@@ -35,8 +36,6 @@ const EXCLUS = [
   'src/admin/',
   'src/editions/',
   'src/types/',
-  // PROVISOIRE : en cours de réécriture, à migrer puis à retirer d'ici.
-  'src/components/panels/ParcoursPanel.tsx',
 ];
 
 const MOTS = [

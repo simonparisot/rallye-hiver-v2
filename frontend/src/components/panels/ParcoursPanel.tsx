@@ -4,6 +4,7 @@ import { Parcours } from '../../types';
 import { getParcoursWithAccess, getParcoursPreview } from '../../services/gameService';
 import { teamAPI, parcoursAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { accorder, majuscule, useEdition } from '../../editions';
 import PDFViewer from '../PDFViewer';
 import ResultatTentative from '../ResultatTentative';
 import './ParcoursPanel.css';
@@ -20,6 +21,8 @@ interface ParcoursPanelProps {
 const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, onExpand, selectionId, onSelectionner }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const v = useEdition().vocabulaire;
+  const realisee = accorder(v.parcours, 'réalisée', 'réalisé');
 
   const { data: team } = useQuery({
     queryKey: ['team', user?.teamId],
@@ -102,10 +105,10 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
     return (
       <div className={`parcours-panel ${isCompact ? 'panel-compact' : ''}`} data-testid="parcours-panel">
         <div className="panel-header">
-          <h2>Tournées</h2>
+          <h2>{v.parcours.Pluriel}</h2>
         </div>
         <div className="panel-content">
-          <div className="loading-state" data-testid="parcours-loading">Chargement des tournées...</div>
+          <div className="loading-state" data-testid="parcours-loading">Chargement des {v.parcours.pluriel}...</div>
         </div>
       </div>
     );
@@ -115,10 +118,10 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
     return (
       <div className={`parcours-panel ${isCompact ? 'panel-compact' : ''}`} data-testid="parcours-panel">
         <div className="panel-header">
-          <h2>Tournées</h2>
+          <h2>{v.parcours.Pluriel}</h2>
         </div>
         <div className="panel-content">
-          <div className="error-state" data-testid="parcours-error">Erreur lors du chargement des tournées. Veuillez réessayer.</div>
+          <div className="error-state" data-testid="parcours-error">Erreur lors du chargement des {v.parcours.pluriel}. Veuillez réessayer.</div>
         </div>
       </div>
     );
@@ -127,12 +130,12 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
   return (
     <div className={`parcours-panel ${isCompact ? 'panel-compact' : ''}`} data-testid="parcours-panel">
       <div className="panel-header">
-        <h2>Tournées</h2>
+        <h2>{v.parcours.Pluriel}</h2>
       </div>
       <div className="panel-content">
         {!hasAccess && (
           <div className="access-blocked-message" data-testid="parcours-access-blocked">
-            Pour accéder aux tournées, rejoignez ou créez une équipe depuis « Ma troupe », puis réglez les frais d'inscription.
+            Pour accéder aux {v.parcours.pluriel}, rejoignez ou créez {v.equipe.un} depuis « {v.monEquipe} », puis réglez les frais d'inscription.
           </div>
         )}
         {!isExpanded ? (
@@ -148,7 +151,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                 <span className="parcours-number">{index + 1}</span>
                 <span className="parcours-title-compact">{parcours.title}</span>
                 {hasAccess && !parcours.isUnlocked && <VerrouCompteur parcours={parcours} />}
-                {parcours.isCompleted && <span className="completed-badge-small" data-testid={`parcours-completed-badge-${parcours.order}`}>Réalisée</span>}
+                {parcours.isCompleted && <span className="completed-badge-small" data-testid={`parcours-completed-badge-${parcours.order}`}>{majuscule(realisee)}</span>}
               </div>
             ))}
           </div>
@@ -186,7 +189,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                   </div>
                   {parcours.isCompleted && (
                     <div className="parcours-meta">
-                      <span className="completed-badge" data-testid={`parcours-completed-badge-${parcours.order}`}>Réalisée</span>
+                      <span className="completed-badge" data-testid={`parcours-completed-badge-${parcours.order}`}>{majuscule(realisee)}</span>
                     </div>
                   )}
                 </div>
@@ -203,7 +206,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                       <div className="parcours-completion-section">
                         {selectedParcours.isCompleted ? (
                           <div className="parcours-completed-badge" data-testid="parcours-completed-banner">
-                            ✅ Tournée réalisée
+                            ✅ {v.parcours.Singulier} {realisee}
                             {selectedParcours.completedAt && (
                               <span className="completed-date">
                                 {' '}le {new Date(selectedParcours.completedAt).toLocaleDateString('fr-FR')}
@@ -212,7 +215,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                           </div>
                         ) : !selectedParcours.hasPassword ? (
                           <p className="parcours-password-indisponible" data-testid="parcours-password-unavailable">
-                            Le mot de passe de cette tournée n'est pas encore disponible
+                            Le mot de passe de {v.parcours.ce} n'est pas encore disponible
                           </p>
                         ) : (
                           <form
@@ -221,7 +224,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                             onSubmit={handlePasswordSubmit}
                           >
                             <label htmlFor="parcours-password-input" className="parcours-password-label">
-                              Mot de passe de fin de tournée
+                              Mot de passe de fin de {v.parcours.singulier}
                             </label>
                             <div className="parcours-password-ligne">
                               <input
@@ -263,14 +266,14 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                   ) : (
                     <div className="parcours-pdf-placeholder" data-testid="parcours-pdf-placeholder">
                       <p>PDF non disponible</p>
-                      <p className="pdf-note">Le PDF de cette tournée n'est pas encore disponible</p>
+                      <p className="pdf-note">Le PDF de {v.parcours.ce} n'est pas encore disponible</p>
                     </div>
                   )}
                 </div>
                 )
               ) : (
                 <div className="parcours-placeholder" data-testid="parcours-placeholder">
-                  <p>Sélectionnez une tournée pour afficher son énoncé</p>
+                  <p>Sélectionnez {v.parcours.un} pour afficher son énoncé</p>
                 </div>
               )}
             </div>
@@ -285,20 +288,25 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
  * Un simple « 🔒 » : une seule intrigue résolue parmi celles listées suffit à
  * ouvrir la tournée, un compte « n/m » laisserait croire qu'il les faut toutes.
  */
-const VerrouCompteur: React.FC<{ parcours: Parcours }> = ({ parcours }) => (
-  <span
-    className="parcours-verrou"
-    data-testid={`parcours-locked-badge-${parcours.order}`}
-    title="Se débloque en résolvant l'une des intrigues listées"
-    aria-label="Se débloque en résolvant l'une des intrigues listées"
-    role="img"
-  >
-    <span aria-hidden="true">🔒</span>
-  </span>
-);
+const VerrouCompteur: React.FC<{ parcours: Parcours }> = ({ parcours }) => {
+  const v = useEdition().vocabulaire;
+  const libelle = `Se débloque en résolvant ${accorder(v.enigme, "l'une", "l'un")} des ${v.enigme.pluriel} ${accorder(v.enigme, 'listées', 'listés')}`;
+  return (
+    <span
+      className="parcours-verrou"
+      data-testid={`parcours-locked-badge-${parcours.order}`}
+      title={libelle}
+      aria-label={libelle}
+      role="img"
+    >
+      <span aria-hidden="true">🔒</span>
+    </span>
+  );
+};
 
 /** Ce que voit une troupe qui ouvre une tournée encore fermée. */
 const TourneeVerrouillee: React.FC<{ parcours: Parcours }> = ({ parcours }) => {
+  const v = useEdition().vocabulaire;
   const requises = parcours.requiredEnigmasDetail || [];
 
   return (
@@ -307,8 +315,10 @@ const TourneeVerrouillee: React.FC<{ parcours: Parcours }> = ({ parcours }) => {
       <h4>{parcours.title}</h4>
       <p>
         {/* Une seule suffit : il n'y a plus de reste à afficher. */}
-        Cette tournée s'ouvrira dès que votre troupe aura résolu{' '}
-        {requises.length > 1 ? "l'une des intrigues suivantes" : "l'intrigue suivante"}.
+        {majuscule(v.parcours.ce)} s'ouvrira dès que votre {v.equipe.singulier} aura résolu{' '}
+        {requises.length > 1
+          ? `${accorder(v.enigme, "l'une", "l'un")} des ${v.enigme.pluriel} ${accorder(v.enigme, 'suivantes', 'suivants')}`
+          : `${v.enigme.le} ${accorder(v.enigme, 'suivante', 'suivant')}`}.
       </p>
       <ul className="unlock-liste" data-testid="parcours-required-enigmas">
         {requises.map((e) => (
@@ -316,7 +326,7 @@ const TourneeVerrouillee: React.FC<{ parcours: Parcours }> = ({ parcours }) => {
             <span className="unlock-marque" aria-hidden="true">{e.isSolved ? '✓' : '○'}</span>
             <span>
               {e.order}. {e.title}
-              <span className="sr-only">{e.isSolved ? ' (résolue)' : ' (à résoudre)'}</span>
+              <span className="sr-only">{e.isSolved ? ` (${accorder(v.enigme, 'résolue', 'résolu')})` : ' (à résoudre)'}</span>
             </span>
           </li>
         ))}

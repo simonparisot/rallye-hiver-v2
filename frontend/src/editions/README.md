@@ -144,8 +144,8 @@ tournée, troupe, souffleur, théâtre, rideau, scène…) est écrit en dur dan
 texte visible du site principal. Il ignore les commentaires, les attributs
 invisibles (`className`, `data-testid`…) et les identifiants, et exclut
 `src/oie/` (inaccessible avant le lancement), `src/admin/` (réservé aux
-organisateurs, qui gardent le vocabulaire du théâtre), `src/editions/`, et
-provisoirement `ParcoursPanel.tsx`, en cours de réécriture.
+organisateurs, qui gardent le vocabulaire du théâtre) et `src/editions/`.
+Aucun autre fichier n'en est exclu.
 `npm run verifier-editions` lance les deux contrôles.
 
 **Ce que l'habillage neutre ne cache pas.** Le build contient les deux
