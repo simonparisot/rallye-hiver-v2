@@ -106,8 +106,10 @@ describe('Membre d\'une équipe', () => {
       data.parcours.forEach((p) => {
         expect(typeof p.isUnlocked).toBe('boolean');
         expect(Array.isArray(p.requiredEnigmas)).toBe(true);
-        // Débloqué : toutes les intrigues requises sont résolues, et seulement alors.
-        expect(p.isUnlocked).toBe(p.requiredEnigmas.every((e) => e.solved));
+        // Débloqué : aucune intrigue requise, ou au moins une résolue, et seulement alors.
+        expect(p.isUnlocked).toBe(
+          p.requiredEnigmas.length === 0 || p.requiredEnigmas.some((e) => e.solved)
+        );
         if (p.isUnlocked) expect(p.pdfUrl).toEqual(expect.any(String));
         else expect(p).not.toHaveProperty('pdfUrl');
       });

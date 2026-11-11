@@ -292,10 +292,8 @@ const AdminParcours: React.FC = () => {
               <p className="admin-form-help">
                 {intriguesRequises.length === 0
                   ? 'Aucune intrigue cochée : la tournée est accessible à toutes les équipes.'
-                  : `La tournée s'ouvre quand l'équipe a résolu ${
-                      intriguesRequises.length === 1
-                        ? "l'intrigue cochée"
-                        : `les ${intriguesRequises.length} intrigues cochées`
+                  : `La tournée s'ouvre dès que l'équipe a résolu ${
+                      intriguesRequises.length === 1 ? "l'intrigue cochée" : "l'une des intrigues cochées"
                     }.`}
               </p>
               {enigmasLoading ? (

@@ -906,7 +906,7 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 - `404`: Parcours not found, or not published (`isActive: false`)
 
 **Notes**:
-- Access is recomputed on every read from the team's progress: a parcours is unlocked when the team has solved **all** the required enigmas that still exist. An empty `requiredEnigmaIds` means the parcours is open to every team. See DATA_MODELS.md, "Parcours Unlocking".
+- Access is recomputed on every read from the team's progress: a parcours is unlocked when the team has solved **at least one** of the required enigmas that still exist (since 2026-11-11). An empty `requiredEnigmaIds`, or a list whose enigmas have all been deleted, means the parcours is open to every team. `requiredEnigmasCount` plays no part in the rule. See DATA_MODELS.md, "Parcours Unlocking".
 - `requiredEnigmas` is sorted by `enigmaNumber`. The title of a required enigma that is not published yet is replaced by `"Intrigue à venir"`.
 - `unlockedAt` / `unlockedBy` come from the TeamParcoursAccess record, when one exists (written when an enigma attempt unlocks the parcours). They only date the unlock; they do not grant it.
 
@@ -1112,7 +1112,7 @@ Same handlers as `POST /admin/parcours`, `PUT /admin/parcours/{parcoursId}` and 
 
 **Notes**:
 - `parcours` lists every published parcours, sorted by `parcoursNumber`, locked or not. `accessibleParcours` keeps only the unlocked ones (for older clients); `count` is its length.
-- `isUnlocked` is recomputed on every read: true when the team has solved all the required enigmas that still exist (always true when `requiredEnigmaIds` is empty).
+- `isUnlocked` is recomputed on every read: true when the team has solved at least one of the required enigmas that still exist (always true when none of them exists, e.g. `requiredEnigmaIds` is empty).
 - `requiredEnigmas` details those enigmas, sorted by `enigmaNumber`; an unpublished one is titled `"Intrigue à venir"`.
 - `pdfUrl` is present only when `isUnlocked` is true. `correctPassword` is never returned; `hasPassword` says whether the parcours can be validated yet.
 - `completed` / `completedAt` are set when the team enters the end-of-parcours password (`POST /parcours/{parcoursId}/attempt`); `completed` is `false` and `completedAt` `null` until then.
@@ -1945,7 +1945,7 @@ Where:
 ```
 
 - `parcoursNumber` is optional: when absent, the parcours takes `max(parcoursNumber) + 1` (1 for the first one). When present it must be an integer ≥ 1.
-- `requiredEnigmaIds` is optional, default `[]` (open to every team). Otherwise the parcours opens once the team has solved all of them. `requiredEnigmasCount` is derived from it and never read from the request.
+- `requiredEnigmaIds` is optional, default `[]` (open to every team). Otherwise the parcours opens as soon as the team has solved any one of them. `requiredEnigmasCount` is the number of listed enigmas, derived from it, never read from the request, and has no role in the unlock rule.
 - `correctPassword` is optional, trimmed, default `""` (no password: teams cannot validate the parcours yet).
 - `isActive` defaults to `true`.
 
@@ -2566,6 +2566,7 @@ L'opération est tracée dans le journal du plateau.
 
 | Date | Endpoint | Change | Type | Impact |
 |------|----------|--------|------|--------|
+| 2026-11-11 | GET /parcours/{id}/access, GET /progress/parcours, POST /parcours/{id}/attempt | Une tournée s'ouvre dès que l'équipe a résolu **une** des intrigues requises encore existantes (et non plus toutes) ; `requiredEnigmasCount` n'est plus que le nombre d'intrigues cochées. Messages de `POST /parcours/{id}/attempt` neutres (sans « tournée ») ; corps invalide en 400 « Corps invalide ». `GET /parcours/{id}` renvoie 404 pour une tournée non publiée ; `GET /admin/parcours` renvoie `hasPassword` | **Breaking** | Des tournées verrouillées s'ouvrent pour les équipes qui ont résolu une partie de leurs intrigues ; `isUnlocked` ne se déduit plus de `requiredEnigmas.every(solved)` mais de `some(solved)` |
 | 2026-11-11 | POST /parcours/{parcoursId}/attempt, POST et DELETE /parcours/{parcoursId}/complete, GET /parcours, GET /parcours/{id}, GET /progress/parcours, GET/POST/PUT /admin/parcours | Tournées validées par un mot de passe de fin de tournée (`correctPassword`, saisi dans l'admin, comparé comme celui des intrigues) ; nouvelle route `POST /parcours/{id}/attempt` ; `hasPassword` dans les réponses joueurs ; tentatives journalisées dans la nouvelle table `ParcoursAttempts` | Feature + **Breaking** | **Breaking** : `POST` et `DELETE /parcours/{id}/complete` sont supprimés, le joueur ne peut plus marquer ni démarquer une tournée à la main (les tournées déjà réalisées le restent). `correctPassword` n'est jamais renvoyé aux joueurs |
 | 2026-11-11 | GET /parcours, GET /parcours/{id}, GET /parcours/{id}/access, GET /progress/parcours, POST/PUT /admin/parcours | Tournées débloquées par des intrigues : toutes les intrigues requises encore existantes, recalculé à chaque lecture ; `requiredEnigmaIds` facultatif à la création (vide = libre) ; numéro automatique ; le PDF n'est plus donné que pour une tournée ouverte ; une intrigue requise non publiée est titrée « Intrigue à venir » ; la mise à jour retire sans erreur les intrigues supprimées | Feature + **Breaking** | **Breaking** : `pdfUrl` disparaît de `GET /parcours` et `GET /parcours/{id}` ; `GET /progress/parcours` liste toutes les tournées dans `parcours`, avec `isUnlocked` et `requiredEnigmas` ; `GET /parcours/{id}/access` renvoie 404 pour une tournée non publiée |
 | 2026-11-11 | GET /hints/{enigmaId}, POST /hints/{enigmaId}/request, POST /enigmas, PUT /enigmas/{id}, PUT /admin/enigmas/{id} | Ouverture des indices par énigme : deux champs sur l'énigme, `hintsEnabled` (booléen, fermé par défaut) et `hintsAvailableFrom` (AAAA-MM-JJ, jour de Paris, `null` ou `""` pour l'effacer). `GET /hints` renvoie `hintsAvailable` ; la demande d'indice répond 403 tant que c'est fermé | Feature + Breaking | **Breaking** : une énigme sans réglage n'offre plus d'indice. Les énigmes existantes doivent être ouvertes depuis l'admin. Une date mal formée est refusée en 400 |

@@ -99,6 +99,29 @@ describe('POST /parcours/{parcoursId}/attempt', () => {
     expect(db.markTeamParcoursCompleted).not.toHaveBeenCalled();
   });
 
+  test('une intrigue résolue sur deux suffit : la tournée est ouverte et se valide', async () => {
+    (db.getParcoursById as jest.Mock).mockResolvedValue({
+      parcoursId: 'p1',
+      isActive: true,
+      requiredEnigmaIds: ['e1', 'e2'],
+      correctPassword: 'Le Malade imaginaire',
+    });
+    (db.getAllEnigmasForAdmin as jest.Mock).mockResolvedValue([
+      { enigmaId: 'e1', enigmaNumber: 1, title: 'Une', isActive: true },
+      { enigmaId: 'e2', enigmaNumber: 2, title: 'Deux', isActive: true },
+    ]);
+    (db.getAllTeamProgress as jest.Mock).mockResolvedValue([
+      { enigmaId: 'e1', solved: false },
+      { enigmaId: 'e2', solved: true },
+    ]);
+
+    const reponse = await handler(evenement({ password: 'le malade imaginaire' }));
+
+    expect(reponse.statusCode).toBe(200);
+    expect(corps(reponse).success).toBe(true);
+    expect(db.markTeamParcoursCompleted).toHaveBeenCalledWith('t1', 'p1', expect.any(String));
+  });
+
   test('tournée non publiée : 403 aussi', async () => {
     (db.getParcoursById as jest.Mock).mockResolvedValue({
       parcoursId: 'p1',
