@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { accorder, majuscule, useEdition, type Edition } from '../editions';
 import FenetreLecture from './FenetreLecture';
+import { useStatutJeu, phaseParDefaut } from '../services/statutJeu';
 import './ReglesDuJeu.css';
 
 /**
@@ -47,6 +48,10 @@ const ReglesContenu: React.FC = () => {
   const v = edition.vocabulaire;
   const { enigme: E, parcours: P, equipe: T } = v;
   const S = v.souffleur;
+  // Phase lue sur le serveur (GET /game/status) : la phrase sur les
+  // préliminaires disparaît au lancement.
+  const { data: statut } = useStatutJeu();
+  const avantLancement = (statut?.phase ?? phaseParDefaut()) === 'avant-lancement';
 
   return (
     <>
@@ -58,6 +63,12 @@ const ReglesContenu: React.FC = () => {
           des {E.pluriel} depuis chez {accorder(T, 'elle', 'lui')}, et part à la découverte
           de lieux de Paris en rapport avec le thème, en suivant des {P.pluriel}.
         </p>
+        {avantLancement && (
+          <p data-testid="regles-preliminaires">
+            Avant le lancement, deux {E.pluriel} préliminaires vous attendent. Leur solution
+            vous donnera un avant-goût du thème.
+          </p>
+        )}
         <p>
           Le {edition.label} se joue du {dateLongue(edition.startsAt)} (solstice d'hiver)
           au {dateLongue(edition.endsAt)} (équinoxe de printemps). Rien ne presse : avancez à
