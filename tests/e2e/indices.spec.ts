@@ -94,8 +94,8 @@ test.describe('Demande d\'indice', () => {
     const bouton = page.getByTestId('hint-request-button');
     await expect(bouton).toBeEnabled();
 
-    // Le barème est annoncé avant toute action irréversible.
-    await expect(page.getByTestId('hint-cost-warning')).toContainText('un quart des points');
+    // Le coût (nul pendant l'essai) est annoncé avant toute action irréversible.
+    await expect(page.getByTestId('hint-cost-warning')).toContainText('ne coûtent aucun point');
 
     await bouton.click();
     await expect(page.getByTestId('hint-confirm')).toBeVisible();
@@ -108,15 +108,13 @@ test.describe('Demande d\'indice', () => {
     await expect(page.getByTestId('hint-request-button')).toBeVisible();
   });
 
-  test('le barème annoncé est le quart, sans chiffre inventé', async ({ page }) => {
+  test('les indices sont annoncés gratuits, sans chiffre inventé', async ({ page }) => {
     await ouvrirSouffleur(page, enigme!.enigmaNumber);
 
     const intro = page.getByTestId('hint-cost-warning');
-    await expect(intro).toContainText('un quart des points');
-    // La règle est écrite en dur : c'est celle annoncée aux équipes, et elle
-    // vaut même si le serveur ne prélève encore rien (nextHintCost = 0,
-    // backend/src/utils/hintCost.ts). En revanche la fenêtre ne doit avancer
-    // aucun montant chiffré, qui lui serait faux.
+    await expect(intro).toContainText('ne coûtent aucun point');
+    // Le serveur ne prélève rien (pointsCharged = 0, backend/src/utils/hintCost.ts) :
+    // la fenêtre ne doit avancer aucun montant chiffré, qui lui serait faux.
     expect((await intro.textContent()) ?? '').not.toMatch(/\d+\s*points?/);
   });
 

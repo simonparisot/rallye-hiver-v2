@@ -466,3 +466,8 @@
 .hints-state-ferme    { background: #EEE9DF; color: #5A6372; }
 .hints-state-planifie { background: #FFF1C9; color: #5A3E00; }
 .hints-state-ouvert   { background: #E4F3EC; color: #1F5A40; }
+
+/* Erreur de l'interrupteur rapide d'indices, au-dessus de la liste. */
+.enigmas-list > .admin-form-error {
+  margin: 0 0 var(--spacing-md);
+}

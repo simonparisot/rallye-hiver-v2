@@ -12,13 +12,14 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     const enigma = await getEnigmaById(enigmaId);
 
-    if (!enigma) {
+    // Une intrigue non publiee n'existe pas pour le joueur.
+    if (!enigma || (enigma as any).isActive === false) {
       return error('Enigma not found', 404);
     }
 
-    // Ni le mot de passe, ni la demarche de resolution, ni le texte des indices
-    // ne doivent atteindre un client.
-    const { correctPassword, solution, hints, ...rest } = enigma as any;
+    // Ni le mot de passe, ni la demarche de resolution, ni le texte des indices,
+    // ni la date d'ouverture des indices ne doivent atteindre un client.
+    const { correctPassword, solution, hints, hintsAvailableFrom, ...rest } = enigma as any;
     const sanitizedEnigma = {
       ...rest,
       hintsCount: Array.isArray(hints) ? hints.length : 0,

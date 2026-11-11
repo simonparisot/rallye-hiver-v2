@@ -1,7 +1,7 @@
 # API Contract
 
 **Last updated by**: backend agent
-**Last updated**: 2026-10-10
+**Last updated**: 2026-11-11
 **Base URL**: `https://rpg0alko8b.execute-api.eu-west-1.amazonaws.com/prod`
 
 ---
@@ -658,10 +658,16 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 ```
 
 **Notes**:
-- `correctPassword`, `solution` et `hints` ne sont JAMAIS exposés aux clients
+- `correctPassword`, `solution`, `hints` et `hintsAvailableFrom` ne sont JAMAIS
+  exposés aux clients (la date d'ouverture des indices n'est pas annoncée aux
+  équipes)
 - `hintsCount` : nombre d'indices pré-écrits existants. Le joueur en a besoin pour
   savoir s'il peut demander un indice ; le texte des indices reste côté serveur
-- Returns all active enigmas
+- `hintsEnabled` peut figurer dans la réponse (réglage brut de l'orga) ; le
+  frontend joueur ne s'en sert pas et lit `hintsAvailable` sur `GET /hints/{enigmaId}`
+- Ne renvoie que les intrigues publiées (`isActive !== false`) depuis le
+  2026-11-11. Les intrigues non publiées ne sont visibles que par
+  `GET /admin/enigmas`
 
 #### GET /enigmas/{enigmaId}
 
@@ -689,10 +695,12 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 ```
 
 **Notes**:
-- `correctPassword`, `solution` et `hints` ne sont JAMAIS exposés aux clients
+- `correctPassword`, `solution`, `hints` et `hintsAvailableFrom` ne sont JAMAIS
+  exposés aux clients
 
 **Errors**:
-- `404`: Enigma not found
+- `404`: Enigma not found, ou intrigue non publiée (`isActive === false`) depuis
+  le 2026-11-11
 
 #### GET /enigmas/by-difficulty
 
@@ -1188,7 +1196,8 @@ qui rend le prompt hacking sans objet.
 
 **Errors**:
 - `403`: L'utilisateur n'a pas d'équipe, ou l'équipe n'a pas réglé son inscription
-- `404`: Enigma not found
+- `404`: Enigma not found, ou intrigue non publiée (`isActive === false`) depuis
+  le 2026-11-11
 
 #### POST /hints/{enigmaId}/request
 
@@ -2627,6 +2636,7 @@ L'opération est tracée dans le journal du plateau.
 
 | Date | Endpoint | Change | Type | Impact |
 |------|----------|--------|------|--------|
+| 2026-11-11 | GET /enigmas, GET /enigmas/{enigmaId}, GET /hints/{enigmaId} | Les intrigues non publiées disparaissent côté joueur : `GET /enigmas` ne les liste plus, `GET /enigmas/{id}` et `GET /hints/{id}` répondent 404. `hintsAvailableFrom` est retiré des réponses joueur | Bug Fix + Breaking | **Breaking** : un client qui comptait sur les intrigues non publiées dans `GET /enigmas` ne les voit plus (le frontend joueur les filtrait déjà, l'admin passe par `/admin/enigmas`). Côté worker, une demande en attente sur une intrigue dont les indices ont été fermés entre-temps est conclue `failed` (« Indices fermés ») |
 | 2026-11-11 | GET/PUT/DELETE /admin/settings/wrong-password-messages, POST /progress/attempt | Messages de mauvais mot de passe modifiables par l'orga : la liste est stockée en base (item `settings#wrong-password-messages` de la table game-status), les 20 messages historiques restent la liste par défaut | Feature | Aucun changement de forme pour `POST /progress/attempt` : `message` est tiré de la liste configurée. Nouvelle page admin « Mauvais mots de passe » |
 | 2026-11-11 | POST /parcours/{parcoursId}/attempt, POST et DELETE /parcours/{parcoursId}/complete, GET /parcours, GET /parcours/{id}, GET /progress/parcours, GET/POST/PUT /admin/parcours | Tournées validées par un mot de passe de fin de tournée (`correctPassword`, saisi dans l'admin, comparé comme celui des intrigues) ; nouvelle route `POST /parcours/{id}/attempt` ; `hasPassword` dans les réponses joueurs ; tentatives journalisées dans la nouvelle table `ParcoursAttempts` | Feature + **Breaking** | **Breaking** : `POST` et `DELETE /parcours/{id}/complete` sont supprimés, le joueur ne peut plus marquer ni démarquer une tournée à la main (les tournées déjà réalisées le restent). `correctPassword` n'est jamais renvoyé aux joueurs |
 | 2026-11-11 | GET /parcours, GET /parcours/{id}, GET /parcours/{id}/access, GET /progress/parcours, POST/PUT /admin/parcours | Tournées débloquées par des intrigues : toutes les intrigues requises encore existantes, recalculé à chaque lecture ; `requiredEnigmaIds` facultatif à la création (vide = libre) ; numéro automatique ; le PDF n'est plus donné que pour une tournée ouverte ; une intrigue requise non publiée est titrée « Intrigue à venir » ; la mise à jour retire sans erreur les intrigues supprimées | Feature + **Breaking** | **Breaking** : `pdfUrl` disparaît de `GET /parcours` et `GET /parcours/{id}` ; `GET /progress/parcours` liste toutes les tournées dans `parcours`, avec `isUnlocked` et `requiredEnigmas` ; `GET /parcours/{id}/access` renvoie 404 pour une tournée non publiée |

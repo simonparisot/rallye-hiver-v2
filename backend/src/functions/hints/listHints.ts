@@ -45,7 +45,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     const enigma = await getEnigmaById(enigmaId);
-    if (!enigma) {
+    // Une intrigue non publiée n'existe pas pour le joueur, comme dans GET /enigmas.
+    if (!enigma || (enigma as any).isActive === false) {
       return error('Enigma not found', 404);
     }
 
