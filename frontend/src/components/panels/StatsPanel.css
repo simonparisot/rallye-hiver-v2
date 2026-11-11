@@ -582,15 +582,17 @@
 
 /* Les demandes reçues prennent le même cadre que la liste des membres juste
    au-dessus : sans lui, ce bloc restait un rectangle au filet pâle, seul de
-   son espèce dans le panneau. */
-.stats-panel .pending-requests-section {
+   son espèce dans le panneau. Limité à .section : dans la vue d'attente
+   (.feuille), la liste des membres garde son cadre pâle, et les demandes
+   doivent continuer de lui ressembler. */
+.section .stats-panel .pending-requests-section {
   background: var(--theatre-scene);
   border: 2px solid var(--theatre-salle);
   border-radius: 12px;
   box-shadow: var(--ombre-affiche);
   color: var(--theatre-salle);
 }
-.stats-panel .pending-requests-section h4 {
+.section .stats-panel .pending-requests-section h4 {
   color: var(--theatre-salle);
   font-family: var(--font-display);
   font-weight: 400;
