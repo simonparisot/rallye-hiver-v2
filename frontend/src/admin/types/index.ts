@@ -48,6 +48,8 @@ export interface EnigmaWithStats extends BackendEnigma {
 
 export interface ParcoursWithStats extends BackendParcours {
   teamsUnlocked: number;
+  /** Calculé par le serveur, avec la même règle que la validation. */
+  hasPassword: boolean;
 }
 
 export interface CreateEnigmaRequest {

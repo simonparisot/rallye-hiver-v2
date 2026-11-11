@@ -63,6 +63,12 @@ test.describe('Parcours', () => {
     await page.getByTestId('parcours-card-1').click();
     await expect(page.getByTestId('parcours-expanded-view')).toBeVisible();
 
+    // Le détail doit être chargé avant de regarder s'il porte le formulaire :
+    // isVisible() ne patiente pas, et répondrait « non » pendant le chargement.
+    await expect(
+      page.getByTestId('parcours-details').or(page.getByTestId('parcours-locked-view'))
+    ).toBeVisible({ timeout: 15_000 });
+
     const formulaire = page.getByTestId('parcours-password-form');
     const ouverte = await formulaire.isVisible().catch(() => false);
     test.skip(
@@ -86,6 +92,6 @@ test.describe('Parcours', () => {
     await expect(page.getByTestId('parcours-completed-banner')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('parcours-completed-badge-1')).toBeVisible();
     await expect(page.getByTestId('parcours-password-form')).toHaveCount(0);
-    // Plus de retour arrière côté joueur : afterAll remet l'équipe à zéro.
+    // Plus de retour arrière côté joueur : beforeEach remet l'équipe à zéro.
   });
 });

@@ -167,6 +167,33 @@ describe('POST /parcours/{parcoursId}/attempt', () => {
     expect((await handler(evenement({ password: 12 }))).statusCode).toBe(400);
   });
 
+  test('corps null, mal formé ou qui n\'est pas un objet : 400 « Corps invalide »', async () => {
+    for (const brut of ['null', '{pas du json', '"texte"', '42', '[]']) {
+      const reponse = await handler({
+        pathParameters: { parcoursId: 'p1' },
+        body: brut,
+        requestContext: { authorizer: { userId: 'u1' } },
+      } as unknown as APIGatewayProxyEvent);
+
+      expect(reponse.statusCode).toBe(400);
+      expect(corps(reponse)).toEqual({ error: 'Corps invalide' });
+    }
+    expect(db.getUserById).not.toHaveBeenCalled();
+  });
+
+  test('les messages ne parlent pas de « tournée » : ils valent pour tous les thèmes', async () => {
+    const messages = [
+      corps(await handler(evenement({ password: 'Tartuffe' }))).message,
+      corps(await handler(evenement({ password: 'le malade imaginaire' }))).message,
+    ];
+    (db.getTeamParcoursAccess as jest.Mock).mockResolvedValue({ completed: true });
+    messages.push(corps(await handler(evenement({ password: 'le malade imaginaire' }))).message);
+    (db.getParcoursById as jest.Mock).mockResolvedValue({ parcoursId: 'p1', isActive: true, requiredEnigmaIds: [] });
+    messages.push(corps(await handler(evenement({ password: 'x' }))).error);
+
+    messages.forEach((m) => expect(m).not.toMatch(/tourn|parcours|intrigue|troupe/i));
+  });
+
   test('sans utilisateur authentifié : 401', async () => {
     const reponse = await handler({
       pathParameters: { parcoursId: 'p1' },

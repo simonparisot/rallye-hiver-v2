@@ -859,7 +859,7 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 - Same fields as `GET /parcours`: no `pdfUrl`, no `correctPassword`, `hasPassword` instead.
 
 **Errors**:
-- `404`: Parcours not found
+- `404`: Parcours not found, or not published (`isActive: false`)
 
 #### GET /parcours/{parcoursId}/access
 
@@ -927,7 +927,7 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 ```json
 {
   "success": true,
-  "message": "Bravo ! Tournée validée.",
+  "message": "Bravo ! Mot de passe validé.",
   "alreadyCompleted": false
 }
 ```
@@ -944,16 +944,18 @@ A wrong password is a 200, as for `POST /progress/attempt`.
 
 **Errors**:
 - `400`: Missing parcoursId, or missing/empty `password`
+- `400`: `Corps invalide` (body is `null`, not valid JSON, or not an object)
 - `401`: Unauthorized
 - `403`: `User must be in a team`
 - `403`: `Parcours locked` (the parcours is not published, or not unlocked for the team)
 - `404`: Parcours not found
-- `409`: The parcours has no password yet (`hasPassword: false`), it cannot be validated
+- `409`: `Ce mot de passe n'est pas encore disponible.` The parcours has no password yet (`hasPassword: false`), it cannot be validated
 
 **Notes**:
 - Password matching is the same as for enigmas (`backend/src/utils/password.ts`): case, accents, ligatures (œ, æ), whitespace and punctuation are ignored.
 - Unlimited attempts. Every attempt (right or wrong) is logged in the `ParcoursAttempts` table, separate from the enigma `PasswordAttempts` table so that enigma statistics (difficulty, timeline, attempts per enigma) are unaffected. Every attempt also updates the team's `lastActivityAt`.
 - A correct password sets `completed: true` and `completedAt` on the team's TeamParcoursAccess record, creating it if missing.
+- Messages are neutral (no edition vocabulary such as "tournée"): the front end shows them as is, whatever the theme.
 - Parcours give no points. Completion is only counted in `GET /teams/stats` (`parcoursCompleted`).
 - No payment check (unlike `POST /progress/attempt`): an unpaid team only sees parcours in preview mode.
 
@@ -1910,6 +1912,7 @@ Where:
       "requiredEnigmaIds": ["uuid", ...],
       "requiredEnigmasCount": number,
       "correctPassword": "string (may be empty)",
+      "hasPassword": boolean,
       "isActive": boolean,
       "teamsUnlocked": number
     }
@@ -1919,7 +1922,7 @@ Where:
 ```
 
 **Notes**:
-- The admin gets `correctPassword` (players never do). An empty or missing value means the parcours cannot be validated yet; the admin list shows "⚠ sans mot de passe".
+- The admin gets `correctPassword` (players never do), and `hasPassword`, computed with the same rule as `POST /parcours/{parcoursId}/attempt` (a password that is empty once normalized counts as missing). When `hasPassword` is false the parcours cannot be validated yet; the admin list shows "⚠ sans mot de passe".
 - `teamsUnlocked` counts TeamParcoursAccess records, test teams excluded.
 
 ##### POST /admin/parcours

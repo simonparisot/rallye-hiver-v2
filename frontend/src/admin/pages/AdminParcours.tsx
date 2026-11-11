@@ -414,7 +414,7 @@ const AdminParcours: React.FC = () => {
                             <div className="parcours-title">
                               {parcours.title}
                               {!parcours.isActive && <span className="unpublished-label">non publiée</span>}
-                              {!(parcours.correctPassword || '').trim() && (
+                              {!parcours.hasPassword && (
                                 <span
                                   className="admin-badge admin-badge--warning parcours-sans-mot-de-passe"
                                   data-testid={`admin-parcours-no-password-${parcours.parcoursId}`}

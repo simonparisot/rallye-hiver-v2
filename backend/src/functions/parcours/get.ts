@@ -14,7 +14,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     const parcours = await getParcoursById(parcoursId);
 
-    if (!parcours) {
+    // Une tournée non publiée n'existe pas pour les joueurs (la liste ne la
+    // montre pas non plus) ; l'administration passe par /admin/parcours.
+    if (!parcours || !parcours.isActive) {
       return error('Parcours not found', 404);
     }
 

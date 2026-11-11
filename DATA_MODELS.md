@@ -629,8 +629,10 @@ Parcours ─── (1:N) TeamParcoursAccess
 - Même règle pour les intrigues et les tournées
   (`backend/src/utils/password.ts`, `normalizePassword`) : casse, accents,
   ligatures (œ, æ), espaces et ponctuation ignorés ; seuls a-z et 0-9 comptent.
-- Un mot de passe attendu qui ne garde aucun caractère une fois normalisé
-  compte comme absent.
+- **Tournées seulement** : un mot de passe de fin de tournée qui ne garde
+  aucun caractère une fois normalisé compte comme absent (`hasUsablePassword` :
+  `hasPassword: false`, validation refusée en 409). Les intrigues n'appliquent
+  pas cette règle.
 
 ---
 
