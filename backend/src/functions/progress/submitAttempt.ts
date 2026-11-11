@@ -15,6 +15,7 @@ import {
 import { success, error } from '../../utils/response';
 import { PasswordAttemptLog } from '../../types';
 import { loadAccessContext, evaluateParcoursAccess } from '../../utils/parcoursAccess';
+import { getWrongPasswordMessages, pickWrongPasswordMessage } from '../../utils/wrongPasswordMessages';
 
 /**
  * Normalize a password for comparison
@@ -35,38 +36,6 @@ function normalizePassword(input: string): string {
     .replace(/\s+/g, '')              // 6. Remove all whitespace
     .replace(/[^a-z0-9]/g, '');       // 7. Keep only a-z and 0-9 (removes hyphens, punctuation, etc.)
 }
-
-// Collection of funny error messages for incorrect password attempts
-const FUNNY_ERROR_MESSAGES = [
-  "Oups ! Ce n'est pas le bon code. Essayez encore !",
-  "Presque ! Enfin... non, pas du tout en fait.",
-  "Raté ! Mais ne vous découragez pas !",
-  "Hmm... Non. Retournez voir l'énigme !",
-  "Ce code ne correspond à rien... pour l'instant !",
-  "Essayez encore ! Vous êtes sur la bonne voie... peut-être.",
-  "Pas encore ! Mais chaque tentative vous rapproche du but.",
-  "Non, non, non ! Mais l'échec est le début du succès !",
-  "Raté ! La réponse est ailleurs, cherchez encore.",
-  "Ce n'est pas ça ! Mais bravo d'avoir essayé.",
-  "Incorrect ! Peut-être qu'une petite pause café vous aidera ?",
-  "Perdu ! Mais Rome ne s'est pas faite en un jour.",
-  "Nope ! Retour à l'énigme, détective !",
-  "Faux ! Mais vous chauffez... ou pas.",
-  "Non ! Allez, courage, vous allez y arriver !",
-  "Raté ! Einstein aussi s'est trompé parfois.",
-  "Ce n'est pas la bonne réponse... Réessayez !",
-  "Incorrect ! Les grands esprits se trompent aussi.",
-  "Oups ! Pas tout à fait. Nouvelle tentative ?",
-  "Non ! Mais l'erreur est humaine... et instructive !",
-];
-
-/**
- * Get a random funny error message for incorrect password attempts
- */
-const getRandomErrorMessage = (): string => {
-  const randomIndex = Math.floor(Math.random() * FUNNY_ERROR_MESSAGES.length);
-  return FUNNY_ERROR_MESSAGES[randomIndex];
-};
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -210,7 +179,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       success: isCorrect,
       message: isCorrect
         ? (alreadySolved ? 'Bravo, c\'est le bon mot de passe ! (Cette énigme était déjà résolue par votre équipe)' : 'Bravo ! Énigme résolue !')
-        : getRandomErrorMessage(),
+        : pickWrongPasswordMessage(await getWrongPasswordMessages()),
     });
   } catch (err: any) {
     console.error('Error submitting password attempt:', err);
