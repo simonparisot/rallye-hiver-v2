@@ -1,6 +1,6 @@
 import {
   evaluateParcoursAccess,
-  withoutPdf,
+  forPlayers,
   resolveRequiredEnigmaIds,
   AccessContext,
 } from '../parcoursAccess';
@@ -68,10 +68,22 @@ describe('evaluateParcoursAccess', () => {
   });
 });
 
-test('withoutPdf retire l\'adresse du PDF et rien d\'autre', () => {
-  expect(withoutPdf({ parcoursId: 'p', title: 'T', pdfUrl: 'https://x' })).toEqual({
-    parcoursId: 'p',
-    title: 'T',
+describe('forPlayers', () => {
+  const tournee = { parcoursId: 'p', title: 'T', pdfUrl: 'https://x', correctPassword: 'Tartuffe' };
+
+  test('retire le PDF et le mot de passe, et dit seulement s\'il existe', () => {
+    expect(forPlayers(tournee)).toEqual({ parcoursId: 'p', title: 'T', hasPassword: true });
+  });
+
+  test('garde le PDF d\'une tournée ouverte, jamais le mot de passe', () => {
+    const vue = forPlayers(tournee, { withPdf: true });
+    expect(vue).toEqual({ parcoursId: 'p', title: 'T', pdfUrl: 'https://x', hasPassword: true });
+    expect(JSON.stringify(vue)).not.toContain('Tartuffe');
+  });
+
+  test('une tournée sans mot de passe le signale', () => {
+    expect(forPlayers({ parcoursId: 'p' }).hasPassword).toBe(false);
+    expect(forPlayers({ parcoursId: 'p', correctPassword: '' }).hasPassword).toBe(false);
   });
 });
 

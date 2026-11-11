@@ -1,15 +1,16 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
 import { asLeader } from '../helpers/users.js';
 import { enigmaWithSolution } from '../helpers/enigmas.js';
+import { parcoursPasswords } from '../helpers/parcours.js';
 import { resetTestTeamProgress } from '../helpers/cleanup.js';
 import { config } from '../config/test-config.js';
 
 /**
- * Cœur du jeu : soumission de mot de passe et complétion de parcours.
+ * Cœur du jeu : soumission de mot de passe et validation de parcours.
  * Couvre les scénarios 4, 5 et 6.
  *
- * Ces tests écrivent. Toutes leurs traces — tentatives, progression, accès aux
- * parcours, compteurs d'équipe — sont effacées à la fin, afin que le run soit
+ * Ces tests écrivent. Toutes leurs traces — tentatives (intrigues et
+ * tournées), progression, accès aux parcours, compteurs d'équipe — sont effacées à la fin, afin que le run soit
  * rejouable et qu'il ne fausse pas les statistiques de difficulté en production.
  */
 describe('Déroulement du jeu', () => {
@@ -132,38 +133,91 @@ describe('Déroulement du jeu', () => {
     });
   });
 
-  describe('6. Complétion d\'un parcours', () => {
-    let parcoursId;
+  describe('6. Validation d\'un parcours par son mot de passe', () => {
+    // Tournée ouverte pour l'équipe et dotée d'un mot de passe, lu en base.
+    let tournee;
 
     beforeAll(async () => {
-      // Seule une tournée débloquée peut être déclarée réalisée.
-      const accessibles = await membre.get('/progress/parcours');
-      parcoursId = accessibles.data.accessibleParcours[0]?.parcoursId;
+      const [{ data }, motsDePasse] = await Promise.all([
+        membre.get('/progress/parcours'),
+        parcoursPasswords(),
+      ]);
+      const candidate = data.accessibleParcours.find(
+        (p) => p.hasPassword && !p.completed && motsDePasse.has(p.parcoursId)
+      );
+      if (candidate) {
+        tournee = { parcoursId: candidate.parcoursId, motDePasse: motsDePasse.get(candidate.parcoursId) };
+      }
     });
 
-    // Aucune tournée ouverte pour l'équipe dans ce décor : on n'appelle pas
-    // /parcours/undefined/..., on le dit et on passe.
+    // Aucune tournée ouverte avec mot de passe pour l'équipe dans ce décor :
+    // on n'appelle pas /parcours/undefined/..., on le dit et on passe.
     const sansTourneeOuverte = () => {
-      if (parcoursId) return false;
-      console.warn('Scénario 6 ignoré : aucune tournée ouverte pour l\'équipe de test.');
+      if (tournee) return false;
+      console.warn(
+        'Scénario 6 ignoré : aucune tournée ouverte, non réalisée et dotée d\'un mot de passe pour l\'équipe de test.'
+      );
       return true;
     };
 
-    test('refuse de marquer réalisé un parcours verrouillé', async () => {
+    test('ne donne jamais le mot de passe d\'une tournée aux joueurs', async () => {
+      const liste = await membre.get('/parcours');
+      const equipe = await membre.get('/progress/parcours');
+
+      expect(JSON.stringify(liste.data)).not.toContain('correctPassword');
+      expect(JSON.stringify(equipe.data)).not.toContain('correctPassword');
+      equipe.data.parcours.forEach((p) => expect(typeof p.hasPassword).toBe('boolean'));
+    });
+
+    test('refuse de valider un parcours verrouillé', async () => {
       const { data } = await membre.get('/progress/parcours');
       const verrouille = data.parcours.find((p) => !p.isUnlocked);
-      if (!verrouille) return; // aucun parcours verrouillé pour l'équipe dans ce décor
+      if (!verrouille) {
+        console.warn('Scénario 6 : aucune tournée verrouillée pour l\'équipe dans ce décor, vérification ignorée.');
+        return;
+      }
 
-      const reponse = await membre.post(`/parcours/${verrouille.parcoursId}/complete`, {});
+      const reponse = await membre.post(`/parcours/${verrouille.parcoursId}/attempt`, { password: 'peu importe' });
 
       expect(reponse.status).toBe(403);
     });
 
-    test('marque le parcours comme réalisé', async () => {
+    test('rejette une tentative sans mot de passe', async () => {
       if (sansTourneeOuverte()) return;
-      const reponse = await membre.post(`/parcours/${parcoursId}/complete`, {});
+      const reponse = await membre.post(`/parcours/${tournee.parcoursId}/attempt`, {});
+
+      expect(reponse.status).toBe(400);
+    });
+
+    test('un mot de passe faux ne valide pas la tournée', async () => {
+      if (sansTourneeOuverte()) return;
+      const reponse = await membre.post(`/parcours/${tournee.parcoursId}/attempt`, {
+        password: 'reponse-volontairement-fausse-42',
+      });
 
       expect(reponse.status).toBe(200);
+      expect(reponse.data.success).toBe(false);
+      expect(reponse.data.message.toLowerCase()).not.toContain(tournee.motDePasse.toLowerCase());
+
+      const { data } = await membre.get('/progress/parcours');
+      expect(data.parcours.find((p) => p.parcoursId === tournee.parcoursId).completed).toBe(false);
+    });
+
+    test('le bon mot de passe, saisi librement, valide la tournée', async () => {
+      if (sansTourneeOuverte()) return;
+      // Même tolérance que pour les intrigues : casse, accents, espaces.
+      const variante = tournee.motDePasse.toLowerCase().split('').join(' ');
+
+      const reponse = await membre.post(`/parcours/${tournee.parcoursId}/attempt`, { password: variante });
+
+      expect(reponse.status).toBe(200);
+      expect(reponse.data.success).toBe(true);
+      expect(reponse.data.alreadyCompleted).toBe(false);
+
+      const { data } = await membre.get('/progress/parcours');
+      const suivi = data.parcours.find((p) => p.parcoursId === tournee.parcoursId);
+      expect(suivi.completed).toBe(true);
+      expect(suivi.completedAt).toEqual(expect.any(String));
     });
 
     test('reporte le parcours réalisé sur le tableau de bord', async () => {
@@ -173,16 +227,16 @@ describe('Déroulement du jeu', () => {
       expect(stats.data.parcoursCompleted).toBeGreaterThanOrEqual(1);
     });
 
-    test('permet de revenir sur la complétion', async () => {
+    test('reste juste sur une tournée déjà validée, sans revalider', async () => {
       if (sansTourneeOuverte()) return;
-      // Réversible : c'est ce qui rend ce scénario exécutable en production.
-      const annulation = await membre.delete(`/parcours/${parcoursId}/complete`);
+      const reponse = await membre.post(`/parcours/${tournee.parcoursId}/attempt`, { password: tournee.motDePasse });
 
-      expect(annulation.status).toBe(200);
-
-      const stats = await membre.get('/teams/stats');
-      expect(stats.data.parcoursCompleted).toBe(0);
+      expect(reponse.data.success).toBe(true);
+      expect(reponse.data.alreadyCompleted).toBe(true);
     });
+
+    // Plus de retour arrière côté joueur : la remise à zéro de afterAll
+    // (resetTestTeamProgress) efface la validation et les tentatives.
   });
 
   describe('Cloisonnement', () => {

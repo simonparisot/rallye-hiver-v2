@@ -97,3 +97,10 @@
   color: var(--text-secondary);
   font-weight: normal;
 }
+
+/* Une tournée sans mot de passe ne peut pas être validée par les équipes. */
+.parcours-sans-mot-de-passe {
+  margin-left: var(--spacing-sm);
+  text-transform: none;
+  vertical-align: middle;
+}

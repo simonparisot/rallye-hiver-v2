@@ -15,6 +15,7 @@ const AdminParcours: React.FC = () => {
     title: '',
     pdfUrl: '',
     requiredEnigmaIds: [],
+    correctPassword: '',
     isActive: true,
   });
   const [erreurFormulaire, setErreurFormulaire] = useState('');
@@ -73,6 +74,7 @@ const AdminParcours: React.FC = () => {
       title: '',
       pdfUrl: '',
       requiredEnigmaIds: [],
+      correctPassword: '',
       isActive: true,
     });
     setErreurFormulaire('');
@@ -87,6 +89,9 @@ const AdminParcours: React.FC = () => {
       title: parcours.title,
       pdfUrl: parcours.pdfUrl,
       requiredEnigmaIds: parcours.requiredEnigmaIds || [],
+      // L'administration reçoit le mot de passe : il est affiché pour être
+      // vérifié ou corrigé.
+      correctPassword: parcours.correctPassword || '',
       isActive: parcours.isActive,
     });
     setErreurFormulaire('');
@@ -144,7 +149,11 @@ const AdminParcours: React.FC = () => {
     setErreurFormulaire('');
     // Le numéro n'est pas envoyé : à la création le serveur place la tournée
     // en dernier, à la modification elle garde sa place dans la liste.
-    const data = { ...formData, requiredEnigmaIds: intriguesRequises };
+    const data = {
+      ...formData,
+      requiredEnigmaIds: intriguesRequises,
+      correctPassword: (formData.correctPassword || '').trim(),
+    };
     if (editingParcours) {
       updateMutation.mutate({ parcoursId: editingParcours.parcoursId, data });
     } else {
@@ -258,6 +267,24 @@ const AdminParcours: React.FC = () => {
                   {uploadProgress}
                 </div>
               )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="parcours-password">Mot de passe de fin de tournée</label>
+              <input data-testid="admin-parcours-password-input"
+                id="parcours-password"
+                type="text"
+                value={formData.correctPassword || ''}
+                onChange={(e) => setFormData({ ...formData, correctPassword: e.target.value.toUpperCase() })}
+                placeholder="Ex: MOLIERE1673"
+                autoComplete="off"
+                style={{ fontFamily: 'monospace', textTransform: 'uppercase' }}
+              />
+              <p className="admin-form-help">
+                Les équipes le trouvent à la fin de la tournée et le saisissent pour la valider.
+                Casse, accents, espaces et ponctuation sont ignorés, comme pour les intrigues.
+                Vide : la tournée ne peut pas encore être validée.
+              </p>
             </div>
 
             <fieldset className="form-group intrigues-requises" data-testid="admin-parcours-required-enigmas">
@@ -387,6 +414,15 @@ const AdminParcours: React.FC = () => {
                             <div className="parcours-title">
                               {parcours.title}
                               {!parcours.isActive && <span className="unpublished-label">non publiée</span>}
+                              {!(parcours.correctPassword || '').trim() && (
+                                <span
+                                  className="admin-badge admin-badge--warning parcours-sans-mot-de-passe"
+                                  data-testid={`admin-parcours-no-password-${parcours.parcoursId}`}
+                                  title="Les équipes ne peuvent pas encore valider cette tournée"
+                                >
+                                  ⚠ sans mot de passe
+                                </span>
+                              )}
                             </div>
                             <div className="parcours-deblocage" data-testid={`admin-parcours-unlock-${parcours.parcoursId}`}>
                               {(parcours.requiredEnigmaIds || []).length === 0

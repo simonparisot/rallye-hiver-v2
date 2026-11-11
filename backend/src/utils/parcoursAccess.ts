@@ -1,4 +1,5 @@
 import { getAllEnigmasForAdmin, getAllTeamProgress } from './dynamodb';
+import { hasUsablePassword } from './password';
 
 /**
  * Déblocage des tournées par les intrigues.
@@ -73,12 +74,19 @@ export function evaluateParcoursAccess(parcours: any, context: AccessContext): P
 }
 
 /**
- * Ce qu'un joueur peut voir d'une tournée sans y avoir accès : tout sauf
- * l'adresse de son PDF, qui suffirait à l'ouvrir.
+ * Ce qu'un joueur peut voir d'une tournée.
+ *
+ * Jamais le mot de passe de fin de tournée : seulement `hasPassword`, pour
+ * savoir s'il peut déjà la valider. L'adresse du PDF, qui suffit à l'ouvrir,
+ * seulement si `withPdf` (tournée ouverte pour son équipe).
  */
-export function withoutPdf(parcours: any) {
-  const { pdfUrl, ...rest } = parcours;
-  return rest;
+export function forPlayers(parcours: any, { withPdf = false }: { withPdf?: boolean } = {}) {
+  const { pdfUrl, correctPassword, ...rest } = parcours;
+  return {
+    ...rest,
+    ...(withPdf && pdfUrl !== undefined ? { pdfUrl } : {}),
+    hasPassword: hasUsablePassword(correctPassword),
+  };
 }
 
 /**

@@ -57,6 +57,13 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       updates.requiredEnigmasCount = resolved.ids.length;
     }
     if (body.isActive !== undefined) updates.isActive = body.isActive;
+    if (body.correctPassword !== undefined) {
+      if (typeof body.correctPassword !== 'string') {
+        return error('correctPassword doit être une chaîne', 400);
+      }
+      // Chaîne vide : la tournée n'a plus de mot de passe.
+      updates.correctPassword = body.correctPassword.trim();
+    }
 
     const updatedParcours = await updateParcours(parcoursId, updates);
 
