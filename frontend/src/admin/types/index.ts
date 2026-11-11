@@ -57,6 +57,8 @@ export interface CreateEnigmaRequest {
   pdfUrl: string;  // TODO: Replace with file upload once S3 integration is ready
   solution?: string;      // Demarche de resolution detaillee, fausses pistes comprises
   hints?: EnigmaHint[];   // Indices pre-ecrits, du plus precoce au plus tardif
+  hintsEnabled?: boolean;            // Indices ouverts aux équipes
+  hintsAvailableFrom?: string | null; // AAAA-MM-JJ ; vide = dès l'ouverture
   isActive: boolean;
 }
 

@@ -143,6 +143,10 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
   // la somme « obtenus + restants » donne la même chose, à ceci près qu'elle
   // vaut zéro pendant le tout premier chargement — d'où l'attente ci-dessous.
   const nombreIndices = data?.totalHints ?? (indicesObtenus.length + indicesRestants);
+  // L'organisateur ouvre les indices intrigue par intrigue, parfois des semaines
+  // après sa publication. Un serveur plus ancien ne connaît pas ce réglage : il
+  // ne ferme jamais rien, d'où le défaut à vrai.
+  const ouverts = data?.hintsAvailable ?? true;
   const longueur = avancement.trim().length;
   const texteValide = longueur >= LONGUEUR_MIN && longueur <= LONGUEUR_MAX;
 
@@ -177,7 +181,9 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
     setConfirmation(false);
   };
 
-  const libelleBouton = epuise
+  const libelleBouton = !ouverts
+    ? `Indices reçus (${indicesObtenus.length})`
+    : epuise
     ? 'Indices : tous donnés'
     : indicesObtenus.length > 0
       ? `Indices (${indicesObtenus.length} obtenu${indicesObtenus.length > 1 ? 's' : ''}, ${indicesRestants} restant${indicesRestants > 1 ? 's' : ''})`
@@ -186,7 +192,11 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
   // Rien à proposer si l'intrigue n'a pas d'indice écrit : le bouton ouvrirait
   // une fenêtre vide, et la demande échouerait côté serveur. On attend d'abord
   // la réponse — afficher le bouton puis le retirer serait pire que l'attente.
-  if (!data || nombreIndices === 0) return null;
+  //
+  // Fermés, les indices ne se demandent plus — mais ceux déjà reçus restent à
+  // l'équipe : le bouton demeure pour les relire. Sans rien reçu, rien à montrer.
+  const aProposer = ouverts && nombreIndices > 0;
+  if (!data || (!aProposer && indicesObtenus.length === 0 && !enAttente)) return null;
 
   return (
     <div className="souffleur" data-testid="hint-section">
@@ -218,7 +228,7 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
         >
         <div className="souffleur-panneau" role="dialog" aria-modal="true" aria-labelledby="souffleur-titre">
           <header className="souffleur-tete">
-            <h3 id="souffleur-titre"><IconeIndice /> Demander un indice</h3>
+            <h3 id="souffleur-titre"><IconeIndice /> {ouverts ? 'Demander un indice' : 'Vos indices'}</h3>
             <button
               type="button"
               className="souffleur-fermer"
@@ -234,6 +244,14 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
                 Le quart est écrit en dur : le barème dort encore côté serveur
                 (backend/src/utils/hintCost.ts, nextHintCost vaut 0), mais
                 c'est la règle annoncée aux équipes et elle sera rebranchée. */}
+            {!ouverts && (
+              <p className="souffleur-alerte" data-testid="hint-closed" role="status">
+                Les demandes d'indice sont fermées pour cette intrigue. Vous pouvez relire ci-dessous
+                les indices que votre troupe a déjà reçus.
+              </p>
+            )}
+
+            {ouverts && (
             <div className="souffleur-intro" data-testid="hint-cost-warning">
               <p>
                 <b>Bloqué sur cette intrigue ?</b> Décrivez où vous en êtes : un indice choisi
@@ -244,6 +262,7 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
                 plus rentable que de rester bloqué et de n'en marquer aucun.
               </p>
             </div>
+            )}
 
             {/* Les indices déjà donnés, rappelés avant d'en demander un autre. */}
             {indicesObtenus.length > 0 && (
@@ -298,7 +317,7 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
             )}
 
             {/* Étapes 1 et 2 — décrire, puis confirmer. */}
-            {!enAttente && !epuise && (
+            {ouverts && !enAttente && !epuise && (
               <>
                 <p className="souffleur-reste-ligne" data-testid="hint-remaining">
                   {indicesRestants} indice{indicesRestants > 1 ? 's' : ''} encore disponible{indicesRestants > 1 ? 's' : ''}

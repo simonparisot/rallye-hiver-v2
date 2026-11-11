@@ -1105,6 +1105,8 @@ qui rend le prompt hacking sans objet.
   ],
   "hintsRequested": number,
   "remainingHints": number,
+  "totalHints": number,
+  "hintsAvailable": boolean,
   "pendingRequest": boolean,
   "nextHintCost": number,
   "enigmaPoints": number,
@@ -1123,6 +1125,12 @@ qui rend le prompt hacking sans objet.
   regarde le worker, pas l'équipe
 - `nextHintCost` vaut 0 pendant l'essai (voir la note sur le coût plus bas)
 - Aucun appel au modèle : cet endpoint est rapide et gratuit
+- `totalHints` : nombre d'indices rédigés pour l'énigme, quoi que l'équipe ait reçu
+- `hintsAvailable` : vrai si l'équipe peut demander un indice maintenant. C'est
+  l'organisateur qui ouvre les indices, énigme par énigme, éventuellement à une
+  date (voir `hintsEnabled` / `hintsAvailableFrom` sur l'énigme). Fermés, les
+  indices déjà reçus restent lisibles dans `hints`. La date d'ouverture n'est pas
+  transmise aux équipes
 
 **Errors**:
 - `403`: L'utilisateur n'a pas d'équipe, ou l'équipe n'a pas réglé son inscription
@@ -1183,7 +1191,8 @@ qui rend le prompt hacking sans objet.
 
 **Errors**:
 - `400`: `progress` absent, de moins de 20 caractères, ou de plus de 3 000
-- `403`: Pas d'équipe, équipe non payante, ou énigme inactive
+- `403`: Pas d'équipe, équipe non payante, énigme inactive, ou indices pas
+  (encore) ouverts sur cette énigme
 - `404`: Énigme inconnue, ou énigme sans aucun indice pré-écrit
 - `409`: Énigme déjà résolue, tous les indices déjà donnés, demande déjà en
   attente pour cette énigme, ou demande concurrente portant la même clé
@@ -2373,6 +2382,7 @@ L'opération est tracée dans le journal du plateau.
 
 | Date | Endpoint | Change | Type | Impact |
 |------|----------|--------|------|--------|
+| 2026-11-11 | GET /hints/{enigmaId}, POST /hints/{enigmaId}/request, POST /enigmas, PUT /enigmas/{id}, PUT /admin/enigmas/{id} | Ouverture des indices par énigme : deux champs sur l'énigme, `hintsEnabled` (booléen, fermé par défaut) et `hintsAvailableFrom` (AAAA-MM-JJ, jour de Paris, `null` ou `""` pour l'effacer). `GET /hints` renvoie `hintsAvailable` ; la demande d'indice répond 403 tant que c'est fermé | Feature + Breaking | **Breaking** : une énigme sans réglage n'offre plus d'indice. Les énigmes existantes doivent être ouvertes depuis l'admin. Une date mal formée est refusée en 400 |
 | 2026-09-12 | GET /oie, POST /oie/answer, POST /oie/roll, POST /oie/prompter | Énigme du jeu de l'oie : plateau partagé par toutes les équipes (édition 2027) | Feature | Une des vingt énigmes se joue sur un plateau commun ; arriver en case 63 marque l'énigme résolue dans `TeamEnigmaProgress`, donc le classement existant la compte |
 | 2026-09-12 | GET/PUT /admin/oie/board, GET /admin/oie/teams, POST /admin/oie/teams/{teamId}/reset | Administration du plateau : 63 questions, quota de lancers, état des équipes | Feature | Le quota `rollsPerDay` est modifiable à tout moment, sans déploiement |
 | 2026-09-12 | POST /hints/{enigmaId}/request, GET /hints/{enigmaId} | Mode `queue` : la demande part en attente (202) et un worker extérieur la traite via `claude -p`, faute de clé d'API pour l'essai. Ajout de `status` et `failureReason` aux demandes. Le coût en points passe à 0 et n'affecte plus `totalPoints` | Feature + Breaking | **Breaking** : `POST /hints/.../request` peut désormais répondre 202 sans indice ; le client doit lire `status` et interroger `GET /hints/{enigmaId}`. `hintsPenalty` disparaît de GET /teams/stats |

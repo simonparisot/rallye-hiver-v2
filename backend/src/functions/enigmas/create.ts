@@ -4,6 +4,7 @@ import { createEnigma } from '../../utils/dynamodb';
 import { requireAdmin } from '../../utils/adminAuth';
 import { success, error } from '../../utils/response';
 import { Enigma } from '../../types';
+import { lireReglageIndices } from '../../utils/hintAvailability';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -22,6 +23,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     if (!body.title || !body.pdfUrl || !body.correctPassword) {
       return error('Missing required fields: title, pdfUrl, correctPassword', 400);
     }
+
+    const reglage = lireReglageIndices(body);
+    if (reglage.erreur) return error(reglage.erreur, 400);
 
     const now = new Date().toISOString();
 
@@ -49,6 +53,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       points: body.points || 10, // Default to 10 points if not provided
       difficulty: body.difficulty || 'medium',
       isActive: body.isActive !== undefined ? body.isActive : true,
+      // Fermés par défaut : l'organisateur les ouvre quand il le décide.
+      hintsEnabled: reglage.valeurs.hintsEnabled ?? false,
+      hintsAvailableFrom: reglage.valeurs.hintsAvailableFrom ?? null,
       createdAt: now,
       updatedAt: now,
       gameId: body.gameId,

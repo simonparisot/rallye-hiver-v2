@@ -69,6 +69,10 @@ export interface Enigma {
   solution?: string;
   /** Indices pre-ecrits, du plus precoce au plus tardif (ordre croissant). */
   hints?: EnigmaHint[];
+  /** Indices ouverts aux équipes. Absent = fermés (voir utils/hintAvailability). */
+  hintsEnabled?: boolean;
+  /** Jour de Paris (AAAA-MM-JJ) à partir duquel les indices s'ouvrent. */
+  hintsAvailableFrom?: string | null;
   points: number;
   difficulty?: 'easy' | 'medium' | 'hard';
   isActive: boolean;

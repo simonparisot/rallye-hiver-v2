@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { updateEnigma, getEnigmaById } from '../../utils/dynamodb';
 import { requireAdmin } from '../../utils/adminAuth';
 import { success, error } from '../../utils/response';
+import { lireReglageIndices } from '../../utils/hintAvailability';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -42,6 +43,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     if (body.difficulty !== undefined) updates.difficulty = body.difficulty;
     if (body.isActive !== undefined) updates.isActive = body.isActive;
     if (body.enigmaNumber !== undefined) updates.enigmaNumber = body.enigmaNumber;
+
+    // Ouverture des indices : un interrupteur et une date facultative.
+    const reglage = lireReglageIndices(body);
+    if (reglage.erreur) return error(reglage.erreur, 400);
+    Object.assign(updates, reglage.valeurs);
 
     const updatedEnigma = await updateEnigma(enigmaId, updates);
 

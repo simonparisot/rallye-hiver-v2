@@ -46,6 +46,7 @@ function decorNominal() {
     enigmaId: 'e1',
     title: 'Enigme',
     isActive: true,
+    hintsEnabled: true,
     points: 20,
     correctPassword: 'MOT',
     solution: 'La démarche complète.',
@@ -240,6 +241,7 @@ describe('POST /hints/{enigmaId}/request', () => {
         enigmaId: 'e1',
         title: 'Enigme',
         isActive: true,
+        hintsEnabled: true,
         points: 20,
         correctPassword: 'MOT',
         hints: [],
@@ -293,6 +295,38 @@ describe('POST /hints/{enigmaId}/request', () => {
       expect(resultat.statusCode).toBe(200);
       // Une seule demande archivée.
       expect(db.createHintRequest).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("ouverture des indices par l'organisateur", () => {
+    const enigme = (reglage: object) => ({
+      enigmaId: 'e1', title: 'Enigme', isActive: true, points: 20,
+      correctPassword: 'MOT', solution: 'La démarche complète.', hints: INDICES, ...reglage,
+    });
+
+    it('refuse quand les indices ne sont pas ouverts (réglage absent)', async () => {
+      (db.getEnigmaById as jest.Mock).mockResolvedValue(enigme({ hintsEnabled: undefined }));
+      const reponse = await handler(evenement({ progress: AVANCEMENT, requestKey: 'f1' }), caller);
+      expect(reponse.statusCode).toBe(403);
+      expect(db.createHintRequest).not.toHaveBeenCalled();
+    });
+
+    it('refuse quand l\'organisateur a fermé les indices', async () => {
+      (db.getEnigmaById as jest.Mock).mockResolvedValue(enigme({ hintsEnabled: false }));
+      const reponse = await handler(evenement({ progress: AVANCEMENT, requestKey: 'f2' }), caller);
+      expect(reponse.statusCode).toBe(403);
+    });
+
+    it("refuse avant la date d'ouverture, même interrupteur levé", async () => {
+      (db.getEnigmaById as jest.Mock).mockResolvedValue(enigme({ hintsEnabled: true, hintsAvailableFrom: '2999-01-01' }));
+      const reponse = await handler(evenement({ progress: AVANCEMENT, requestKey: 'f3' }), caller);
+      expect(reponse.statusCode).toBe(403);
+    });
+
+    it("accepte une fois la date d'ouverture passée", async () => {
+      (db.getEnigmaById as jest.Mock).mockResolvedValue(enigme({ hintsEnabled: true, hintsAvailableFrom: '2000-01-01' }));
+      const reponse = await handler(evenement({ progress: AVANCEMENT, requestKey: 'f4' }), caller);
+      expect(reponse.statusCode).toBe(200);
     });
   });
 });

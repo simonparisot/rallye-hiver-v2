@@ -12,6 +12,7 @@ import {
   getHintRequestsByTeamAndEnigma,
 } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
+import { indicesOuverts } from '../../utils/hintAvailability';
 import {
   selectHint,
   hintProvider,
@@ -148,6 +149,12 @@ export const handler = async (
     }
     if (!enigma.isActive) {
       return error("Cette énigme n'est pas active", 403);
+    }
+    // L'organisateur ouvre les indices énigme par énigme, éventuellement à une
+    // date donnée. Le bouton est déjà masqué tant qu'ils sont fermés ; ce
+    // contrôle-ci est celui qui compte, le frontend n'étant qu'une politesse.
+    if (!indicesOuverts(enigma)) {
+      return error("Les indices ne sont pas ouverts pour cette énigme.", 403);
     }
 
     const progression = await getTeamProgress(user.teamId, enigmaId);

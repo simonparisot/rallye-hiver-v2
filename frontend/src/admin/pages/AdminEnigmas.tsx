@@ -17,6 +17,8 @@ const AdminEnigmas: React.FC = () => {
     pdfUrl: '',
     solution: '',
     hints: [],
+    hintsEnabled: false,
+    hintsAvailableFrom: '',
     isActive: true,
   });
   const [uploadingPdf, setUploadingPdf] = useState(false);
@@ -65,6 +67,8 @@ const AdminEnigmas: React.FC = () => {
       pdfUrl: '',
       solution: '',
       hints: [],
+      hintsEnabled: false,
+      hintsAvailableFrom: '',
       isActive: true,
     });
     setEditingEnigma(null);
@@ -80,6 +84,8 @@ const AdminEnigmas: React.FC = () => {
       pdfUrl: enigma.pdfUrl,
       solution: enigma.solution || '',
       hints: enigma.hints ? enigma.hints.map((h) => ({ ...h })) : [],
+      hintsEnabled: enigma.hintsEnabled === true,
+      hintsAvailableFrom: enigma.hintsAvailableFrom || '',
       isActive: enigma.isActive,
     });
     setShowForm(true);
@@ -416,6 +422,60 @@ const AdminEnigmas: React.FC = () => {
               </div>
             </div>
 
+            {/* L'ouverture des indices est un choix de l'organisateur, énigme par
+                énigme : jamais, tout de suite, ou à partir d'une date. Fermée par
+                défaut, pour qu'on puisse rédiger les indices sans les exposer. */}
+            <div className="form-row">
+              <div className="form-group form-group-full">
+                <label>Ouverture des indices aux équipes</label>
+                <div className="hints-opening" data-testid="admin-enigmas-hints-opening">
+                  <div className="toggle-container">
+                    <label className="toggle-switch">
+                      <input data-testid="admin-enigmas-hints-enabled"
+                        id="enigma-hints-enabled"
+                        type="checkbox"
+                        checked={!!formData.hintsEnabled}
+                        onChange={(e) => setFormData({ ...formData, hintsEnabled: e.target.checked })}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span className={`toggle-label ${formData.hintsEnabled ? 'active' : 'inactive'}`}>
+                      {formData.hintsEnabled ? '✓ Indices ouverts' : '✗ Indices fermés'}
+                    </span>
+                  </div>
+                  <div className="hints-opening-date">
+                    <label htmlFor="enigma-hints-from">à partir du</label>
+                    <input
+                      id="enigma-hints-from"
+                      type="date"
+                      data-testid="admin-enigmas-hints-from"
+                      value={formData.hintsAvailableFrom || ''}
+                      disabled={!formData.hintsEnabled}
+                      onChange={(e) => setFormData({ ...formData, hintsAvailableFrom: e.target.value })}
+                    />
+                    {formData.hintsAvailableFrom && formData.hintsEnabled && (
+                      <button
+                        type="button"
+                        className="btn btn-small btn-secondary"
+                        data-testid="admin-enigmas-hints-from-clear"
+                        onClick={() => setFormData({ ...formData, hintsAvailableFrom: '' })}
+                      >
+                        Ouvrir tout de suite
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <small className="form-help" data-testid="admin-enigmas-hints-opening-help">
+                  {!formData.hintsEnabled
+                    ? 'Les équipes ne voient pas le bouton d’indice sur cette intrigue.'
+                    : formData.hintsAvailableFrom
+                      ? `Les équipes pourront demander un indice à partir du ${new Date(formData.hintsAvailableFrom + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}, à minuit (heure de Paris).`
+                      : 'Les équipes peuvent demander un indice dès maintenant.'}
+                  {formData.hintsEnabled && indices.length === 0 && ' Attention : aucun indice n’est encore rédigé, le bouton restera masqué.'}
+                </small>
+              </div>
+            </div>
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="enigma-active">Statut de publication</label>
@@ -496,7 +556,7 @@ const AdminEnigmas: React.FC = () => {
                 <th style={{ width: '50px' }}>#</th>
                 <th>Titre</th>
                 <th style={{ width: '150px' }}>Stats</th>
-                <th style={{ width: '60px' }}>Indices</th>
+                <th style={{ width: '120px' }}>Indices</th>
                 <th style={{ width: '100px' }}></th>
               </tr>
             </thead>
@@ -529,13 +589,24 @@ const AdminEnigmas: React.FC = () => {
                             )}
                           </td>
                           <td>
-                            {enigma.hints && enigma.hints.length > 0 ? (
-                              <span className="hint-count" title="Indices pré-écrits">
-                                {enigma.hints.length}
-                              </span>
-                            ) : (
-                              <span className="no-hint">-</span>
-                            )}
+                            {/* Le nombre d'indices rédigés, et surtout leur état :
+                                c'est ce que l'organisateur vient vérifier ici. */}
+                            <span className="hints-cell" data-testid={`admin-enigmas-hints-status-${enigma.enigmaId}`}>
+                              {enigma.hints && enigma.hints.length > 0 ? (
+                                <span className="hint-count" title="Indices rédigés">{enigma.hints.length}</span>
+                              ) : (
+                                <span className="no-hint">-</span>
+                              )}
+                              {enigma.hintsEnabled !== true ? (
+                                <span className="hints-state hints-state-ferme">fermés</span>
+                              ) : enigma.hintsAvailableFrom && enigma.hintsAvailableFrom > new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' }) ? (
+                                <span className="hints-state hints-state-planifie">
+                                  dès le {new Date(enigma.hintsAvailableFrom + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                                </span>
+                              ) : (
+                                <span className="hints-state hints-state-ouvert">ouverts</span>
+                              )}
+                            </span>
                           </td>
                           <td className="actions">
                             <button data-testid={`admin-enigmas-edit-button-${enigma.enigmaId}`}

@@ -47,6 +47,8 @@ export interface BackendEnigma {
   hintsCount?: number;  // Nombre d'indices existants (le texte reste cote serveur)
   solution?: string;    // Demarche de resolution, cote admin uniquement
   hints?: EnigmaHint[]; // Indices pre-ecrits, cote admin uniquement
+  hintsEnabled?: boolean;            // Indices ouverts aux équipes (absent = fermés)
+  hintsAvailableFrom?: string | null; // AAAA-MM-JJ, jour de Paris d'ouverture
   points: number;
   difficulty?: 'easy' | 'medium' | 'hard';
   isActive: boolean;
@@ -242,6 +244,12 @@ export interface HintsListResponse {
    * Facultatif le temps que le serveur déployé porte le champ.
    */
   totalHints?: number;
+  /**
+   * Vrai si l'équipe peut demander un indice maintenant : l'organisateur ouvre
+   * les indices intrigue par intrigue, éventuellement à une date. Facultatif le
+   * temps que le serveur déployé porte le champ.
+   */
+  hintsAvailable?: boolean;
   /** Vrai tant qu'une demande n'est pas conclue : le frontend réinterroge. */
   pendingRequest: boolean;
   nextHintCost: number;

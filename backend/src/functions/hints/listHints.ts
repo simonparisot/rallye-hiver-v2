@@ -7,6 +7,7 @@ import {
 } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
 import { ordonnerIndices } from './requestHint';
+import { indicesOuverts } from '../../utils/hintAvailability';
 
 /**
  * Demandes d'indice de l'équipe sur une énigme, avec leur statut.
@@ -92,6 +93,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       // tous eus » se ressemblent : remainingHints vaut zéro dans les deux cas,
       // et le frontend ne peut pas décider s'il doit proposer le bouton.
       totalHints: tousLesIndices.length,
+      // Les équipes peuvent-elles en demander maintenant ? Fermé, le bouton
+      // disparaît — sauf pour relire les indices déjà reçus, qui restent dus.
+      // La date d'ouverture n'est pas transmise : l'organisateur n'a pas à
+      // l'annoncer aux équipes.
+      hintsAvailable: indicesOuverts(enigma),
       pendingRequest: enAttente,
       enigmaPoints: enigma.points || 0,
       // Coût nul pendant l'essai : le barème dort dans utils/hintCost.ts.
