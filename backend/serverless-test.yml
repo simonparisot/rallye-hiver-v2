@@ -367,11 +367,20 @@ functions:
             resultTtlInSeconds: 0
 
   # Enigma management endpoints (admin)
+  # La route /admin/... sert le meme handler : une seule fonction pour les deux,
+  # chaque fonction coutant 3 ressources sur les 500 permises par CloudFormation.
   createEnigma:
     handler: src/functions/enigmas/create.handler
     events:
       - http:
           path: /enigmas
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+      - http:
+          path: /admin/enigmas
           method: post
           cors: true
           authorizer:
@@ -449,11 +458,20 @@ functions:
             resultTtlInSeconds: 0
 
   # Parcours management endpoints (admin)
+  # La route /admin/... sert le meme handler : une seule fonction pour les deux,
+  # chaque fonction coutant 3 ressources sur les 500 permises par CloudFormation.
   createParcours:
     handler: src/functions/parcours/create.handler
     events:
       - http:
           path: /parcours
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+      - http:
+          path: /admin/parcours
           method: post
           cors: true
           authorizer:
@@ -494,6 +512,8 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
+  # La route /admin/... sert le meme handler : une seule fonction pour les deux,
+  # chaque fonction coutant 3 ressources sur les 500 permises par CloudFormation.
   updateParcours:
     handler: src/functions/parcours/update.handler
     events:
@@ -504,12 +524,28 @@ functions:
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
+      - http:
+          path: /admin/parcours/{parcoursId}
+          method: put
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
 
+  # La route /admin/... sert le meme handler : une seule fonction pour les deux,
+  # chaque fonction coutant 3 ressources sur les 500 permises par CloudFormation.
   deleteParcours:
     handler: src/functions/parcours/delete.handler
     events:
       - http:
           path: /parcours/{parcoursId}
+          method: delete
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+      - http:
+          path: /admin/parcours/{parcoursId}
           method: delete
           cors: true
           authorizer:
@@ -599,8 +635,12 @@ functions:
           cors: true
 
   # Admin endpoints
-  adminStartGame:
-    handler: src/functions/admin/game/start.handler
+  # Phase du jeu vue par l'orga, et retour en avant-lancement (utils/gamePhase).
+  # Plusieurs routes, une seule fonction qui aiguille selon la route
+  # (utils/routeur) : chaque fonction coute 3 ressources sur les 500
+  # permises par CloudFormation.
+  adminGame:
+    handler: src/functions/admin/game/routes.handler
     events:
       - http:
           path: /admin/game/start
@@ -609,11 +649,6 @@ functions:
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
-
-  # Phase du jeu vue par l'orga, et retour en avant-lancement (utils/gamePhase).
-  adminGetGameStatus:
-    handler: src/functions/admin/game/status.handler
-    events:
       - http:
           path: /admin/game/status
           method: get
@@ -621,10 +656,6 @@ functions:
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
-
-  adminResetGame:
-    handler: src/functions/admin/game/reset.handler
-    events:
       - http:
           path: /admin/game/reset
           method: post
@@ -636,8 +667,11 @@ functions:
   # Messages servis au hasard quand une equipe donne un mauvais mot de passe.
   # Item gameId = settings#wrong-password-messages de la table game-status,
   # deja couverte par les droits IAM du role (GetItem, PutItem, DeleteItem).
-  adminGetWrongPasswordMessages:
-    handler: src/functions/admin/settings/wrongPasswordMessages.getHandler
+  # Plusieurs routes, une seule fonction qui aiguille selon la route
+  # (utils/routeur) : chaque fonction coute 3 ressources sur les 500
+  # permises par CloudFormation.
+  adminWrongPasswordMessages:
+    handler: src/functions/admin/settings/routes.handler
     events:
       - http:
           path: /admin/settings/wrong-password-messages
@@ -657,10 +691,6 @@ functions:
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
-
-  adminPutWrongPasswordMessages:
-    handler: src/functions/admin/settings/wrongPasswordMessages.putHandler
-    events:
       - http:
           path: /admin/settings/wrong-password-messages
           method: put
@@ -679,10 +709,6 @@ functions:
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
-
-  adminResetWrongPasswordMessages:
-    handler: src/functions/admin/settings/wrongPasswordMessages.deleteHandler
-    events:
       - http:
           path: /admin/settings/wrong-password-messages
           method: delete
@@ -767,8 +793,11 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
-  adminListTeams:
-    handler: src/functions/admin/teams/list.handler
+  # Plusieurs routes, une seule fonction qui aiguille selon la route
+  # (utils/routeur) : chaque fonction coute 3 ressources sur les 500
+  # permises par CloudFormation.
+  adminTeams:
+    handler: src/functions/admin/teams/routes.handler
     events:
       - http:
           path: /admin/teams
@@ -777,12 +806,29 @@ functions:
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
-
-  adminTeamsProgressGrid:
-    handler: src/functions/admin/teams/progressGrid.handler
-    events:
       - http:
           path: /admin/teams/progress-grid
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+      - http:
+          path: /admin/teams/{teamId}
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+      - http:
+          path: /admin/teams/{teamId}/hints/reset
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+      - http:
+          path: /admin/teams/{teamId}/progress
           method: get
           cors: true
           authorizer:
@@ -811,56 +857,12 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
-  adminGetTeam:
-    handler: src/functions/admin/teams/get.handler
-    events:
-      - http:
-          path: /admin/teams/{teamId}
-          method: get
-          cors: true
-          authorizer:
-            name: authorizer
-            resultTtlInSeconds: 0
-
-  adminResetTeamHints:
-    handler: src/functions/admin/teams/resetHints.handler
-    events:
-      - http:
-          path: /admin/teams/{teamId}/hints/reset
-          method: post
-          cors: true
-          authorizer:
-            name: authorizer
-            resultTtlInSeconds: 0
-
-  adminGetTeamProgress:
-    handler: src/functions/admin/teams/getProgress.handler
-    events:
-      - http:
-          path: /admin/teams/{teamId}/progress
-          method: get
-          cors: true
-          authorizer:
-            name: authorizer
-            resultTtlInSeconds: 0
-
   adminListEnigmas:
     handler: src/functions/admin/enigmas/list.handler
     events:
       - http:
           path: /admin/enigmas
           method: get
-          cors: true
-          authorizer:
-            name: authorizer
-            resultTtlInSeconds: 0
-
-  adminCreateEnigma:
-    handler: src/functions/enigmas/create.handler
-    events:
-      - http:
-          path: /admin/enigmas
-          method: post
           cors: true
           authorizer:
             name: authorizer
@@ -910,41 +912,11 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
-  adminCreateParcours:
-    handler: src/functions/parcours/create.handler
-    events:
-      - http:
-          path: /admin/parcours
-          method: post
-          cors: true
-          authorizer:
-            name: authorizer
-            resultTtlInSeconds: 0
-
-  adminUpdateParcours:
-    handler: src/functions/parcours/update.handler
-    events:
-      - http:
-          path: /admin/parcours/{parcoursId}
-          method: put
-          cors: true
-          authorizer:
-            name: authorizer
-            resultTtlInSeconds: 0
-
-  adminDeleteParcours:
-    handler: src/functions/parcours/delete.handler
-    events:
-      - http:
-          path: /admin/parcours/{parcoursId}
-          method: delete
-          cors: true
-          authorizer:
-            name: authorizer
-            resultTtlInSeconds: 0
-
-  adminListAttempts:
-    handler: src/functions/admin/attempts/list.handler
+  # Plusieurs routes, une seule fonction qui aiguille selon la route
+  # (utils/routeur) : chaque fonction coute 3 ressources sur les 500
+  # permises par CloudFormation.
+  adminAttempts:
+    handler: src/functions/admin/attempts/routes.handler
     events:
       - http:
           path: /admin/attempts
@@ -953,10 +925,6 @@ functions:
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
-
-  getAttemptsByTeam:
-    handler: src/functions/admin/getAttemptsByTeam.handler
-    events:
       - http:
           path: /admin/attempts/team/{teamId}
           method: get
@@ -964,10 +932,6 @@ functions:
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
-
-  getAttemptsByEnigma:
-    handler: src/functions/admin/getAttemptsByEnigma.handler
-    events:
       - http:
           path: /admin/attempts/enigma/{enigmaId}
           method: get
@@ -1054,8 +1018,11 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
-  adminOieBoardGet:
-    handler: src/functions/oie/admin/board.getHandler
+  # Plusieurs routes, une seule fonction qui aiguille selon la route
+  # (utils/routeur) : chaque fonction coute 3 ressources sur les 500
+  # permises par CloudFormation.
+  adminOie:
+    handler: src/functions/oie/admin/routes.handler
     events:
       - http:
           path: /admin/oie/board
@@ -1064,10 +1031,6 @@ functions:
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
-
-  adminOieBoardPut:
-    handler: src/functions/oie/admin/board.putHandler
-    events:
       - http:
           path: /admin/oie/board
           method: put
@@ -1075,10 +1038,6 @@ functions:
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
-
-  adminOieTeams:
-    handler: src/functions/oie/admin/teams.listHandler
-    events:
       - http:
           path: /admin/oie/teams
           method: get
@@ -1086,10 +1045,6 @@ functions:
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
-
-  adminOieTeamReset:
-    handler: src/functions/oie/admin/teams.resetHandler
-    events:
       - http:
           path: /admin/oie/teams/{teamId}/reset
           method: post

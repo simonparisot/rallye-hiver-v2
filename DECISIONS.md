@@ -381,6 +381,27 @@ src/
 
 ---
 
+### Limite de 500 ressources CloudFormation
+**Décision** : plusieurs routes admin d'un même domaine partagent une fonction Lambda
+**Date** : 2026-11-12
+**Contexte** : chaque fonction coûte 3 ressources (fonction, groupe de journaux,
+permission API Gateway) et la pile est plafonnée à 500. Avec les routes
+`/admin/game/status` et `/admin/game/reset`, elle en comptait 503, sans aucune
+`AWS::Lambda::Version` puisque `versionFunctions: false` était déjà en place.
+
+**Mise en œuvre** :
+- `src/utils/routeur.ts` aiguille selon `event.httpMethod` + `event.resource`.
+  Fonctions regroupées : `adminGame`, `adminWrongPasswordMessages`, `adminTeams`,
+  `adminAttempts`, `adminOie`.
+- Les routes `/admin/...` qui servaient le même handler que la route publique
+  (création d'énigme, création, modification et suppression de parcours) sont
+  des événements de plus sur cette fonction.
+- 503 → 452 ressources. Les routes, les authorizers et le CORS ne changent pas : le contrat d'API est intact.
+- Pour une nouvelle route admin, ajoute un événement à la fonction de son
+  domaine et une entrée dans son `routes.ts`, plutôt qu'une nouvelle fonction.
+
+---
+
 ### Environment Strategy
 **Decision**: Two environments (dev and prod)
 **Date**: 2025-11-15
