@@ -9,7 +9,9 @@
  * Un mot écrit en dur dans un composant s'afficherait sous les deux.
  *
  * Ce qui est examiné : les fichiers .tsx et .ts de src/, commentaires retirés,
- * ainsi que les attributs qui ne s'affichent pas (className, data-testid, key,
+ * ainsi que public/*.html (commentaires HTML retirés) et public/manifest.json,
+ * qui portent le titre de l'onglet, la description et le nom de l'application
+ * installée. Dans src/, sont aussi retirés les attributs qui ne s'affichent pas (className, data-testid, key,
  * htmlFor, id…). Un mot collé à une lettre, un tiret ou un souligné est un
  * identifiant (onAllerTroupe, souffleur-icone) et n'est pas signalé. Seuls
  * les accès à une clé du vocabulaire, `v.<clé>` et `vocabulaire.<clé>`
@@ -42,6 +44,7 @@ const MOTS = [
   'intrigues?', 'tourn[ée]es?', 'troupes?', 'souffleurs?', 'th[ée][âa]tres?',
   'th[ée][âa]tral\\w*', 'rideaux?', 'sc[èe]nes?', 'actes?', 'r[ée]p[ée]titions?',
   'coulisses?', 'loges?', 'spectacles?', 'masques?', 'com[ée]diens?', 'acteurs?',
+  'actrices?', 'op[ée]ras?', 'com[ée]dies?', 'trag[ée]dies?',
 ];
 const motif = new RegExp(`(?<![\\p{L}\\-_])(?<!\\b(?:v|vocabulaire)\\.)(${MOTS.join('|')})(?![\\p{L}\\-_])`, 'giu');
 
@@ -68,13 +71,31 @@ function sansAttributsInvisibles(texte) {
   );
 }
 
+/** Remplace les commentaires HTML par des espaces, en gardant les retours à la ligne. */
+function sansCommentairesHtml(texte) {
+  return texte.replace(/<!--[\s\S]*?-->/g, (m) => m.replace(/[^\n]/g, ' '));
+}
+
 const fichiers = parcourir(src)
   .filter((f) => /\.(tsx|ts)$/.test(f) && !/\.test\.tsx?$/.test(f))
   .filter((f) => !EXCLUS.some((e) => path.relative(racine, f).startsWith(e)));
 
+// Ce que public/ expose sans passer par React : titre et description de la
+// page, nom de l'application installée.
+const publics = fs
+  .readdirSync(path.join(racine, 'public'))
+  .filter((n) => /\.html$/.test(n) || n === 'manifest.json')
+  .map((n) => path.join(racine, 'public', n));
+
+function preparer(f, texte) {
+  if (/\.html$/.test(f)) return sansCommentairesHtml(texte);
+  if (/\.json$/.test(f)) return texte;
+  return sansAttributsInvisibles(sansCommentaires(texte));
+}
+
 let trouves = 0;
-for (const f of fichiers) {
-  const lignes = sansAttributsInvisibles(sansCommentaires(fs.readFileSync(f, 'utf8'))).split('\n');
+for (const f of [...fichiers, ...publics]) {
+  const lignes = preparer(f, fs.readFileSync(f, 'utf8')).split('\n');
   lignes.forEach((ligne, i) => {
     for (const m of ligne.matchAll(motif)) {
       trouves++;

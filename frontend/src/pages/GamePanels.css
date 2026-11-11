@@ -195,7 +195,9 @@
 .section .parcours-item-compact.completed:hover {
   transform: none;
   box-shadow: none;
-  background: #F2E9D6;
+  /* Un cran plus sourd que le papier en retrait, dans la teinte du thème
+     (sous le thème officiel, on retrouve l'ancien #F2E9D6). */
+  background: color-mix(in srgb, var(--theatre-programme-2) 65%, var(--theatre-filet));
 }
 .section .enigma-item.solved .enigma-title,
 .section .enigma-item-compact.solved .enigma-title-compact,
@@ -405,7 +407,7 @@
   color: var(--theatre-salle);
 }
 .section .discord-card:hover {
-  background: #F2E9D6;
+  background: color-mix(in srgb, var(--theatre-programme-2) 65%, var(--theatre-filet));
   border-color: var(--theatre-coulisse-pale);
 }
 .section .discord-title { color: var(--theatre-comedie); }

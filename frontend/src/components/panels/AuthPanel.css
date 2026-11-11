@@ -137,7 +137,7 @@
    --------------------------------------------------------------------------- */
 .error-message {
   border-left: 3px solid var(--theatre-tragedie, var(--color-primary-red));
-  background: rgba(225, 68, 58, .08);
+  background: color-mix(in srgb, var(--theatre-tragedie) 8%, transparent);
   color: var(--theatre-tragedie-sombre);
   padding: 12px 14px;
   margin-bottom: 16px;
