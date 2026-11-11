@@ -764,6 +764,25 @@ identifiant, et le fil raconterait l'histoire dans le désordre.
 `detail` ne quitte jamais le serveur : le fil envoyé aux joueurs ne porte que
 `message`.
 
+Case occupée (depuis le 2026-11-11) : chaque recul de la chaîne est une ligne
+à part, `type` `deplacement` (ou `liberation` pour une équipe tirée du puits ou
+de la prison), `teamId` celui de l'équipe qui recule, dans l'ordre de la
+chaîne, avec :
+
+```typescript
+detail: {
+  kind: 'recul',
+  dislodgedBy: string,   // équipe qui a lancé et déclenché la chaîne
+  pushedBy: string[],    // équipe(s) arrivée(s) sur la case : le lanceur au rang 1
+  from: number,          // case quittée
+  to: number,            // from - 1, jamais sous 0
+  rang: number           // 1 pour les occupants de la case d'arrivée, 2 ensuite...
+}
+```
+
+Les lignes `case_speciale` portant `detail.dislodgedBy` ne sont plus produites :
+une équipe qui recule ne subit pas l'effet de sa nouvelle case.
+
 ### Ce que le serveur ne dit jamais
 
 - les réponses acceptées, sur aucune case ;

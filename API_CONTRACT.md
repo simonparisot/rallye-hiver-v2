@@ -2433,24 +2433,31 @@ enchaînement.
   5-4 → 53) sont supprimés. L'effet `oie` ne porte plus de champ `total`.
 - **Pont** (6, 23, 47) : on ne s'y arrête pas, l'équipe passe directement en
   face (12, 30, 53), dont la question l'attend. `to` est la case d'en face ;
-  l'effet `pont` suit l'`avance`. Une équipe délogée envoyée sur un pont le
-  traverse aussi.
+  l'effet `pont` suit l'`avance`. Une équipe qui recule sur un pont (case
+  occupée) y reste, sans le traverser.
 - **Puits** (31) : trois jours sans lancer (`nextRollAllowedDay` = J+4), levés
   plus tôt si une autre équipe y tombe. Il ne bloque plus sans échéance.
 - **Rebond** : l'effet porte `manques`, le nombre d'essais manqués au 63 celui-ci
   compris. Chaque dépassement compte, y compris un rebond bien avant la fin :
   au troisième, c'est `metteur_en_scene` au lieu d'un rebond.
-- **Case occupée** : si une ou plusieurs équipes se trouvent sur la case
-  d'arrivée, elles partent sur la case d'où vient l'équipe qui lance (`from`),
-  et l'effet de cette case s'applique à elles (puits, prison, loge, oie...).
-  Elles doivent répondre à la question de leur nouvelle case, perdent un lancer
-  d'oie en attente, et sont libérées de toute pénalité liée à la case quittée :
-  c'est ainsi qu'une équipe sort du puits ou de la prison. Pas de réaction en
-  chaîne. Ni la case 0 ni la case 63 ne délogent personne, une équipe ayant
-  gagné non plus, ni un rebond qui ramène l'équipe sur sa propre case.
-  `releases` raconte ces délogements et leurs suites, en phrases prêtes à
-  afficher ; chacun est journalisé (`deplacement`, ou `liberation` pour le
-  puits et la prison).
+- **Case occupée** (revu le 2026-11-11) : si une ou plusieurs équipes se
+  trouvent sur la case d'arrivée finale (`to`), chacune **recule d'une case**.
+  Si cette case est occupée à son tour, ses occupantes reculent aussi d'une
+  case, et ainsi de suite, jusqu'à une case libre ou la case 0, partagée, sous
+  laquelle on ne descend jamais. Seul le recul se propage : la case où l'on
+  recule n'a **aucun effet** (ni oie, ni pont, ni puits, ni prison, ni loge,
+  ni répétition). Les équipes reculées doivent répondre à la question de leur
+  nouvelle case, perdent un lancer d'oie en attente, et sont libérées de toute
+  pénalité liée à la case quittée : c'est ainsi qu'une équipe sort du puits ou
+  de la prison. Ni la case 0 ni la case 63 ne poussent personne, une équipe
+  ayant gagné n'est jamais poussée, et un rebond qui ramène l'équipe sur sa
+  propre case ne pousse personne. Toute la chaîne est écrite en une seule
+  transaction. `releases` raconte chaque recul, dans l'ordre de la chaîne, en
+  phrases prêtes à afficher (« A arrive en case 25 : B recule en case 24 »,
+  « B arrive en case 24 : C recule en case 23 (recul en chaîne n° 2) ») ;
+  chacun est un événement distinct du journal (`deplacement`, ou `liberation`
+  pour une équipe tirée du puits ou de la prison), dont `detail` vaut
+  `{ kind: 'recul', dislodgedBy, pushedBy: string[], from, to, rang }`.
 - **Case 63** : `reachedFinish: true`. Si la case 63 porte une question
   (le cas normal), `awaitsFinalQuestion: true`, `finished: false`, et la
   question finale passe en attente : voir `POST /oie/answer`. Sur un plateau
@@ -2571,6 +2578,7 @@ L'opération est tracée dans le journal du plateau.
 | 2026-10-10 | GET /oie, POST /oie/roll, POST /oie/answer, GET /admin/oie/teams | Règles v2 après les essais des organisateurs : l'oie fait relancer les dés (lancer gratuit, `bonusRolls`), règle du premier neuf supprimée, puits à trois tours, question finale en case 63 | **Breaking** | Effet `oie` sans `total` ; `finished` d'un lancer ne signifie plus « en 63 » mais « intrigue gagnée » (voir `reachedFinish`, `awaitsFinalQuestion`) ; la victoire passe par `POST /oie/answer` ; nouveaux statuts `question_finale` et `relance_oie` |
 | 2026-10-25 | GET /oie, POST /oie/roll | Deuxième série d'essais : règle de la case occupée, fil limité aux mouvements (100 lignes), jour de reprise dans les messages de pénalité, compte des essais manqués au 63 | Feature | Effet `rebond` avec `manques` ; `releases` couvre désormais tous les délogements, pas seulement puits et prison |
 | 2026-10-25 | GET /oie, POST /oie/roll | Les ponts : 6 vers 12, 23 vers 30, 47 vers 53 | Feature | Nouveau type de case `pont` et nouvel effet `pont` ; les cases 6, 23 et 47 ne portent plus de question |
+| 2026-11-11 | POST /oie/roll | Case occupée : l'occupant recule d'une case, en chaîne, sans effet de case | Feature | Forme de la réponse inchangée ; `releases` contient une phrase par recul, sans phrases d'effet de case ; `detail` des événements de recul : `kind: 'recul'`, `pushedBy`, `rang` |
 | 2026-09-12 | POST /hints/{enigmaId}/request, GET /hints/{enigmaId} | Mode `queue` : la demande part en attente (202) et un worker extérieur la traite via `claude -p`, faute de clé d'API pour l'essai. Ajout de `status` et `failureReason` aux demandes. Le coût en points passe à 0 et n'affecte plus `totalPoints` | Feature + Breaking | **Breaking** : `POST /hints/.../request` peut désormais répondre 202 sans indice ; le client doit lire `status` et interroger `GET /hints/{enigmaId}`. `hintsPenalty` disparaît de GET /teams/stats |
 | 2026-09-12 | POST /hints/{enigmaId}/request, GET /hints/{enigmaId}, GET /admin/hints/requests | Nouvelle récupération d'indices : l'équipe décrit son avancement, un modèle choisit l'indice pré-écrit adapté. Remplace POST /hints/{enigmaId}/use et GET /admin/hints/usage, supprimés | Feature + Breaking | **Breaking** : les deux anciens endpoints n'existent plus ; `hintPdfUrl` et `hasHint` disparaissent de l'énigme au profit de `hintsCount`, `hintUsed`/`hintUsedAt` de la progression au profit de `hintsRequested`/`lastHintAt`. La pénalité de points, jusqu'ici annoncée mais jamais appliquée, est désormais déduite de `totalPoints` dans GET /teams/stats |
 | 2026-01-02 | GET /admin/attempts | Fixed pagination bug (Scan → Query) + added stats object + removed legacy count/total fields | Bug Fix + Breaking | **Critical fix**: Now returns ALL attempts (not just 1MB), shows correct success counts; **Breaking**: Removed `count` and `total` root fields - use `stats.totalAttempts` instead; **Frontend must use stats object for all statistics** |
