@@ -115,6 +115,8 @@ const OiePage: React.FC = () => {
       if (data.finished) {
         queryClient.invalidateQueries({ queryKey: ['enigmas-with-progress'] });
         queryClient.invalidateQueries({ queryKey: ['team-stats'] });
+        // L'intrigue résolue peut ouvrir des tournées.
+        queryClient.invalidateQueries({ queryKey: ['parcours-with-access'] });
       }
     },
     onError: (err: any) => {
@@ -134,6 +136,8 @@ const OiePage: React.FC = () => {
       if (data.finished) {
         queryClient.invalidateQueries({ queryKey: ['enigmas-with-progress'] });
         queryClient.invalidateQueries({ queryKey: ['team-stats'] });
+        // L'intrigue résolue peut ouvrir des tournées.
+        queryClient.invalidateQueries({ queryKey: ['parcours-with-access'] });
       }
     },
     onError: (err: any) => {

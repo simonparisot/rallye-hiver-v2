@@ -31,6 +31,11 @@ const AdminParcours: React.FC = () => {
   });
   const intrigues = [...(enigmasData?.enigmas || [])].sort((a, b) => a.enigmaNumber - b.enigmaNumber);
   const titreIntrigue = new Map(intrigues.map((e) => [e.enigmaId, `${e.enigmaNumber}. ${e.title}`]));
+  // Une intrigue supprimée depuis reste dans la liste enregistrée : on ne la
+  // renvoie pas, et on ne la compte pas.
+  const intriguesRequises = enigmasData
+    ? formData.requiredEnigmaIds.filter((id) => titreIntrigue.has(id))
+    : formData.requiredEnigmaIds;
 
   // Un enregistrement refusé doit le dire : l'échec silencieux du bouton
   // « Créer » est ce qui a empêché de mettre les tournées en ligne.
@@ -107,7 +112,8 @@ const AdminParcours: React.FC = () => {
       await adminUploadAPI.uploadPdf(uploadUrl, file);
 
       setUploadProgress('Upload terminé !');
-      setFormData({ ...formData, pdfUrl: fileUrl });
+      // Mise à jour fonctionnelle : le formulaire a pu changer pendant l'envoi.
+      setFormData((f) => ({ ...f, pdfUrl: fileUrl }));
 
       setTimeout(() => {
         setUploadProgress('');
@@ -138,10 +144,11 @@ const AdminParcours: React.FC = () => {
     setErreurFormulaire('');
     // Le numéro n'est pas envoyé : à la création le serveur place la tournée
     // en dernier, à la modification elle garde sa place dans la liste.
+    const data = { ...formData, requiredEnigmaIds: intriguesRequises };
     if (editingParcours) {
-      updateMutation.mutate({ parcoursId: editingParcours.parcoursId, data: formData });
+      updateMutation.mutate({ parcoursId: editingParcours.parcoursId, data });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(data);
     }
   };
 
@@ -256,12 +263,12 @@ const AdminParcours: React.FC = () => {
             <fieldset className="form-group intrigues-requises" data-testid="admin-parcours-required-enigmas">
               <legend>Intrigues qui débloquent la tournée</legend>
               <p className="admin-form-help">
-                {formData.requiredEnigmaIds.length === 0
+                {intriguesRequises.length === 0
                   ? 'Aucune intrigue cochée : la tournée est accessible à toutes les équipes.'
                   : `La tournée s'ouvre quand l'équipe a résolu ${
-                      formData.requiredEnigmaIds.length === 1
+                      intriguesRequises.length === 1
                         ? "l'intrigue cochée"
-                        : `les ${formData.requiredEnigmaIds.length} intrigues cochées`
+                        : `les ${intriguesRequises.length} intrigues cochées`
                     }.`}
               </p>
               {enigmasLoading ? (
@@ -305,7 +312,7 @@ const AdminParcours: React.FC = () => {
             </div>
 
             <div className="form-actions">
-              <button data-testid="admin-parcours-submit" type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || uploadingPdf}>
+              <button data-testid="admin-parcours-submit" type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || uploadingPdf || enigmasLoading}>
                 {editingParcours ? 'Mettre à jour' : 'Créer'}
               </button>
               <button data-testid="admin-parcours-cancel" type="button" className="btn btn-secondary" onClick={resetForm}>

@@ -388,6 +388,9 @@ export async function getAllTeamProgress(teamId: string) {
     new QueryCommand({
       TableName: TEAM_ENIGMA_PROGRESS_TABLE,
       KeyConditionExpression: 'teamId = :teamId',
+      // Relue juste après une résolution pour recalculer l'accès aux
+      // tournées : une lecture éventuellement cohérente la laisserait fermée.
+      ConsistentRead: true,
       ExpressionAttributeValues: {
         ':teamId': teamId,
       },
