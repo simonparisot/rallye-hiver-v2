@@ -51,6 +51,64 @@
   font-size: 0.95rem;
 }
 
+/* Les règles et le retour au jeu, côte à côte à droite du titre ; dessous
+   quand la place manque. */
+.oie-entete-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Le bouton des règles prend l'allure de celui des règles du jeu générales
+   (pastille, livre ouvert), en un peu plus grand : 44 px au moins, la
+   taille d'une cible au doigt. */
+.oie-regles-ouvrir {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 16px;
+  cursor: pointer;
+  background: var(--theatre-scene);
+  color: var(--theatre-salle);
+  border: var(--border-width-medium) var(--border-style) var(--theatre-salle);
+  border-radius: 999px;
+  box-shadow: var(--ombre-affiche);
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: left;
+}
+.oie-regles-ouvrir:hover { background: var(--theatre-programme-2); }
+.oie-regles-ouvrir:focus-visible { outline: 3px solid var(--theatre-tragedie); outline-offset: 2px; }
+.oie-regles-ouvrir svg { width: 18px; height: 18px; flex: none; }
+
+/* --- Les cases spéciales, dans la fenêtre des règles --- */
+/* Une liste plutôt qu'un tableau : sur téléphone, trois colonnes ne
+   tiendraient pas. La pastille reprend la couleur de la case sur le plateau. */
+.regles-section ul.oie-regles-cases { margin-bottom: 12px; }
+.regles-section .oie-regles-cases li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 0 0;
+  border-top: 1px solid var(--theatre-filet);
+}
+.regles-section .oie-regles-cases li:first-child { border-top: 0; padding-top: 0; }
+.regles-section .oie-regles-cases li::before { content: none; }
+
+.oie-regles-pastille {
+  align-self: flex-start;
+  padding: 1px 9px;
+  border: 1px solid var(--theatre-filet);
+  border-radius: 5px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
 .oie-etat {
   max-width: 1280px;
   margin: 0 auto 16px;
@@ -150,7 +208,9 @@
 
 @keyframes oie-appel {
   0%, 100% { box-shadow: -4px 0 14px rgba(0, 0, 0, 0.18); }
-  50% { box-shadow: -4px 0 0 6px rgba(200, 40, 40, 0.25); }
+  /* La lueur suit le thème : rouge sous le thème officiel, couleur de
+     l'habillage neutre sinon. */
+  50% { box-shadow: -4px 0 0 6px color-mix(in srgb, var(--theatre-tragedie-fonce) 25%, transparent); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -886,5 +946,16 @@
    de chaque côté suffit. */
 @media (max-width: 340px) {
   .oie-case { padding: 2px; }
+  /* Question finale à 320 px : avec la police de secours, « Répondre » passait
+     sous le champ. Une grille de deux colonnes l'y garde quoi qu'il arrive :
+     le libellé occupe la première ligne, le champ cède la place au bouton
+     sur la seconde. (Un simple nowrap aurait tiré le libellé sur la même
+     ligne.) */
+  .oie-question-saisie {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .oie-question-saisie .oie-champ-label { grid-column: 1 / -1; }
+  .oie-question-saisie button { padding-left: 12px; padding-right: 12px; }
   .oie-case-illustree .oie-case-numero { padding: 0 2px; }
 }

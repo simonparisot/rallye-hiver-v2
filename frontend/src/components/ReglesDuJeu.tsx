@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState } from 'react';
 import { accorder, majuscule, useEdition, type Edition } from '../editions';
+import FenetreLecture from './FenetreLecture';
 import './ReglesDuJeu.css';
 
 /**
@@ -13,10 +13,8 @@ import './ReglesDuJeu.css';
  * accords, et les dates viennent de l'édition. Rien ici ne doit être écrit
  * avec le vocabulaire d'un thème particulier.
  *
- * Fenêtre plein écran sur téléphone, colonne de lecture centrée sur grand
- * écran. Le focus va au texte, qui défile au clavier ; Échap ferme, le
- * focus reste dans la fenêtre tant qu'elle est ouverte et revient ensuite à
- * ce qui l'a ouverte.
+ * La fenêtre elle-même (plein écran sur téléphone, focus au texte, Échap,
+ * piège à focus, retour du focus) est la coquille commune FenetreLecture.
  */
 
 const FUSEAU = 'Europe/Paris';
@@ -186,103 +184,20 @@ interface ReglesDuJeuProps {
   retourFocus?: React.RefObject<HTMLElement | null>;
 }
 
-const SELECTEUR_FOCUSABLE =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-const ReglesDuJeu: React.FC<ReglesDuJeuProps> = ({ ouverte, onFermer, retourFocus }) => {
-  const fenetre = useRef<HTMLDivElement>(null);
-  const corps = useRef<HTMLDivElement>(null);
-  const surFermer = useRef(onFermer);
-  surFermer.current = onFermer;
-
-  useEffect(() => {
-    if (!ouverte) return;
-    const avant = document.activeElement as HTMLElement | null;
-    const debordement = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    // Le focus va au texte, pas au bouton « Fermer » : c'est ce qu'on vient
-    // lire, et Flèche bas, Page suivante ou Fin le font alors défiler.
-    corps.current?.focus();
-
-    const auClavier = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        surFermer.current();
-        return;
-      }
-      // Le focus reste dans la fenêtre : Tab et Maj+Tab bouclent.
-      if (e.key === 'Tab' && fenetre.current) {
-        const elements = Array.from(fenetre.current.querySelectorAll<HTMLElement>(SELECTEUR_FOCUSABLE));
-        if (elements.length === 0) return;
-        const premier = elements[0];
-        const dernier = elements[elements.length - 1];
-        if (e.shiftKey && document.activeElement === premier) {
-          e.preventDefault();
-          dernier.focus();
-        } else if (!e.shiftKey && document.activeElement === dernier) {
-          e.preventDefault();
-          premier.focus();
-        }
-      }
-    };
-    document.addEventListener('keydown', auClavier);
-
-    return () => {
-      document.removeEventListener('keydown', auClavier);
-      document.body.style.overflow = debordement;
-      // La valeur du ref est lue à la fermeture exprès : c'est l'élément
-      // présent à ce moment-là qui doit recevoir le focus.
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      const cible = avant && avant.isConnected && avant !== document.body ? avant : retourFocus?.current;
-      cible?.focus();
-    };
-  }, [ouverte, retourFocus]);
-
-  if (!ouverte) return null;
-
-  return createPortal(
-    <div
-      className="regles-voile"
-      data-testid="regles-voile"
-      onClick={(e) => { if (e.target === e.currentTarget) onFermer(); }}
-    >
-      <div
-        ref={fenetre}
-        className="regles-fenetre"
-        data-testid="regles-du-jeu"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="regles-titre"
-      >
-        <header className="regles-tete">
-          <h2 id="regles-titre">Règles du jeu</h2>
-          <button
-            type="button"
-            className="regles-fermer"
-            data-testid="regles-fermer"
-            onClick={onFermer}
-            aria-label="Fermer les règles du jeu"
-          >
-            ×
-          </button>
-        </header>
-        <div
-          ref={corps}
-          className="regles-corps"
-          data-testid="regles-corps"
-          tabIndex={0}
-          role="region"
-          aria-labelledby="regles-titre"
-        >
-          <div className="regles-texte">
-            <ReglesContenu />
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-};
+const ReglesDuJeu: React.FC<ReglesDuJeuProps> = ({ ouverte, onFermer, retourFocus }) => (
+  <FenetreLecture
+    ouverte={ouverte}
+    onFermer={onFermer}
+    retourFocus={retourFocus}
+    titre="Règles du jeu"
+    idTitre="regles-titre"
+    libelleFermer="Fermer les règles du jeu"
+    prefixeTestId="regles"
+    testIdFenetre="regles-du-jeu"
+  >
+    <ReglesContenu />
+  </FenetreLecture>
+);
 
 /** Le bouton du panneau de l'équipe, avec sa fenêtre. */
 export const BoutonReglesDuJeu: React.FC = () => {
