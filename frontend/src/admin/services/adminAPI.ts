@@ -186,11 +186,6 @@ export const adminEnigmasAPI = {
     return response.data;
   },
 
-  getById: async (enigmaId: string): Promise<{ enigma: EnigmaWithStats }> => {
-    const response = await adminApi.get(`/enigmas/${enigmaId}`);
-    return response.data;
-  },
-
   create: async (data: CreateEnigmaRequest): Promise<{ enigma: EnigmaWithStats }> => {
     const response = await adminApi.post('/enigmas', data);
     return response.data;
@@ -201,7 +196,8 @@ export const adminEnigmasAPI = {
     return response.data;
   },
 
-  delete: async (enigmaId: string): Promise<{ success: boolean }> => {
+  // DELETE /admin/enigmas/{enigmaId} : même fonction que DELETE /enigmas/{enigmaId}.
+  delete: async (enigmaId: string): Promise<{ message: string }> => {
     const response = await adminApi.delete(`/enigmas/${enigmaId}`);
     return response.data;
   },
@@ -238,11 +234,6 @@ export const adminEnigmasAPI = {
 export const adminParcoursAPI = {
   listAll: async (): Promise<{ parcours: ParcoursWithStats[]; count: number }> => {
     const response = await adminApi.get('/parcours');
-    return response.data;
-  },
-
-  getById: async (parcoursId: string): Promise<{ parcours: ParcoursWithStats }> => {
-    const response = await adminApi.get(`/parcours/${parcoursId}`);
     return response.data;
   },
 

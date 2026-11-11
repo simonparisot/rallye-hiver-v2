@@ -446,6 +446,10 @@ functions:
             name: authorizer
             resultTtlInSeconds: 0
 
+  # La route /admin/... sert le meme handler : une seule fonction pour les deux,
+  # chaque fonction coutant 3 ressources sur les 500 permises par CloudFormation.
+  # Son CORS reprend celui du PUT /admin/enigmas/{enigmaId} (adminUpdateEnigma) :
+  # les deux methodes partagent la meme reponse OPTIONS.
   deleteEnigma:
     handler: src/functions/enigmas/delete.handler
     events:
@@ -453,6 +457,24 @@ functions:
           path: /enigmas/{enigmaId}
           method: delete
           cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+      - http:
+          path: /admin/enigmas/{enigmaId}
+          method: delete
+          cors:
+            origin: ${ssm:/rallye-hiver/${self:provider.stage}/cors-origin}
+            headers:
+              - Content-Type
+              - Authorization
+              - X-Amz-Date
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - X-Requested-With
+            allowCredentials: true
+            maxAge: 3600
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
