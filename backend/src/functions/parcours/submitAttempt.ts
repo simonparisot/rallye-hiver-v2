@@ -11,6 +11,7 @@ import {
 import { success, error } from '../../utils/response';
 import { ParcoursAttemptLog } from '../../types';
 import { loadAccessContext, evaluateParcoursAccess } from '../../utils/parcoursAccess';
+import { phasePourUtilisateur } from '../../utils/gamePhase';
 import { normalizePassword, hasUsablePassword } from '../../utils/password';
 import { getWrongPasswordMessages, pickWrongPasswordMessage } from '../../utils/wrongPasswordMessages';
 
@@ -71,6 +72,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // Une tournée non publiée ou encore verrouillée ne peut pas avoir été
     // parcourue : rien ne dit ici si son mot de passe existe.
     if (!parcours.isActive) {
+      return error('Parcours locked', 403);
+    }
+    // Avant le lancement, aucune tournée ne se joue (utils/gamePhase).
+    if ((await phasePourUtilisateur(userId)) !== 'lance') {
       return error('Parcours locked', 403);
     }
     const { isUnlocked } = evaluateParcoursAccess(parcours, await loadAccessContext(teamId));

@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getEnigmaById } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
+import { phasePourUtilisateur, intrigueOuverte, estPreliminaire } from '../../utils/gamePhase';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -10,10 +11,14 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error('Missing enigmaId parameter', 400);
     }
 
-    const enigma = await getEnigmaById(enigmaId);
+    const [enigma, phase] = await Promise.all([
+      getEnigmaById(enigmaId),
+      phasePourUtilisateur(event.requestContext?.authorizer?.userId),
+    ]);
 
-    // Une intrigue non publiee n'existe pas pour le joueur.
-    if (!enigma || (enigma as any).isActive === false) {
+    // Une intrigue non publiee, ou fermée dans cette phase (vraie intrigue
+    // avant le lancement, préliminaire après), n'existe pas pour le joueur.
+    if (!enigma || (enigma as any).isActive === false || !intrigueOuverte(enigma, phase)) {
       return error('Enigma not found', 404);
     }
 
@@ -23,7 +28,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const { correctPassword, solution, hints, hintsAvailableFrom, nearMisses, ...rest } = enigma as any;
     const sanitizedEnigma = {
       ...rest,
-      hintsCount: Array.isArray(hints) ? hints.length : 0,
+      hintsCount: !estPreliminaire(enigma) && Array.isArray(hints) ? hints.length : 0,
     };
 
     return success({

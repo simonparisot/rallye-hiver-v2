@@ -13,6 +13,7 @@ import {
 } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
 import { indicesOuverts } from '../../utils/hintAvailability';
+import { lireEtatJeu, phasePourEquipe, estPreliminaire } from '../../utils/gamePhase';
 import {
   selectHint,
   hintProvider,
@@ -149,6 +150,16 @@ export const handler = async (
     }
     if (!enigma.isActive) {
       return error("Cette énigme n'est pas active", 403);
+    }
+    // Une préliminaire n'a pas d'indice : c'est une mise en bouche, et chaque
+    // demande coûte un appel au modèle. Une vraie intrigue n'en a qu'une fois
+    // le jeu lancé, comme elle n'existe qu'à partir de là (utils/gamePhase).
+    if (estPreliminaire(enigma)) {
+      return error("Les énigmes préliminaires n'ont pas d'indice.", 403);
+    }
+    const { phase: phaseGlobale } = await lireEtatJeu();
+    if (phasePourEquipe(phaseGlobale, team) !== 'lance') {
+      return error("Cette énigme n'est pas encore ouverte : elle le sera au lancement du rallye.", 403);
     }
     // L'organisateur ouvre les indices énigme par énigme, éventuellement à une
     // date donnée. Le bouton est déjà masqué tant qu'ils sont fermés ; ce

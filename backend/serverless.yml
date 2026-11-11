@@ -375,9 +375,10 @@ functions:
           path: /enigmas
           method: get
           cors: true
-          caching:
-            enabled: true
-            ttlInSeconds: 300  # 5 min cache - enigmas rarely change
+          # Pas de cache API Gateway : la liste dépend de la phase du jeu et de
+          # l'équipe (préliminaires avant le lancement, équipes bêta). Le bloc
+          # `caching` d'avant n'avait d'ailleurs aucun effet sans le plugin
+          # serverless-api-gateway-caching.
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
@@ -456,9 +457,7 @@ functions:
           path: /parcours
           method: get
           cors: true
-          caching:
-            enabled: true
-            ttlInSeconds: 300  # 5 min cache - parcours rarely change
+          # Pas de cache : la liste est vide avant le lancement (voir listEnigmas).
           authorizer:
             name: authorizer
             resultTtlInSeconds: 0
@@ -595,6 +594,29 @@ functions:
     events:
       - http:
           path: /admin/game/start
+          method: post
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  # Phase du jeu vue par l'orga, et retour en avant-lancement (utils/gamePhase).
+  adminGetGameStatus:
+    handler: src/functions/admin/game/status.handler
+    events:
+      - http:
+          path: /admin/game/status
+          method: get
+          cors: true
+          authorizer:
+            name: authorizer
+            resultTtlInSeconds: 0
+
+  adminResetGame:
+    handler: src/functions/admin/game/reset.handler
+    events:
+      - http:
+          path: /admin/game/reset
           method: post
           cors: true
           authorizer:

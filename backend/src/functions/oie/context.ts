@@ -5,6 +5,7 @@
 
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { getTeamById, getUserById } from '../../utils/dynamodb';
+import { lireEtatJeu, phasePourEquipe } from '../../utils/gamePhase';
 import { OieMoveEffect, OiePush } from '../../types/oie';
 import { MAX_OVERSHOOTS } from './rules';
 
@@ -48,6 +49,12 @@ export async function requirePlayer(event: APIGatewayProxyEvent): Promise<OiePla
 
   if (!team.hasPaid) {
     throw new OieAccessError('Votre équipe doit avoir réglé son inscription', 403);
+  }
+
+  // Le plateau est une vraie intrigue : fermé avant le lancement (utils/gamePhase).
+  const { phase } = await lireEtatJeu();
+  if (phasePourEquipe(phase, team) !== 'lance') {
+    throw new OieAccessError("Le jeu de l'oie ouvrira au lancement du rallye", 403);
   }
 
   return { userId, teamId: team.teamId, teamName: team.teamName };

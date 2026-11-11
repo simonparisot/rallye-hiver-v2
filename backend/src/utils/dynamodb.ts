@@ -688,6 +688,41 @@ export async function startGame(adminUserId: string) {
   return result.Attributes;
 }
 
+/**
+ * Retour en avant-lancement (POST /admin/game/reset) : `isStarted` repasse à
+ * false. La phase ne redevient « avant-lancement » que si l'heure de
+ * lancement n'est pas passée ; `launchAt` permet de la repousser. Upsert :
+ * crée l'item s'il n'existe pas encore.
+ */
+export async function resetGame(adminUserId: string, launchAt?: string) {
+  const now = new Date().toISOString();
+  const values: Record<string, any> = {
+    ':false': false,
+    ':resetAt': now,
+    ':resetBy': adminUserId,
+    ':updatedAt': now,
+    ':createdAt': now,
+  };
+  let set =
+    'SET isStarted = :false, resetAt = :resetAt, resetBy = :resetBy, updatedAt = :updatedAt, createdAt = if_not_exists(createdAt, :createdAt)';
+  if (launchAt) {
+    set += ', launchAt = :launchAt';
+    values[':launchAt'] = launchAt;
+  }
+
+  const result = await dynamoDb.send(
+    new UpdateCommand({
+      TableName: GAME_STATUS_TABLE,
+      Key: { gameId: GAME_ID },
+      UpdateExpression: `${set} REMOVE startedAt, startedBy`,
+      ExpressionAttributeValues: values,
+      ReturnValues: 'ALL_NEW',
+    })
+  );
+
+  return result.Attributes;
+}
+
 // ==================== HINT REQUEST FUNCTIONS ====================
 
 /**

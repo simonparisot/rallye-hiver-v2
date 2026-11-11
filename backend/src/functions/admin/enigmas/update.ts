@@ -4,6 +4,7 @@ import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
 import { lireReglageIndices } from '../../../utils/hintAvailability';
 import { lireNearMisses, conflitAvecMotDePasse } from '../../../utils/nearMisses';
+import { refusPreliminaire } from '../../../utils/parcoursAccess';
 
 /**
  * Admin update enigma endpoint
@@ -48,6 +49,17 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     if (body.difficulty !== undefined) updates.difficulty = body.difficulty;
     if (body.isActive !== undefined) updates.isActive = body.isActive;
     if (body.enigmaNumber !== undefined) updates.enigmaNumber = body.enigmaNumber;
+
+    // Intrigue préliminaire (utils/gamePhase) : un booléen, refusé si une
+    // tournée compte sur cette intrigue pour s'ouvrir.
+    if (body.isPreliminary !== undefined) {
+      if (typeof body.isPreliminary !== 'boolean') return error('isPreliminary doit être un booléen', 400);
+      if (body.isPreliminary && existingEnigma.isPreliminary !== true) {
+        const refus = await refusPreliminaire(enigmaId);
+        if (refus) return error(refus, 400);
+      }
+      updates.isPreliminary = body.isPreliminary;
+    }
 
     // Ouverture des indices : un interrupteur et une date facultative.
     const reglage = lireReglageIndices(body);

@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { getAllTeams, getAllEnigmas, getAllParcours } from '../../../utils/dynamodb';
+import { getAllTeams, getAllEnigmasForAdmin, getAllParcours } from '../../../utils/dynamodb';
+import { idsPreliminaires, sansPreliminaires, estPreliminaire } from '../../../utils/gamePhase';
 import { dynamoDb, USERS_TABLE, PASSWORD_ATTEMPTS_TABLE } from '../../../utils/dynamodb';
 import { isTestTeam, excludeTestTeams, excludeTestTeamRows } from '../../../utils/testTeams';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
@@ -40,8 +41,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     );
     const users = excludeTestTeamRows(usersResult.Items || [], testTeamIds);
 
-    // Get all enigmas
-    const enigmas = await getAllEnigmas();
+    // Get all enigmas. Les préliminaires ne comptent pas (utils/gamePhase) :
+    // ni dans le nombre d'intrigues, ni dans les tentatives.
+    const toutesLesEnigmes = await getAllEnigmasForAdmin();
+    const preliminaires = idsPreliminaires(toutesLesEnigmes);
+    const enigmas = toutesLesEnigmes.filter((e: any) => e.isActive === true && !estPreliminaire(e));
 
     // Get all parcours
     const parcours = await getAllParcours();
@@ -55,7 +59,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         TableName: PASSWORD_ATTEMPTS_TABLE,
       })
     );
-    const attempts = excludeTestTeamRows(attemptsResult.Items || [], testTeamIds);
+    const attempts = sansPreliminaires(excludeTestTeamRows(attemptsResult.Items || [], testTeamIds), preliminaires);
     const totalAttempts = attempts.length;
     const successfulAttempts = attempts.filter((attempt: any) => attempt.success).length;
 

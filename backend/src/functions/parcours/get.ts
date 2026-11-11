@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getParcoursById } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
 import { forPlayers } from '../../utils/parcoursAccess';
+import { phasePourUtilisateur } from '../../utils/gamePhase';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -12,11 +13,15 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error('Missing parcoursId parameter', 400);
     }
 
-    const parcours = await getParcoursById(parcoursId);
+    const [parcours, phase] = await Promise.all([
+      getParcoursById(parcoursId),
+      phasePourUtilisateur(userId),
+    ]);
 
     // Une tournée non publiée n'existe pas pour les joueurs (la liste ne la
     // montre pas non plus) ; l'administration passe par /admin/parcours.
-    if (!parcours || !parcours.isActive) {
+    // Avant le lancement, aucune n'existe (utils/gamePhase).
+    if (!parcours || !parcours.isActive || phase !== 'lance') {
       return error('Parcours not found', 404);
     }
 

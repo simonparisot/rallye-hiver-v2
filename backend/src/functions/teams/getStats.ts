@@ -4,7 +4,7 @@ import {
   getTeamById,
   getAllTeamProgress,
   getAllTeamParcoursAccess,
-  getAllEnigmas,
+  getAllEnigmasForAdmin,
   getAllParcours,
   getPasswordAttemptsByTeam,
   dynamoDb,
@@ -13,6 +13,7 @@ import {
 import { getTestTeamIds, excludeTestTeamRows } from '../../utils/testTeams';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { success, error } from '../../utils/response';
+import { idsPreliminaires, sansPreliminaires, estPreliminaire } from '../../utils/gamePhase';
 
 /**
  * Get team statistics including password attempts and comparative ranking
@@ -40,13 +41,18 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     // Get all enigmas and parcours to calculate totals
-    const [allEnigmas, allParcours] = await Promise.all([
-      getAllEnigmas(),
+    const [toutesLesEnigmes, allParcours] = await Promise.all([
+      getAllEnigmasForAdmin(),
       getAllParcours(),
     ]);
 
+    // Les préliminaires ne comptent nulle part (utils/gamePhase) : ni dans le
+    // total, ni dans les résolues, ni dans les tentatives et le classement.
+    const preliminaires = idsPreliminaires(toutesLesEnigmes);
+    const allEnigmas = toutesLesEnigmes.filter((e: any) => e.isActive === true && !estPreliminaire(e));
+
     // Get team progress
-    const progress = await getAllTeamProgress(teamId);
+    const progress = sansPreliminaires(await getAllTeamProgress(teamId), preliminaires);
     const solvedEnigmas = progress.filter((p: any) => p.solved);
 
     // Get parcours access/completion
@@ -70,20 +76,23 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     );
 
     // Get password attempts for this team
-    const teamAttempts = await getPasswordAttemptsByTeam(teamId, 10000);
+    const teamAttempts = sansPreliminaires(await getPasswordAttemptsByTeam(teamId, 10000), preliminaires);
     const passwordAttemptsCount = teamAttempts.length;
 
     // Get all password attempts from all teams for comparative stats
     const allAttemptsResult = await dynamoDb.send(
       new ScanCommand({
         TableName: PASSWORD_ATTEMPTS_TABLE,
-        ProjectionExpression: 'teamId',
+        ProjectionExpression: 'teamId, enigmaId',
       })
     );
     // Test teams play automated scenarios and would skew the percentile
     // computed for the real teams, so they are left out of the comparison
     const testTeamIds = await getTestTeamIds();
-    const allAttempts = excludeTestTeamRows(allAttemptsResult.Items || [], testTeamIds);
+    const allAttempts = sansPreliminaires(
+      excludeTestTeamRows(allAttemptsResult.Items || [], testTeamIds),
+      preliminaires
+    );
 
     // Count attempts per team
     const attemptsByTeam = new Map<string, number>();

@@ -3,6 +3,7 @@ import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
 import { dynamoDb, TEAMS_TABLE, TEAM_ENIGMA_PROGRESS_TABLE, TEAM_PARCOURS_ACCESS_TABLE, ENIGMAS_TABLE, PARCOURS_TABLE } from '../../../utils/dynamodb';
 import { excludeTestTeams } from '../../../utils/testTeams';
+import { estPreliminaire } from '../../../utils/gamePhase';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 
 /**
@@ -45,7 +46,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // Dropping the test teams here keeps them out of both the grid rows and
     // the metadata.totalTeams counter computed below
     const teams = excludeTestTeams(teamsResult.Items || []);
-    const enigmas = enigmasResult.Items || [];
+    // Les préliminaires n'ont pas de colonne : elles ne comptent pas
+    // (utils/gamePhase), et la grille garde ses vingt vraies intrigues.
+    const enigmas = (enigmasResult.Items || []).filter((e: any) => !estPreliminaire(e));
+    const idsEnigmes = new Set(enigmas.map((e: any) => e.enigmaId));
     const parcours = parcoursResult.Items || [];
     const allProgress = progressResult.Items || [];
     const allAccess = accessResult.Items || [];
@@ -60,7 +64,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     // Index all solved enigmas by team
     allProgress.forEach((progress: any) => {
-      if (progress.solved) {
+      if (progress.solved && idsEnigmes.has(progress.enigmaId)) {
         const teamId = progress.teamId;
         if (!solvedEnigmasByTeam.has(teamId)) {
           solvedEnigmasByTeam.set(teamId, new Set());

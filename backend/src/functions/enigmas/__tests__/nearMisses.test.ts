@@ -3,6 +3,8 @@ import { APIGatewayProxyEvent } from 'aws-lambda';
 // Les handlers d'administration des intrigues et la lecture côté joueur, sans
 // AWS : DynamoDB et le contrôle d'administrateur sont remplacés.
 jest.mock('../../../utils/dynamodb', () => ({
+  // Jeu lancé : la phase (utils/gamePhase) n'est pas le sujet de ces tests.
+  getGameStatus: jest.fn(async () => ({ gameId: 'rallye-2025', isStarted: true })),
   createEnigma: jest.fn(),
   updateEnigma: jest.fn(),
   getEnigmaById: jest.fn(),

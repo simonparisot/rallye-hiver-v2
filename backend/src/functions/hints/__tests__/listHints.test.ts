@@ -2,6 +2,8 @@ import { APIGatewayProxyEvent } from 'aws-lambda';
 
 // La couche DynamoDB est entièrement remplacée : aucun service n'est appelé.
 jest.mock('../../../utils/dynamodb', () => ({
+  // Jeu lancé : la phase (utils/gamePhase) n'est pas le sujet de ces tests.
+  getGameStatus: jest.fn(async () => ({ gameId: 'rallye-2025', isStarted: true })),
   getUserById: jest.fn(),
   getTeamById: jest.fn(),
   getEnigmaById: jest.fn(),

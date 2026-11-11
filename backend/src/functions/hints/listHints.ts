@@ -8,6 +8,7 @@ import {
 import { success, error } from '../../utils/response';
 import { ordonnerIndices } from './requestHint';
 import { indicesOuverts } from '../../utils/hintAvailability';
+import { lireEtatJeu, phasePourEquipe, intrigueOuverte, estPreliminaire } from '../../utils/gamePhase';
 
 /**
  * Demandes d'indice de l'équipe sur une énigme, avec leur statut.
@@ -45,12 +46,19 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     const enigma = await getEnigmaById(enigmaId);
-    // Une intrigue non publiée n'existe pas pour le joueur, comme dans GET /enigmas.
+    // Une intrigue non publiée, ou fermée dans cette phase du jeu, n'existe
+    // pas pour le joueur, comme dans GET /enigmas (utils/gamePhase).
     if (!enigma || (enigma as any).isActive === false) {
       return error('Enigma not found', 404);
     }
+    const { phase: phaseGlobale } = await lireEtatJeu();
+    if (!intrigueOuverte(enigma, phasePourEquipe(phaseGlobale, team))) {
+      return error('Enigma not found', 404);
+    }
 
-    const tousLesIndices = ordonnerIndices(enigma.hints);
+    // Une préliminaire n'a pas d'indice (voir requestHint).
+    const preliminaire = estPreliminaire(enigma);
+    const tousLesIndices = preliminaire ? [] : ordonnerIndices(enigma.hints);
     const demandes = await getHintRequestsByTeamAndEnigma(user.teamId, enigmaId);
 
     // Les demandes, dans l'ordre, avec juste ce qu'il faut au joueur. `processing`
@@ -98,7 +106,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       // disparaît — sauf pour relire les indices déjà reçus, qui restent dus.
       // La date d'ouverture n'est pas transmise : l'organisateur n'a pas à
       // l'annoncer aux équipes.
-      hintsAvailable: indicesOuverts(enigma),
+      hintsAvailable: !preliminaire && indicesOuverts(enigma),
       pendingRequest: enAttente,
       enigmaPoints: enigma.points || 0,
       // Coût nul pendant l'essai : le barème dort dans utils/hintCost.ts.

@@ -1,7 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { getGameStatus, initializeGameStatus, getUserById, getTeamById } from '../../utils/dynamodb';
+import { getUserById, getTeamById, getUserByCognitoSub } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
 import { getUserIdFromEvent } from '../../utils/auth';
+import { lireEtatJeu, phasePourEquipe, themeOfficielDebloque } from '../../utils/gamePhase';
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
 
 const COGNITO_USER_POOL_ID = process.env.COGNITO_USER_POOL_ID!;
@@ -15,109 +16,65 @@ const verifier = CognitoJwtVerifier.create({
 });
 
 /**
- * Public endpoint to check game status
- * No authentication required - allows frontend to show waiting state
- * Returns whether the game has started
+ * L'utilisateur derrière le jeton, s'il y en a un et qu'il est valide. La
+ * route n'a pas d'authorizer (elle doit répondre aux visiteurs) : le jeton est
+ * vérifié ici, et un jeton absent, expiré ou invalide vaut visiteur.
+ */
+async function utilisateurFacultatif(event: APIGatewayProxyEvent): Promise<string | undefined> {
+  const depuisAuthorizer = getUserIdFromEvent(event);
+  if (depuisAuthorizer) return depuisAuthorizer;
+
+  const entete = event.headers?.Authorization || event.headers?.authorization;
+  if (!entete) return undefined;
+
+  try {
+    const payload = await verifier.verify(entete.replace('Bearer ', ''));
+    const user = await getUserByCognitoSub(payload.sub as string);
+    return user?.userId;
+  } catch (jwtErr) {
+    console.log('JWT verification failed (continuing as unauthenticated):', jwtErr);
+    return undefined;
+  }
+}
+
+/**
+ * GET /game/status — public, jeton facultatif.
  *
- * Special behavior: If user is authenticated and their team is marked as isBetaTeam,
- * the game appears as started (early access for beta teams)
+ * - `phase` : « avant-lancement » ou « lance », calculée par le serveur
+ *   (utils/gamePhase) ; une équipe bêta voit toujours le jeu lancé.
+ * - `isStarted` : `phase === 'lance'`, gardé pour les clients qui le lisaient.
+ * - `launchAt` : heure du lancement officiel.
+ * - `themeOfficiel` : le thème officiel est-il débloqué pour cet utilisateur ?
+ *   Oui une fois le jeu lancé ; avant, seulement pour une équipe qui a résolu
+ *   une intrigue préliminaire.
  */
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
-    // Try to get userId from authorizer first (if endpoint has authorizer)
-    let userId = getUserIdFromEvent(event);
+    const userId = await utilisateurFacultatif(event);
+    const etat = await lireEtatJeu();
 
-    // If no userId from authorizer, try to manually verify JWT token
-    if (!userId && event.headers?.Authorization) {
-      try {
-        const token = event.headers.Authorization.replace('Bearer ', '');
-        const payload = await verifier.verify(token);
-        const cognitoSub = payload.sub as string;
-
-        // Get user from database using cognitoSub
-        const { getUserByCognitoSub } = await import('../../utils/dynamodb');
-        const user = await getUserByCognitoSub(cognitoSub);
-        if (user) {
-          userId = user.userId;
-          console.log(`Authenticated via JWT: userId=${userId}, cognitoSub=${cognitoSub}`);
-        }
-      } catch (jwtErr) {
-        // Token invalid or expired - continue as unauthenticated user
-        console.log('JWT verification failed (continuing as unauthenticated):', jwtErr);
-      }
-    }
-
-    // Also check lowercase 'authorization' header
-    if (!userId && event.headers?.authorization) {
-      try {
-        const token = event.headers.authorization.replace('Bearer ', '');
-        const payload = await verifier.verify(token);
-        const cognitoSub = payload.sub as string;
-
-        // Get user from database using cognitoSub
-        const { getUserByCognitoSub } = await import('../../utils/dynamodb');
-        const user = await getUserByCognitoSub(cognitoSub);
-        if (user) {
-          userId = user.userId;
-          console.log(`Authenticated via JWT (lowercase): userId=${userId}, cognitoSub=${cognitoSub}`);
-        }
-      } catch (jwtErr) {
-        console.log('JWT verification failed (continuing as unauthenticated):', jwtErr);
-      }
-    }
-
-    if (userId) {
-      // User is authenticated - check if they're in a beta team
+    let team: any = null;
+    if (userId && etat.phase !== 'lance') {
+      // Avant le lancement seulement : après, la réponse est la même pour tous.
       try {
         const user = await getUserById(userId);
-        console.log(`User found: userId=${userId}, teamId=${user?.teamId}`);
-
-        if (user?.teamId) {
-          const team = await getTeamById(user.teamId);
-          console.log(`Team found: teamName=${team?.teamName}, isBetaTeam=${team?.isBetaTeam}`);
-
-          if (team?.isBetaTeam === true) {
-            // This is a beta team - grant early access
-            console.log(`✅ BETA TEAM ACCESS GRANTED for ${team.teamName}`);
-            return success({
-              isStarted: true,
-              startedAt: new Date().toISOString(),
-            });
-          } else {
-            console.log(`❌ NOT a beta team: ${team?.teamName}`);
-          }
-        } else {
-          console.log('User has no team');
-        }
+        team = user?.teamId ? await getTeamById(user.teamId) : null;
       } catch (userCheckErr) {
-        // If user check fails, continue with normal flow (don't break public access)
-        console.warn('Failed to check user beta team status:', userCheckErr);
-      }
-    } else {
-      console.log('No authenticated user - returning real game status');
-    }
-
-    // Normal flow: Get actual game status
-    let gameStatus = await getGameStatus();
-
-    // If game status doesn't exist, initialize it
-    if (!gameStatus) {
-      try {
-        gameStatus = await initializeGameStatus();
-      } catch (err: any) {
-        // If initialization fails due to concurrent creation, fetch again
-        if (err.name === 'ConditionalCheckFailedException') {
-          gameStatus = await getGameStatus();
-        } else {
-          throw err;
-        }
+        // L'équipe est illisible : on répond comme à un visiteur plutôt
+        // que de casser une route publique.
+        console.warn('Failed to read user team for game status:', userCheckErr);
       }
     }
 
-    // Return only public fields (don't expose startedBy for privacy)
+    const phase = phasePourEquipe(etat.phase, team);
+
+    // Ni startedBy ni le détail de l'item : rien d'autre ne regarde le public.
     return success({
-      isStarted: gameStatus.isStarted,
-      startedAt: gameStatus.startedAt || null,
+      isStarted: phase === 'lance',
+      startedAt: etat.startedAt,
+      phase,
+      launchAt: etat.launchAt,
+      themeOfficiel: themeOfficielDebloque(phase, team),
     });
   } catch (err: any) {
     console.error('Get game status error:', err);

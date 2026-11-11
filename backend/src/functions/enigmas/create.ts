@@ -31,6 +31,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const presqueBons = lireNearMisses(body.nearMisses ?? [], body.correctPassword);
     if (presqueBons.erreur) return error(presqueBons.erreur, 400);
 
+    if (body.isPreliminary !== undefined && typeof body.isPreliminary !== 'boolean') {
+      return error('isPreliminary doit être un booléen', 400);
+    }
+
     const now = new Date().toISOString();
 
     // Auto-assign enigmaNumber if not provided (find max + 1)
@@ -57,6 +61,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       points: body.points || 10, // Default to 10 points if not provided
       difficulty: body.difficulty || 'medium',
       isActive: body.isActive !== undefined ? body.isActive : true,
+      // Préliminaire : jouable avant le lancement seulement (utils/gamePhase).
+      isPreliminary: body.isPreliminary === true,
       // Fermés par défaut : l'organisateur les ouvre quand il le décide.
       hintsEnabled: reglage.valeurs.hintsEnabled ?? false,
       hintsAvailableFrom: reglage.valeurs.hintsAvailableFrom ?? null,

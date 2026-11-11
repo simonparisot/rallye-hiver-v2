@@ -1,6 +1,7 @@
 import { dynamoDb, PASSWORD_ATTEMPTS_TABLE, TEAMS_TABLE, TEAM_ENIGMA_PROGRESS_TABLE, ENIGMAS_TABLE } from './dynamodb';
 import { ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { isTestTeam, excludeTestTeams, excludeTestTeamRows } from './testTeams';
+import { idsPreliminaires, sansPreliminaires } from './gamePhase';
 
 /**
  * Difficulty calculation configuration (updated algorithm)
@@ -62,8 +63,10 @@ export async function calculateAllEnigmaDifficulties(): Promise<EnigmaDifficulty
     teams.filter((team: any) => isTestTeam(team)).map((team: any) => team.teamId)
   );
 
-  const attempts = excludeTestTeamRows(attemptsResult.Items || [], testTeamIds);
-  const progressRecords = excludeTestTeamRows(progressResult.Items || [], testTeamIds);
+  // Les préliminaires ne comptent pas dans la difficulté (utils/gamePhase).
+  const preliminaires = idsPreliminaires(enigmas);
+  const attempts = sansPreliminaires(excludeTestTeamRows(attemptsResult.Items || [], testTeamIds), preliminaires);
+  const progressRecords = sansPreliminaires(excludeTestTeamRows(progressResult.Items || [], testTeamIds), preliminaires);
 
   const totalTeams = excludeTestTeams(teams).length;
 

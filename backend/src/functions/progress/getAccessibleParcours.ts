@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getUserById, getAllParcours, getAllTeamParcoursAccess } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
 import { loadAccessContext, evaluateParcoursAccess, forPlayers } from '../../utils/parcoursAccess';
+import { phasePourUtilisateur } from '../../utils/gamePhase';
 
 /**
  * Les tournées publiées, avec pour chacune son état pour l'équipe : ouverte ou
@@ -23,6 +24,13 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const user = await getUserById(userId);
     if (!user || !user.teamId) {
       return error('User is not in a team', 403);
+    }
+
+    // Avant le lancement, aucune tournée n'existe pour les joueurs : ni
+    // titre, ni PDF (utils/gamePhase).
+    const phase = await phasePourUtilisateur(userId);
+    if (phase !== 'lance') {
+      return success({ teamId: user.teamId, parcours: [], accessibleParcours: [], count: 0, phase });
     }
 
     const [allParcours, accessRecords, context] = await Promise.all([
@@ -58,6 +66,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       parcours,
       accessibleParcours,
       count: accessibleParcours.length,
+      phase,
     });
   } catch (err: any) {
     console.error('Error getting accessible parcours:', err);

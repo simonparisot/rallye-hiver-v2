@@ -18,6 +18,7 @@ import { loadAccessContext, evaluateParcoursAccess } from '../../utils/parcoursA
 import { normalizePassword } from '../../utils/password';
 import { getWrongPasswordMessages, pickWrongPasswordMessage } from '../../utils/wrongPasswordMessages';
 import { trouverNearMiss } from '../../utils/nearMisses';
+import { lireEtatJeu, phasePourEquipe, estPreliminaire, intrigueOuverte } from '../../utils/gamePhase';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -60,6 +61,21 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error('This enigma is not currently active', 403);
     }
 
+    // Phase du jeu (utils/gamePhase) : les préliminaires se jouent avant le
+    // lancement, les vraies intrigues après. Rien n'est journalisé d'une
+    // tentative refusée ici.
+    const { phase: phaseGlobale } = await lireEtatJeu();
+    const phase = phasePourEquipe(phaseGlobale, team);
+    const preliminaire = estPreliminaire(enigma);
+    if (!intrigueOuverte(enigma, phase)) {
+      return error(
+        preliminaire
+          ? 'Les énigmes préliminaires sont closes : le rallye est lancé.'
+          : "Cette énigme n'est pas encore ouverte : elle le sera au lancement du rallye.",
+        403
+      );
+    }
+
     const now = new Date().toISOString();
 
     // Normalize passwords for comparison (removes spaces, accents, punctuation, case-insensitive)
@@ -90,8 +106,12 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     await logPasswordAttempt(attemptLog);
 
-    // Update team lastActivityAt on every password attempt (correct or incorrect)
-    await updateTeam(user.teamId, { lastActivityAt: now });
+    // Update team lastActivityAt on every password attempt (correct or incorrect).
+    // Pas pour une préliminaire : elle ne compte nulle part, pas même dans
+    // l'activité qui départage le classement.
+    if (!preliminaire) {
+      await updateTeam(user.teamId, { lastActivityAt: now });
+    }
 
     // Only update progress if not already solved (or if correct answer to mark as solved)
     if (!alreadySolved) {
@@ -114,6 +134,22 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       }
 
       await createOrUpdateTeamProgress(user.teamId, enigmaId, progressUpdates);
+    }
+
+    // Préliminaire résolue : elle ne compte pas (ni solvedEnigmasCount, ni
+    // tournées), mais elle débloque le thème officiel pour toute l'équipe.
+    // La date n'est posée qu'une fois.
+    if (preliminaire && isCorrect) {
+      if (!team.themeUnlockedAt) {
+        await updateTeam(user.teamId, { themeUnlockedAt: now });
+      }
+      return success({
+        success: true,
+        message: alreadySolved
+          ? 'Bravo, c\'est le bon mot de passe ! (Cette énigme était déjà résolue par votre équipe)'
+          : 'Bravo ! Énigme résolue !',
+        themeOfficiel: true,
+      });
     }
 
     // If solved, update team solved count

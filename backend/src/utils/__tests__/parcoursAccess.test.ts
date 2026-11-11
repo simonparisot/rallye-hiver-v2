@@ -2,13 +2,17 @@ import {
   evaluateParcoursAccess,
   forPlayers,
   resolveRequiredEnigmaIds,
+  validateRequiredEnigmaIds,
+  refusPreliminaire,
+  loadAccessContext,
   AccessContext,
 } from '../parcoursAccess';
-import { getAllEnigmasForAdmin } from '../dynamodb';
+import { getAllEnigmasForAdmin, getAllTeamProgress, getAllParcoursForAdmin } from '../dynamodb';
 
 jest.mock('../dynamodb', () => ({
   getAllEnigmasForAdmin: jest.fn(),
   getAllTeamProgress: jest.fn(),
+  getAllParcoursForAdmin: jest.fn(),
 }));
 
 const context = (solved: string[]): AccessContext => ({
@@ -128,5 +132,47 @@ describe('resolveRequiredEnigmaIds', () => {
 
   test('refuse autre chose qu\'une liste de chaînes', async () => {
     expect((await resolveRequiredEnigmaIds('e1')).error).toMatch(/liste/);
+  });
+});
+
+describe('intrigues préliminaires et tournées', () => {
+  const ENIGMES = [
+    { enigmaId: 'e1', enigmaNumber: 1, title: 'La Tour', isActive: true },
+    { enigmaId: 'p1', enigmaNumber: 1, title: 'Affiche', isActive: true, isPreliminary: true },
+  ];
+
+  beforeEach(() => {
+    (getAllEnigmasForAdmin as jest.Mock).mockResolvedValue(ENIGMES);
+  });
+
+  test('requiredEnigmaIds qui contient une préliminaire : refusé, à la création comme à la modification', async () => {
+    expect(await validateRequiredEnigmaIds(['e1', 'p1'])).toBe(
+      'Une intrigue préliminaire ne peut pas ouvrir une tournée : #1 Affiche'
+    );
+    // Même déjà enregistrée : l'administration ne la propose plus, elle ne
+    // doit pas revenir par la bande.
+    expect((await resolveRequiredEnigmaIds(['p1'], ['p1'])).error).toMatch(/préliminaire/);
+  });
+
+  test('sans préliminaire, la liste passe', async () => {
+    expect(await resolveRequiredEnigmaIds(['e1'])).toEqual({ error: null, ids: ['e1'] });
+  });
+
+  test('une préliminaire résolue n\'ouvre aucune tournée', async () => {
+    (getAllTeamProgress as jest.Mock).mockResolvedValue([{ enigmaId: 'p1', solved: true }]);
+
+    const contexte = await loadAccessContext('t1');
+
+    expect(contexte.enigmasById.has('p1')).toBe(false);
+    expect(evaluateParcoursAccess({ requiredEnigmaIds: ['e1'] }, contexte).isUnlocked).toBe(false);
+  });
+
+  test('une intrigue requise par une tournée ne peut pas devenir préliminaire', async () => {
+    (getAllParcoursForAdmin as jest.Mock).mockResolvedValue([
+      { parcoursId: 't1', parcoursNumber: 2, title: 'Les quais', requiredEnigmaIds: ['e1'] },
+    ]);
+
+    expect(await refusPreliminaire('e1')).toMatch(/#2 Les quais/);
+    expect(await refusPreliminaire('e2')).toBeNull();
   });
 });

@@ -3,6 +3,8 @@ import { APIGatewayProxyEvent } from 'aws-lambda';
 // Aucun service n'est appelé : DynamoDB est remplacé, et uuid (paquet ESM que
 // jest ne charge pas) aussi. Le calcul d'accès est le vrai.
 jest.mock('../../../utils/dynamodb', () => ({
+  // Jeu lancé : la phase (utils/gamePhase) n'est pas le sujet de ces tests.
+  getGameStatus: jest.fn(async () => ({ gameId: 'rallye-2025', isStarted: true })),
   getUserById: jest.fn(),
   getParcoursById: jest.fn(),
   getTeamParcoursAccess: jest.fn(),

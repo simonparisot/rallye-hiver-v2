@@ -1,7 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
-import { dynamoDb, PASSWORD_ATTEMPTS_TABLE } from '../../../utils/dynamodb';
+import { dynamoDb, PASSWORD_ATTEMPTS_TABLE, getAllEnigmasForAdmin } from '../../../utils/dynamodb';
+import { idsPreliminaires, sansPreliminaires } from '../../../utils/gamePhase';
 import { getTestTeamIds, excludeTestTeamRows } from '../../../utils/testTeams';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 
@@ -42,7 +43,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     // Automated test traffic would show up as activity peaks on the chart
     const testTeamIds = await getTestTeamIds();
-    const attempts = excludeTestTeamRows(result.Items || [], testTeamIds);
+    // Les préliminaires ne comptent pas dans les statistiques (utils/gamePhase) ;
+    // leurs tentatives restent dans le journal (/admin/attempts).
+    const preliminaires = idsPreliminaires(await getAllEnigmasForAdmin());
+    const attempts = sansPreliminaires(excludeTestTeamRows(result.Items || [], testTeamIds), preliminaires);
 
     // Group attempts by day
     // Map structure: "YYYY-MM-DD" -> { correct: number, incorrect: number, total: number }

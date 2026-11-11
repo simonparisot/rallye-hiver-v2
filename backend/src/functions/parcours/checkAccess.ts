@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getUserById, getParcoursById, getTeamParcoursAccess } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
 import { loadAccessContext, evaluateParcoursAccess } from '../../utils/parcoursAccess';
+import { phasePourUtilisateur } from '../../utils/gamePhase';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -24,8 +25,12 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       });
     }
 
-    const parcours = await getParcoursById(parcoursId);
-    if (!parcours || !parcours.isActive) {
+    const [parcours, phase] = await Promise.all([
+      getParcoursById(parcoursId),
+      phasePourUtilisateur(userId),
+    ]);
+    // Avant le lancement, aucune tournée n'existe (utils/gamePhase).
+    if (!parcours || !parcours.isActive || phase !== 'lance') {
       return error('Parcours not found', 404);
     }
 

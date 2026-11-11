@@ -26,6 +26,11 @@ export interface Team {
   lastActivityAt?: string;
   isBetaTeam?: boolean; // Beta team flag for early access before game starts
   isTestTeam?: boolean; // Test team flag: excluded from every list and every statistic
+  /**
+   * Première résolution d'une intrigue préliminaire par l'équipe : le thème
+   * officiel lui est débloqué avant le lancement (utils/gamePhase).
+   */
+  themeUnlockedAt?: string;
 }
 
 export interface AuthUser {
@@ -83,6 +88,13 @@ export interface Enigma {
   points: number;
   difficulty?: 'easy' | 'medium' | 'hard';
   isActive: boolean;
+  /**
+   * Intrigue préliminaire : jouable seulement avant le lancement officiel,
+   * elle débloque le thème officiel pour l'équipe qui la résout. Elle ne
+   * compte nulle part (score, statistiques, classement, tournées).
+   * Absent = vraie intrigue.
+   */
+  isPreliminary?: boolean;
   createdAt: string;
   updatedAt: string;
   gameId?: string;
@@ -173,6 +185,11 @@ export interface GameStatus {
   isStarted: boolean; // Whether the game has been started by admin
   startedAt?: string; // ISO 8601 timestamp when game was started
   startedBy?: string; // Admin userId who started the game
+  /** Heure de lancement automatique ; absente = DATE_LANCEMENT_PAR_DEFAUT (utils/gamePhase). */
+  launchAt?: string;
+  /** Dernier retour en avant-lancement (POST /admin/game/reset). */
+  resetAt?: string;
+  resetBy?: string;
   createdAt: string;
   updatedAt: string;
 }

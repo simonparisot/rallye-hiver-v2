@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { getAllTeams, getAllTeamProgress, getUsersByIds } from '../../../utils/dynamodb';
+import { getAllTeams, getAllTeamProgress, getUsersByIds, getAllEnigmasForAdmin } from '../../../utils/dynamodb';
+import { idsPreliminaires, sansPreliminaires } from '../../../utils/gamePhase';
 import { dynamoDb, TEAM_PARCOURS_ACCESS_TABLE, PASSWORD_ATTEMPTS_TABLE } from '../../../utils/dynamodb';
 import { excludeTestTeams } from '../../../utils/testTeams';
 import { QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
@@ -24,6 +25,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // Get all teams (test teams are hidden from the admin list as well)
     const teamsResult = await getAllTeams(10000); // High limit to get all teams
     const teams = excludeTestTeams(teamsResult.items || []);
+    // Les préliminaires ne comptent pas dans les intrigues résolues (utils/gamePhase).
+    const preliminaires = idsPreliminaires(await getAllEnigmasForAdmin());
 
     // Enhance each team with progress statistics
     const teamsWithProgress = await Promise.all(
@@ -32,7 +35,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         const members = await getUsersByIds(team.members || []);
 
         // Get team's solved enigmas count
-        const progressResult = await getAllTeamProgress(team.teamId);
+        const progressResult = sansPreliminaires(await getAllTeamProgress(team.teamId), preliminaires);
         const solvedEnigmasCount = progressResult.filter((p: any) => p.solved).length;
 
         // Get team's unlocked parcours count

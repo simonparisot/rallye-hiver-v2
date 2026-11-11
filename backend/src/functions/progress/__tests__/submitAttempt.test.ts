@@ -4,6 +4,8 @@ import { APIGatewayProxyEvent } from 'aws-lambda';
 // ne charge pas) aussi, et les messages de refus sont figés pour qu'on
 // reconnaisse celui qui est tiré au hasard.
 jest.mock('../../../utils/dynamodb', () => ({
+  // Jeu lancé : la phase (utils/gamePhase) n'est pas le sujet de ces tests.
+  getGameStatus: jest.fn(async () => ({ gameId: 'rallye-2025', isStarted: true })),
   getEnigmaById: jest.fn(),
   getUserById: jest.fn(),
   getTeamById: jest.fn(),

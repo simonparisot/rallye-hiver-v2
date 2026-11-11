@@ -1,5 +1,6 @@
-import { getAllEnigmasForAdmin, getAllTeamProgress } from './dynamodb';
+import { getAllEnigmasForAdmin, getAllTeamProgress, getAllParcoursForAdmin } from './dynamodb';
 import { hasUsablePassword } from './password';
+import { estPreliminaire } from './gamePhase';
 
 /**
  * Déblocage des tournées par les intrigues.
@@ -44,8 +45,10 @@ export async function loadAccessContext(teamId: string): Promise<AccessContext> 
   ]);
 
   return {
+    // Une préliminaire n'ouvre aucune tournée : elle est ignorée comme une
+    // intrigue supprimée (l'administration refuse de toute façon de la cocher).
     enigmasById: new Map(
-      enigmas.map((e: any) => [
+      enigmas.filter((e: any) => !estPreliminaire(e)).map((e: any) => [
         e.enigmaId,
         { enigmaNumber: e.enigmaNumber, title: e.title, isActive: e.isActive === true },
       ])
@@ -121,7 +124,32 @@ export async function resolveRequiredEnigmaIds(
   if (unknown.length > 0) {
     return { error: `Intrigues inconnues : ${unknown.join(', ')}` };
   }
+  // Une préliminaire ne se joue qu'avant le lancement, quand aucune tournée
+  // n'est ouverte : elle ne peut pas en ouvrir une.
+  const preliminaires = enigmas.filter((e: any) => estPreliminaire(e) && ids.includes(e.enigmaId));
+  if (preliminaires.length > 0) {
+    return {
+      error: `Une intrigue préliminaire ne peut pas ouvrir une tournée : ${preliminaires
+        .map((e: any) => `#${e.enigmaNumber} ${e.title}`)
+        .join(', ')}`,
+    };
+  }
   return { error: null, ids: Array.from(new Set(ids.filter((id) => known.has(id)))) };
+}
+
+/**
+ * Une intrigue peut-elle devenir préliminaire ? Non si une tournée la requiert :
+ * la tournée perdrait en silence une de ses conditions d'ouverture. Renvoie un
+ * message d'erreur, ou null.
+ */
+export async function refusPreliminaire(enigmaId: string): Promise<string | null> {
+  const tournees = (await getAllParcoursForAdmin()).filter((p: any) =>
+    (p.requiredEnigmaIds || []).includes(enigmaId)
+  );
+  if (tournees.length === 0) return null;
+  return `Cette intrigue ouvre ${tournees.length > 1 ? 'des tournées' : 'une tournée'} (${tournees
+    .map((p: any) => `#${p.parcoursNumber} ${p.title}`)
+    .join(', ')}) : décochez-la d'abord pour en faire une préliminaire.`;
 }
 
 /**
