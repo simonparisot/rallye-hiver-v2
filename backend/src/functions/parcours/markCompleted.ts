@@ -8,6 +8,7 @@ import {
   updateTeam,
 } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
+import { loadAccessContext, evaluateParcoursAccess } from '../../utils/parcoursAccess';
 
 /**
  * Mark a parcours as completed for the team
@@ -36,6 +37,12 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const parcours = await getParcoursById(parcoursId);
     if (!parcours) {
       return error('Parcours not found', 404);
+    }
+
+    // Une tournée encore verrouillée ne peut pas avoir été réalisée.
+    const { isUnlocked } = evaluateParcoursAccess(parcours, await loadAccessContext(user.teamId));
+    if (!isUnlocked) {
+      return error('Parcours locked', 403);
     }
 
     const now = new Date().toISOString();

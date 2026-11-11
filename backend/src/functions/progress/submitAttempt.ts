@@ -9,12 +9,12 @@ import {
   logPasswordAttempt,
   updateTeam,
   getAllParcours,
-  getAllTeamProgress,
   grantParcoursAccess,
   getTeamParcoursAccess,
 } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
 import { PasswordAttemptLog } from '../../types';
+import { loadAccessContext, evaluateParcoursAccess } from '../../utils/parcoursAccess';
 
 /**
  * Normalize a password for comparison
@@ -172,10 +172,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
       // Check for parcours unlocks
       const allParcours = await getAllParcours();
-      const teamProgress = await getAllTeamProgress(user.teamId);
-      const solvedEnigmaIds = teamProgress
-        .filter((p: any) => p.solved)
-        .map((p: any) => p.enigmaId);
+      const accessContext = await loadAccessContext(user.teamId);
 
       for (const parcours of allParcours) {
         // Check if team already has access
@@ -184,19 +181,18 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           continue; // Already unlocked
         }
 
-        // Check if team has solved required enigmas
-        const solvedRequiredCount = parcours.requiredEnigmaIds.filter((id: string) =>
-          solvedEnigmaIds.includes(id)
-        ).length;
+        // Même règle que pour l'affichage : toutes les intrigues cochées.
+        // L'enregistrement ne sert qu'à dater le déblocage et aux statistiques ;
+        // l'accès lui-même est recalculé à chaque lecture.
+        const { isUnlocked, requiredEnigmas } = evaluateParcoursAccess(parcours, accessContext);
 
-        if (solvedRequiredCount >= parcours.requiredEnigmasCount) {
-          // Grant access to parcours
+        if (isUnlocked) {
           await grantParcoursAccess({
             teamId: user.teamId,
             parcoursId: parcours.parcoursId,
             hasAccess: true,
             unlockedAt: now,
-            unlockedBy: parcours.requiredEnigmaIds.filter((id: string) => solvedEnigmaIds.includes(id)),
+            unlockedBy: requiredEnigmas.map((e) => e.enigmaId),
             createdAt: now,
           });
 

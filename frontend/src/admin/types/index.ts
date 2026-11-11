@@ -67,9 +67,12 @@ export interface UpdateEnigmaRequest extends Partial<CreateEnigmaRequest> {
 }
 
 export interface CreateParcoursRequest {
-  parcoursNumber: number;
+  /** Absent à la création : le serveur place la tournée après la dernière. */
+  parcoursNumber?: number;
   title: string;
   pdfUrl: string;
+  /** Intrigues à résoudre toutes pour ouvrir la tournée ; vide = tournée libre. */
+  requiredEnigmaIds: string[];
   isActive: boolean;
 }
 

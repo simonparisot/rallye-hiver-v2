@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { updateParcours, getParcoursById } from '../../utils/dynamodb';
 import { requireAdmin } from '../../utils/adminAuth';
 import { success, error } from '../../utils/response';
+import { validateRequiredEnigmaIds } from '../../utils/parcoursAccess';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -32,11 +33,24 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       updatedAt: new Date().toISOString(),
     };
 
+    // parcoursNumber était ignoré : le glisser-déposer de l'administration ne
+    // réordonnait rien.
+    if (body.parcoursNumber !== undefined) {
+      if (!Number.isInteger(body.parcoursNumber) || body.parcoursNumber < 1) {
+        return error('parcoursNumber doit être un entier positif', 400);
+      }
+      updates.parcoursNumber = body.parcoursNumber;
+    }
     if (body.title !== undefined) updates.title = body.title;
     if (body.description !== undefined) updates.description = body.description;
     if (body.pdfUrl !== undefined) updates.pdfUrl = body.pdfUrl;
-    if (body.requiredEnigmaIds !== undefined) updates.requiredEnigmaIds = body.requiredEnigmaIds;
-    if (body.requiredEnigmasCount !== undefined) updates.requiredEnigmasCount = body.requiredEnigmasCount;
+    if (body.requiredEnigmaIds !== undefined) {
+      const invalid = await validateRequiredEnigmaIds(body.requiredEnigmaIds);
+      if (invalid) return error(invalid, 400);
+      // Toutes les intrigues cochées sont requises : le compte suit la liste.
+      updates.requiredEnigmaIds = body.requiredEnigmaIds;
+      updates.requiredEnigmasCount = body.requiredEnigmaIds.length;
+    }
     if (body.isActive !== undefined) updates.isActive = body.isActive;
 
     const updatedParcours = await updateParcours(parcoursId, updates);

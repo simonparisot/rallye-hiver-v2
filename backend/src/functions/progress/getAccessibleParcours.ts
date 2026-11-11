@@ -1,7 +1,16 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getUserById, getAllParcours, getAllTeamParcoursAccess } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
+import { loadAccessContext, evaluateParcoursAccess, withoutPdf } from '../../utils/parcoursAccess';
 
+/**
+ * Les tournées publiées, avec pour chacune son état pour l'équipe : ouverte ou
+ * non, intrigues requises et résolues, réalisation déclarée.
+ *
+ * `parcours` les liste toutes ; `accessibleParcours` ne garde que les
+ * ouvertes, pour les clients qui ne lisaient que celle-là. Le PDF d'une
+ * tournée verrouillée n'est jamais renvoyé.
+ */
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
     const userId = event.requestContext.authorizer?.userId;
@@ -10,41 +19,42 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error('Unauthorized', 401);
     }
 
-    // Get user to find team
     const user = await getUserById(userId);
     if (!user || !user.teamId) {
       return error('User is not in a team', 403);
     }
 
-    // Get ALL parcours - no longer checking access, all parcours are accessible
-    const allParcours = await getAllParcours();
+    const [allParcours, accessRecords, context] = await Promise.all([
+      getAllParcours(),
+      getAllTeamParcoursAccess(user.teamId),
+      loadAccessContext(user.teamId),
+    ]);
 
-    // Get team's parcours access records (to check completion status)
-    const accessRecords = await getAllTeamParcoursAccess(user.teamId);
     const accessMap = new Map(
       accessRecords.map((record: any) => [record.parcoursId, record])
     );
 
-    // Filter active parcours and add unlock/completion info
-    const now = new Date().toISOString();
-    const accessibleParcours = allParcours
-      .filter((parcours: any) => parcours.isActive)
-      .map((parcours: any) => {
-        const accessRecord = accessMap.get(parcours.parcoursId);
+    const parcours = allParcours
+      .map((p: any) => {
+        const { isUnlocked, requiredEnigmas } = evaluateParcoursAccess(p, context);
+        const accessRecord: any = accessMap.get(p.parcoursId);
         return {
-          ...parcours,
-          unlockedAt: accessRecord?.unlockedAt || now, // All parcours are unlocked by default
-          unlockedBy: accessRecord?.unlockedBy || [], // No specific enigmas required
-          completed: accessRecord?.completed || false, // Include completion status
-          completedAt: accessRecord?.completedAt || null, // Include completion timestamp
+          ...(isUnlocked ? p : withoutPdf(p)),
+          isUnlocked,
+          requiredEnigmas,
+          unlockedAt: isUnlocked ? accessRecord?.unlockedAt || null : null,
+          unlockedBy: accessRecord?.unlockedBy || [],
+          completed: accessRecord?.completed || false,
+          completedAt: accessRecord?.completedAt || null,
         };
-      });
+      })
+      .sort((a: any, b: any) => a.parcoursNumber - b.parcoursNumber);
 
-    // Sort by parcours number
-    accessibleParcours.sort((a: any, b: any) => a.parcoursNumber - b.parcoursNumber);
+    const accessibleParcours = parcours.filter((p: any) => p.isUnlocked);
 
     return success({
       teamId: user.teamId,
+      parcours,
       accessibleParcours,
       count: accessibleParcours.length,
     });

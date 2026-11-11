@@ -81,8 +81,9 @@ describe('Membre d\'une équipe', () => {
       const parcours = liste.data.parcours[0];
       expect(parcours).toHaveProperty('parcoursId');
       expect(parcours).toHaveProperty('parcoursNumber');
-      expect(parcours).toHaveProperty('pdfUrl');
       expect(parcours).toHaveProperty('requiredEnigmasCount');
+      // L'adresse du PDF suffit à l'ouvrir : la liste ne la donne à personne.
+      liste.data.parcours.forEach((p) => expect(p).not.toHaveProperty('pdfUrl'));
     });
 
     test('indique les parcours accessibles à l\'équipe', async () => {
@@ -91,6 +92,21 @@ describe('Membre d\'une équipe', () => {
       expect(accessibles.status).toBe(200);
       expect(accessibles.data.teamId).toBe(config.teamId);
       expect(Array.isArray(accessibles.data.accessibleParcours)).toBe(true);
+      expect(Array.isArray(accessibles.data.parcours)).toBe(true);
+    });
+
+    test('ne donne le PDF que des parcours débloqués', async () => {
+      const { data } = await membre.get('/progress/parcours');
+
+      data.parcours.forEach((p) => {
+        expect(typeof p.isUnlocked).toBe('boolean');
+        expect(Array.isArray(p.requiredEnigmas)).toBe(true);
+        // Débloqué : toutes les intrigues requises sont résolues, et seulement alors.
+        expect(p.isUnlocked).toBe(p.requiredEnigmas.every((e) => e.solved));
+        if (p.isUnlocked) expect(p.pdfUrl).toEqual(expect.any(String));
+        else expect(p).not.toHaveProperty('pdfUrl');
+      });
+      expect(data.accessibleParcours.every((p) => p.isUnlocked)).toBe(true);
     });
   });
 
@@ -115,8 +131,12 @@ describe('Membre d\'une équipe', () => {
 
   describe('8. Téléchargement d\'un parcours', () => {
     test('le PDF du parcours est téléchargeable par le membre', async () => {
-      const liste = await membre.get('/parcours');
-      const { pdfUrl } = liste.data.parcours[0];
+      const { data } = await membre.get('/progress/parcours');
+      const ouvert = data.accessibleParcours[0];
+      // Le décor de test doit compter au moins une tournée ouverte à l'équipe :
+      // une tournée sans intrigue requise, ou dont l'équipe a résolu les siennes.
+      expect(ouvert).toBeDefined();
+      const { pdfUrl } = ouvert;
 
       const pdf = await axios.get(pdfUrl, {
         responseType: 'arraybuffer',

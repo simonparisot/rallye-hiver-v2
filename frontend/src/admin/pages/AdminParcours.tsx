@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { adminParcoursAPI, adminUploadAPI } from '../services/adminAPI';
+import { adminParcoursAPI, adminUploadAPI, adminEnigmasAPI } from '../services/adminAPI';
 import { ParcoursWithStats, CreateParcoursRequest } from '../types';
 import './AdminParcours.css';
 
@@ -12,16 +12,30 @@ const AdminParcours: React.FC = () => {
   const [uploadingPdf, setUploadingPdf] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
   const [formData, setFormData] = useState<CreateParcoursRequest>({
-    parcoursNumber: 1,
     title: '',
     pdfUrl: '',
+    requiredEnigmaIds: [],
     isActive: true,
   });
+  const [erreurFormulaire, setErreurFormulaire] = useState('');
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['adminParcours'],
     queryFn: adminParcoursAPI.listAll,
   });
+
+  // Les intrigues qu'on peut exiger pour ouvrir une tournée.
+  const { data: enigmasData, isLoading: enigmasLoading } = useQuery({
+    queryKey: ['adminEnigmas'],
+    queryFn: adminEnigmasAPI.listAll,
+  });
+  const intrigues = [...(enigmasData?.enigmas || [])].sort((a, b) => a.enigmaNumber - b.enigmaNumber);
+  const titreIntrigue = new Map(intrigues.map((e) => [e.enigmaId, `${e.enigmaNumber}. ${e.title}`]));
+
+  // Un enregistrement refusé doit le dire : l'échec silencieux du bouton
+  // « Créer » est ce qui a empêché de mettre les tournées en ligne.
+  const messageErreur = (err: any) =>
+    err?.response?.data?.error || err?.message || 'Une erreur est survenue';
 
   const createMutation = useMutation({
     mutationFn: adminParcoursAPI.create,
@@ -29,6 +43,7 @@ const AdminParcours: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['adminParcours'] });
       resetForm();
     },
+    onError: (err) => setErreurFormulaire(messageErreur(err)),
   });
 
   const updateMutation = useMutation({
@@ -38,6 +53,7 @@ const AdminParcours: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['adminParcours'] });
       resetForm();
     },
+    onError: (err) => setErreurFormulaire(messageErreur(err)),
   });
 
   const deleteMutation = useMutation({
@@ -49,11 +65,12 @@ const AdminParcours: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
-      parcoursNumber: 1,
       title: '',
       pdfUrl: '',
+      requiredEnigmaIds: [],
       isActive: true,
     });
+    setErreurFormulaire('');
     setEditingParcours(null);
     setShowForm(false);
     setUploadProgress('');
@@ -62,11 +79,12 @@ const AdminParcours: React.FC = () => {
   const handleEdit = (parcours: ParcoursWithStats) => {
     setEditingParcours(parcours);
     setFormData({
-      parcoursNumber: parcours.parcoursNumber,
       title: parcours.title,
       pdfUrl: parcours.pdfUrl,
+      requiredEnigmaIds: parcours.requiredEnigmaIds || [],
       isActive: parcours.isActive,
     });
+    setErreurFormulaire('');
     setShowForm(true);
   };
 
@@ -103,8 +121,23 @@ const AdminParcours: React.FC = () => {
     }
   };
 
+  const basculerIntrigue = (enigmaId: string) => {
+    const ids = formData.requiredEnigmaIds;
+    setFormData({
+      ...formData,
+      requiredEnigmaIds: ids.includes(enigmaId) ? ids.filter((id) => id !== enigmaId) : [...ids, enigmaId],
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.pdfUrl) {
+      setErreurFormulaire("Ajoutez le PDF de la tournée avant d'enregistrer.");
+      return;
+    }
+    setErreurFormulaire('');
+    // Le numéro n'est pas envoyé : à la création le serveur place la tournée
+    // en dernier, à la modification elle garde sa place dans la liste.
     if (editingParcours) {
       updateMutation.mutate({ parcoursId: editingParcours.parcoursId, data: formData });
     } else {
@@ -199,7 +232,7 @@ const AdminParcours: React.FC = () => {
             </div>
 
             <div className="form-group pdf-upload-container">
-              <label>Fichier PDF</label>
+              <label>Fichier PDF *</label>
               {formData.pdfUrl && (
                 <div className="current-pdf">
                   <a href={formData.pdfUrl} target="_blank" rel="noopener noreferrer">
@@ -219,6 +252,39 @@ const AdminParcours: React.FC = () => {
                 </div>
               )}
             </div>
+
+            <fieldset className="form-group intrigues-requises" data-testid="admin-parcours-required-enigmas">
+              <legend>Intrigues qui débloquent la tournée</legend>
+              <p className="admin-form-help">
+                {formData.requiredEnigmaIds.length === 0
+                  ? 'Aucune intrigue cochée : la tournée est accessible à toutes les équipes.'
+                  : `La tournée s'ouvre quand l'équipe a résolu ${
+                      formData.requiredEnigmaIds.length === 1
+                        ? "l'intrigue cochée"
+                        : `les ${formData.requiredEnigmaIds.length} intrigues cochées`
+                    }.`}
+              </p>
+              {enigmasLoading ? (
+                <p className="admin-form-help">Chargement des intrigues...</p>
+              ) : (
+                <div className="intrigues-requises-liste">
+                  {intrigues.map((e) => (
+                    <label key={e.enigmaId} className="intrigue-requise">
+                      <input
+                        type="checkbox"
+                        data-testid={`admin-parcours-required-${e.enigmaId}`}
+                        checked={formData.requiredEnigmaIds.includes(e.enigmaId)}
+                        onChange={() => basculerIntrigue(e.enigmaId)}
+                      />
+                      <span>
+                        {e.enigmaNumber}. {e.title}
+                        {!e.isActive && <span className="unpublished-label">non publiée</span>}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </fieldset>
 
             <div className="form-group toggle-group">
               <label>Statut de publication</label>
@@ -246,6 +312,12 @@ const AdminParcours: React.FC = () => {
                 Annuler
               </button>
             </div>
+
+            {erreurFormulaire && (
+              <div data-testid="admin-parcours-form-error" className="admin-form-error" role="alert">
+                {erreurFormulaire}
+              </div>
+            )}
 
             {editingParcours && (
               <div className="form-zone-danger">
@@ -308,6 +380,13 @@ const AdminParcours: React.FC = () => {
                             <div className="parcours-title">
                               {parcours.title}
                               {!parcours.isActive && <span className="unpublished-label">non publiée</span>}
+                            </div>
+                            <div className="parcours-deblocage" data-testid={`admin-parcours-unlock-${parcours.parcoursId}`}>
+                              {(parcours.requiredEnigmaIds || []).length === 0
+                                ? 'Accès libre'
+                                : `🔒 ${(parcours.requiredEnigmaIds || [])
+                                    .map((id) => titreIntrigue.get(id) || 'intrigue supprimée')
+                                    .join(' · ')}`}
                             </div>
                           </td>
                           <td className="parcours-stats">

@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { getParcoursById, getTeamParcoursAccess } from '../../utils/dynamodb';
+import { getParcoursById } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
+import { withoutPdf } from '../../utils/parcoursAccess';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -17,11 +18,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error('Parcours not found', 404);
     }
 
-    // Note: Access control should be checked when serving the PDF
-    // Here we just return metadata
-
+    // Métadonnées seulement : le PDF passe par /progress/parcours, qui
+    // vérifie le déblocage.
     return success({
-      parcours,
+      parcours: withoutPdf(parcours),
     });
   } catch (err: any) {
     console.error('Error getting parcours:', err);

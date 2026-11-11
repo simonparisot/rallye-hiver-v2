@@ -148,11 +148,12 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
               <div
                 key={parcours.id}
                 data-testid={`parcours-card-${parcours.order}`}
-                className={`parcours-item-compact ${parcours.isCompleted ? 'completed' : ''} ${!hasAccess ? 'locked' : ''}`}
+                className={`parcours-item-compact ${parcours.isCompleted ? 'completed' : ''} ${!hasAccess || !parcours.isUnlocked ? 'locked' : ''}`}
                 onClick={() => hasAccess && handleParcoursSelect(parcours)}
               >
                 <span className="parcours-number">{index + 1}</span>
                 <span className="parcours-title-compact">{parcours.title}</span>
+                {hasAccess && !parcours.isUnlocked && <VerrouCompteur parcours={parcours} />}
                 {parcours.isCompleted && <span className="completed-badge-small" data-testid={`parcours-completed-badge-${parcours.order}`}>Réalisée</span>}
               </div>
             ))}
@@ -167,12 +168,13 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                   data-testid={`parcours-card-${parcours.order}`}
                   className={`parcours-item ${selectedParcours?.id === parcours.id ? 'active' : ''} ${
                     parcours.isCompleted ? 'completed' : ''
-                  }`}
+                  } ${hasAccess && !parcours.isUnlocked ? 'locked' : ''}`}
                   onClick={() => handleParcoursSelect(parcours)}
                 >
                   <div className="parcours-header-item">
                     <span className="parcours-number">{index + 1}</span>
                     <span className="parcours-title">{parcours.title}</span>
+                    {hasAccess && !parcours.isUnlocked && <VerrouCompteur parcours={parcours} />}
                     {parcours.pdfUrl && selectedParcours?.id === parcours.id && (
                       <button
                         data-testid={`parcours-download-button-${parcours.order}`}
@@ -198,6 +200,9 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
             </div>
             <div className="parcours-viewer" data-testid="parcours-viewer">
               {selectedParcours ? (
+                hasAccess && !selectedParcours.isUnlocked ? (
+                  <TourneeVerrouillee parcours={selectedParcours} />
+                ) : (
                 <div className="parcours-details" data-testid="parcours-details">
                   {hasAccess && (
                     <div className="parcours-header-detail">
@@ -251,6 +256,7 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
                     </div>
                   )}
                 </div>
+                )
               ) : (
                 <div className="parcours-placeholder" data-testid="parcours-placeholder">
                   <p>Sélectionnez une tournée pour afficher son énoncé</p>
@@ -260,6 +266,46 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+/** « 🔒 2/4 » : ce qui manque pour ouvrir la tournée, d'un coup d'œil. */
+const VerrouCompteur: React.FC<{ parcours: Parcours }> = ({ parcours }) => (
+  <span
+    className="parcours-verrou"
+    data-testid={`parcours-locked-badge-${parcours.order}`}
+    title={`${parcours.solvedEnigmas} intrigue${parcours.solvedEnigmas > 1 ? 's' : ''} résolue${parcours.solvedEnigmas > 1 ? 's' : ''} sur ${parcours.requiredEnigmas}`}
+  >
+    <span aria-hidden="true">🔒</span> {parcours.solvedEnigmas}/{parcours.requiredEnigmas}
+  </span>
+);
+
+/** Ce que voit une troupe qui ouvre une tournée encore fermée. */
+const TourneeVerrouillee: React.FC<{ parcours: Parcours }> = ({ parcours }) => {
+  const requises = parcours.requiredEnigmasDetail || [];
+  const manquantes = parcours.requiredEnigmas - parcours.solvedEnigmas;
+
+  return (
+    <div className="parcours-locked-view" data-testid="parcours-locked-view">
+      <div className="lock-icon" aria-hidden="true">🔒</div>
+      <h4>{parcours.title}</h4>
+      <p>
+        Cette tournée s'ouvrira quand votre troupe aura résolu{' '}
+        {requises.length > 1 ? 'les intrigues suivantes' : "l'intrigue suivante"}.
+        {manquantes > 0 && ` Encore ${manquantes} à résoudre.`}
+      </p>
+      <ul className="unlock-liste" data-testid="parcours-required-enigmas">
+        {requises.map((e) => (
+          <li key={e.id} className={e.isSolved ? 'resolue' : ''}>
+            <span className="unlock-marque" aria-hidden="true">{e.isSolved ? '✓' : '○'}</span>
+            <span>
+              {e.order}. {e.title}
+              <span className="sr-only">{e.isSolved ? ' (résolue)' : ' (à résoudre)'}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

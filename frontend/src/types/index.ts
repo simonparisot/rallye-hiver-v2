@@ -126,19 +126,38 @@ export interface TeamProgressResponse {
   totalSolved: number;
 }
 
+export interface RequiredEnigmaStatus {
+  enigmaId: string;
+  enigmaNumber: number;
+  title: string;
+  solved: boolean;
+}
+
+/** Une tournée vue par une équipe. Le PDF n'y figure que si elle est ouverte. */
+export interface TeamParcours extends Omit<BackendParcours, 'pdfUrl'> {
+  pdfUrl?: string;
+  isUnlocked: boolean;
+  requiredEnigmas: RequiredEnigmaStatus[];
+  unlockedAt: string | null;
+  unlockedBy: string[];
+  completed: boolean;
+  completedAt: string | null;
+}
+
 export interface AccessibleParcoursResponse {
   teamId: string;
-  accessibleParcours: Array<BackendParcours & {
-    unlockedAt: string;
-    unlockedBy: string[];
-  }>;
+  /** Toutes les tournées publiées, ouvertes ou non. */
+  parcours: TeamParcours[];
+  /** Les seules tournées ouvertes. */
+  accessibleParcours: TeamParcours[];
   count: number;
 }
 
 export interface ParcoursAccessResponse {
   hasAccess: boolean;
-  unlockedAt?: string;
+  unlockedAt?: string | null;
   unlockedBy?: string[];
+  requiredEnigmas?: RequiredEnigmaStatus[];
   reason?: string;
 }
 
@@ -168,12 +187,15 @@ export interface Parcours {
   pdfUrl?: string;
   unlockedAt?: string;
   requiredEnigmaIds?: string[];
+  /** Intrigues à résoudre pour ouvrir la tournée ; vide si elle est libre. */
+  requiredEnigmasDetail?: RequiredEnigma[];
   isCompleted?: boolean;
   completedAt?: string;
 }
 
 export interface RequiredEnigma {
   id: string;
+  order: number;
   title: string;
   isSolved: boolean;
 }

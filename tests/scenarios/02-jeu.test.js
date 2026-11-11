@@ -136,12 +136,19 @@ describe('Déroulement du jeu', () => {
     let parcoursId;
 
     beforeAll(async () => {
+      // Seule une tournée débloquée peut être déclarée réalisée.
       const accessibles = await membre.get('/progress/parcours');
-      const liste = accessibles.data.accessibleParcours?.length
-        ? accessibles.data.accessibleParcours
-        : (await membre.get('/parcours')).data.parcours;
+      parcoursId = accessibles.data.accessibleParcours[0]?.parcoursId;
+    });
 
-      parcoursId = liste[0].parcoursId;
+    test('refuse de marquer réalisé un parcours verrouillé', async () => {
+      const { data } = await membre.get('/progress/parcours');
+      const verrouille = data.parcours.find((p) => !p.isUnlocked);
+      if (!verrouille) return; // aucun parcours verrouillé pour l'équipe dans ce décor
+
+      const reponse = await membre.post(`/parcours/${verrouille.parcoursId}/complete`, {});
+
+      expect(reponse.status).toBe(403);
     });
 
     test('marque le parcours comme réalisé', async () => {

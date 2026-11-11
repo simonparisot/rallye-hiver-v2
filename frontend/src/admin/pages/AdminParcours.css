@@ -56,3 +56,44 @@
   background: #eff6ff;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
+/* Intrigues qui débloquent la tournée */
+.intrigues-requises {
+  border: none;
+  padding: 0;
+  margin: 0 0 var(--spacing-lg) 0;
+}
+
+.intrigues-requises legend {
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+}
+
+.intrigues-requises-liste {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--spacing-xs) var(--spacing-md);
+  margin-top: var(--spacing-sm);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.intrigue-requise {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.intrigue-requise input {
+  width: auto;
+  flex-shrink: 0;
+}
+
+.parcours-deblocage {
+  margin-top: 2px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: normal;
+}

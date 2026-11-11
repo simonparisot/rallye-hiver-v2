@@ -96,38 +96,37 @@ export async function getParcoursPreview(): Promise<Parcours[]> {
 }
 
 /**
- * Get all parcours with access status and progress
+ * Les tournées publiées, avec leur état pour l'équipe.
+ *
+ * Tout vient de /progress/parcours : c'est le serveur qui décide si une
+ * tournée est ouverte, et lui seul donne l'adresse du PDF d'une tournée
+ * ouverte.
  */
 export async function getParcoursWithAccess(): Promise<Parcours[]> {
-  const [parcoursResponse, accessibleResponse, progressResponse] = await Promise.all([
-    parcoursAPI.listParcours(),
-    progressAPI.getAccessibleParcours(),
-    progressAPI.getTeamProgress(),
-  ]);
+  const { parcours } = await progressAPI.getAccessibleParcours();
 
-  const accessibleMap = new Map(
-    accessibleResponse.accessibleParcours.map((p: any) => [
-      p.parcoursId,
-      {
-        hasAccess: true,
-        unlockedAt: p.unlockedAt,
-        unlockedBy: p.unlockedBy,
-        completed: p.completed,
-        completedAt: p.completedAt
-      }
-    ])
-  );
-
-  const solvedEnigmasSet = new Set(
-    progressResponse.progress.filter(p => p.solved).map(p => p.enigmaId)
-  );
-
-  return parcoursResponse.parcours
-    .filter(p => p.isActive)
-    .map(parcours => {
-      const accessInfo = accessibleMap.get(parcours.parcoursId) || { hasAccess: false };
-      const solvedCount = parcours.requiredEnigmaIds.filter(id => solvedEnigmasSet.has(id)).length;
-      return transformParcoursWithAccess(parcours, accessInfo, solvedCount);
+  return parcours
+    .map((p): Parcours => {
+      const requis = p.requiredEnigmas || [];
+      return {
+        id: p.parcoursId,
+        title: p.title,
+        order: p.parcoursNumber,
+        isUnlocked: p.isUnlocked,
+        requiredEnigmas: requis.length,
+        solvedEnigmas: requis.filter((e) => e.solved).length,
+        pdfUrl: p.isUnlocked ? p.pdfUrl : undefined,
+        unlockedAt: p.unlockedAt || undefined,
+        requiredEnigmaIds: requis.map((e) => e.enigmaId),
+        requiredEnigmasDetail: requis.map((e) => ({
+          id: e.enigmaId,
+          order: e.enigmaNumber,
+          title: e.title,
+          isSolved: e.solved,
+        })),
+        isCompleted: p.completed,
+        completedAt: p.completedAt || undefined,
+      };
     })
     .sort((a, b) => a.order - b.order);
 }

@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { getUserById } from '../../utils/dynamodb';
+import { getUserById, getParcoursById, getTeamParcoursAccess } from '../../utils/dynamodb';
 import { success, error } from '../../utils/response';
+import { loadAccessContext, evaluateParcoursAccess } from '../../utils/parcoursAccess';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -15,7 +16,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error('Unauthorized', 401);
     }
 
-    // Get user to find team
     const user = await getUserById(userId);
     if (!user || !user.teamId) {
       return success({
@@ -24,12 +24,23 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       });
     }
 
-    // All parcours are now accessible without conditions
-    const now = new Date().toISOString();
+    const parcours = await getParcoursById(parcoursId);
+    if (!parcours || !parcours.isActive) {
+      return error('Parcours not found', 404);
+    }
+
+    const [context, accessRecord] = await Promise.all([
+      loadAccessContext(user.teamId),
+      getTeamParcoursAccess(user.teamId, parcoursId),
+    ]);
+    const { isUnlocked, requiredEnigmas } = evaluateParcoursAccess(parcours, context);
+
     return success({
-      hasAccess: true,
-      unlockedAt: now,
-      unlockedBy: [], // No specific enigmas required
+      hasAccess: isUnlocked,
+      unlockedAt: isUnlocked ? accessRecord?.unlockedAt || null : null,
+      unlockedBy: accessRecord?.unlockedBy || [],
+      requiredEnigmas,
+      ...(isUnlocked ? {} : { reason: 'Required enigmas not solved' }),
     });
   } catch (err: any) {
     console.error('Error checking parcours access:', err);
