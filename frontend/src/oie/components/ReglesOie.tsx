@@ -30,8 +30,8 @@ const CASES: CaseSpeciale[] = [
     nom: "L'acteur sur son oie",
     effet: (
       <>
-        Pas de question : vous relancez aussitôt les dés. Ce lancer est offert, il ne
-        compte pas dans le quota du jour et reste permis même si vous l'avez épuisé.
+        Pas de question : vous gagnez un lancer supplémentaire, à jouer quand vous voulez.
+        Il ne compte pas dans le quota du jour et reste permis même si vous l'avez épuisé.
       </>
     ),
   },
@@ -64,7 +64,7 @@ const CASES: CaseSpeciale[] = [
     effet: (
       <>
         Vous passez un tour : plus de lancer ce jour-là ni le lendemain. Vous relancez
-        le surlendemain.
+        le surlendemain (tombé un lundi, vous relancez le mercredi).
       </>
     ),
   },
@@ -74,8 +74,9 @@ const CASES: CaseSpeciale[] = [
     nom: 'Le puits',
     effet: (
       <>
-        Vous passez trois tours : vous relancez le quatrième jour. Une autre équipe qui
-        arrive sur la case vous en sort plus tôt (voir « Case occupée »).
+        Vous passez trois tours : vous relancez quatre jours plus tard (tombé un lundi,
+        vous relancez le vendredi). Une autre équipe qui arrive sur la case vous en sort
+        plus tôt (voir « Case occupée »).
       </>
     ),
   },
@@ -85,8 +86,8 @@ const CASES: CaseSpeciale[] = [
     nom: 'La prison',
     effet: (
       <>
-        Vous passez deux tours : vous relancez le troisième jour. Une autre équipe qui
-        arrive sur la case vous en sort plus tôt.
+        Vous passez deux tours : vous relancez trois jours plus tard (tombé un lundi, vous
+        relancez le jeudi). Une autre équipe qui arrive sur la case vous en sort plus tôt.
       </>
     ),
   },
@@ -102,7 +103,8 @@ const CASES: CaseSpeciale[] = [
     nom: 'Rideau',
     effet: (
       <>
-        L'arrivée, à atteindre pile. La question finale vous y attend : c'est sa bonne
+        L'arrivée, à atteindre pile (ou par le metteur en scène, voir plus bas). La
+        question finale vous y attend : c'est sa bonne
         réponse qui fait gagner.
       </>
     ),
@@ -169,10 +171,6 @@ const ReglesOieContenu: React.FC<{ lancersParJour: number }> = ({ lancersParJour
         carte de votre équipe affiche la date à laquelle vous relancez. Pendant ce temps, vous
         pouvez toujours répondre à la question de votre case.
       </p>
-      <p>
-        Contrairement au jeu traditionnel, un 9 au premier lancer n'a rien de particulier :
-        vous tombez sur l'oie de la case 9 et relancez, comme tout le monde.
-      </p>
     </section>
 
     <section className="regles-section">
@@ -186,16 +184,18 @@ const ReglesOieContenu: React.FC<{ lancersParJour: number }> = ({ lancersParJour
         <li>
           L'équipe qui recule ne subit pas la case où elle arrive : pas de relance sur une
           oie, pas de passage sur un pont, pas de chute dans le puits, pas de retour à 0 sur
-          la répétition. Elle doit seulement répondre à la question de sa nouvelle case.
+          la répétition. Elle reste sur cette case, même une oie, un pont ou la répétition,
+          sans en subir l'effet. Si la case porte une question, elle doit y répondre avant
+          de relancer.
         </li>
         <li>
-          Reculer libère de toute pénalité : c'est ainsi qu'on sort du puits ou de la
-          prison avant l'heure, ou de la loge. En revanche, une équipe arrêtée sur une oie
-          perd la relance qui l'attendait.
+          Reculer libère de toute pénalité (loge, puits, prison) : l'équipe repoussée peut
+          relancer dès le jour même, dans la limite de son quota. En revanche, une équipe
+          arrêtée sur une oie perd le lancer supplémentaire qui l'attendait.
         </li>
         <li>
-          Seule la case où vous vous arrêtez compte : les cases traversées, ni celle de
-          départ d'un pont, ne délogent personne.
+          Seule la case où vous vous arrêtez compte : ni les cases traversées ni la case de
+          départ d'un pont ne délogent personne.
         </li>
         <li>
           On partage sans reculer la case 0 et la case 63. Une équipe qui a gagné ne bouge
