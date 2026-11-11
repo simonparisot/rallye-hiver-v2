@@ -12,6 +12,7 @@ import { success, error } from '../../utils/response';
 import { ParcoursAttemptLog } from '../../types';
 import { loadAccessContext, evaluateParcoursAccess } from '../../utils/parcoursAccess';
 import { normalizePassword, hasUsablePassword } from '../../utils/password';
+import { getWrongPasswordMessages, pickWrongPasswordMessage } from '../../utils/wrongPasswordMessages';
 
 /**
  * POST /parcours/{parcoursId}/attempt — { password }
@@ -102,11 +103,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     if (!isCorrect) {
       return success({
         success: false,
-        // Message neutre, sans vocabulaire d'édition : il s'affiche tel quel
-        // quel que soit le thème. TODO intégration : le remplacer par
-        // pickWrongPasswordMessage(await getWrongPasswordMessages())
-        // (utils/wrongPasswordMessages, branche feat/wrong-password-messages).
-        message: "Ce n'est pas le bon mot de passe. Vérifiez-le et réessayez.",
+        // Mêmes messages que pour une intrigue, modifiables par l'organisation.
+        message: pickWrongPasswordMessage(await getWrongPasswordMessages()),
       });
     }
 

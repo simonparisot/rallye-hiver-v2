@@ -948,7 +948,7 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
   "message": "string"
 }
 ```
-A wrong password is a 200, as for `POST /progress/attempt`.
+A wrong password is a 200, as for `POST /progress/attempt`, and `message` is drawn from the same editable list of wrong-password messages (`/admin/settings/wrong-password-messages`).
 
 **Errors**:
 - `400`: Missing parcoursId, or missing/empty `password`

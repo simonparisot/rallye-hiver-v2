@@ -14,9 +14,16 @@ jest.mock('../../../utils/dynamodb', () => ({
 }));
 jest.mock('../../../utils/adminAuth', () => ({ requireAdmin: jest.fn() }));
 jest.mock('uuid', () => ({ v4: () => 'tentative-1' }));
+// Les messages de mauvais mot de passe sont ceux des intrigues, modifiables
+// par l'organisation et lus en base : le module est remplacé.
+jest.mock('../../../utils/wrongPasswordMessages', () => ({
+  getWrongPasswordMessages: jest.fn(async () => ['Message choisi par l\'orga.']),
+  pickWrongPasswordMessage: jest.fn((messages: string[]) => messages[0]),
+}));
 
 import * as db from '../../../utils/dynamodb';
 import { handler } from '../submitAttempt';
+import { getWrongPasswordMessages, pickWrongPasswordMessage } from '../../../utils/wrongPasswordMessages';
 
 function evenement(corps: any, parcoursId = 'p1'): APIGatewayProxyEvent {
   return {
@@ -81,8 +88,9 @@ describe('POST /parcours/{parcoursId}/attempt', () => {
     const reponse = await handler(evenement({ password: 'Tartuffe' }));
 
     expect(reponse.statusCode).toBe(200);
-    expect(corps(reponse)).toEqual({ success: false, message: expect.any(String) });
-    expect(corps(reponse).message).not.toMatch(/malade/i);
+    expect(corps(reponse)).toEqual({ success: false, message: 'Message choisi par l\'orga.' });
+    expect(getWrongPasswordMessages).toHaveBeenCalled();
+    expect(pickWrongPasswordMessage).toHaveBeenCalledWith(['Message choisi par l\'orga.']);
     expect(db.markTeamParcoursCompleted).not.toHaveBeenCalled();
     expect(db.logParcoursAttempt).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
     expect(db.updateTeam).toHaveBeenCalled();
@@ -204,6 +212,9 @@ describe('POST /parcours/{parcoursId}/attempt', () => {
     expect(db.getUserById).not.toHaveBeenCalled();
   });
 
+  // Le mauvais mot de passe vient du module partagé (mocké ici) : ses messages
+  // par défaut parlent d'« énigme », ce qui est neutre. Les messages propres à
+  // cette route, eux, ne doivent pas employer le vocabulaire du théâtre.
   test('les messages ne parlent pas de « tournée » : ils valent pour tous les thèmes', async () => {
     const messages = [
       corps(await handler(evenement({ password: 'Tartuffe' }))).message,
