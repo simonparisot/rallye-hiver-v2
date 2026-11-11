@@ -4,7 +4,13 @@
  * experiment can be removed in one piece.
  */
 
-import { GetCommand, PutCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import {
+  GetCommand,
+  PutCommand,
+  QueryCommand,
+  ScanCommand,
+  TransactWriteCommand,
+} from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 import { dynamoDb } from '../../utils/dynamodb';
 import { OieBoardConfig, OieEvent, OieEventType, OieSquare, OieTeamState } from '../../types/oie';
@@ -147,14 +153,24 @@ export async function getTeamState(
   return initialTeamState(teamId, today, now);
 }
 
-/** Every team state, for the shared board and for the admin table. */
-export async function getAllTeamStates(): Promise<OieTeamState[]> {
+/**
+ * Every team state, for the shared board and for the admin table.
+ *
+ * `consistent` asks for a strongly consistent scan: used when the occupied
+ * square chain is computed again after a conflict, so that the retry does not
+ * read the very same stale versions that made the transaction fail.
+ */
+export async function getAllTeamStates(consistent: boolean = false): Promise<OieTeamState[]> {
   const states: OieTeamState[] = [];
   let lastKey: Record<string, any> | undefined;
 
   do {
     const result: any = await dynamoDb.send(
-      new ScanCommand({ TableName: OIE_TEAM_STATE_TABLE, ExclusiveStartKey: lastKey })
+      new ScanCommand({
+        TableName: OIE_TEAM_STATE_TABLE,
+        ExclusiveStartKey: lastKey,
+        ...(consistent ? { ConsistentRead: true } : {}),
+      })
     );
     (result.Items || []).forEach((item: OieTeamState) => states.push(item));
     lastKey = result.LastEvaluatedKey;
@@ -197,35 +213,62 @@ export async function putTeamState(next: OieTeamState, expectedVersion: number):
   return item;
 }
 
-/**
- * Changes another team's state, typically to dislodge it from a square.
- *
- * The state is read again and the change recomputed on every attempt, under
- * the same version condition as putTeamState: if the team plays at the very
- * same moment, its own move wins and the change is reconsidered against where
- * it now stands. `change` returns null when it no longer applies (the team has
- * left the square meanwhile), and the function then returns null too.
- */
-export async function changeTeamState(
-  teamId: string,
-  today: string,
-  now: string,
-  change: (state: OieTeamState) => OieTeamState | null,
-  attempts: number = 3
-): Promise<{ before: OieTeamState; after: OieTeamState } | null> {
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    const before = await getTeamState(teamId, today, now);
-    const next = change(before);
-    if (!next) return null;
+/** Most items DynamoDB accepts in one TransactWriteItems. */
+export const MAX_TRANSACTION_ITEMS = 100;
 
+/**
+ * Writes several team states at once, all or nothing, each under the same
+ * version condition as putTeamState.
+ *
+ * Used by the occupied-square chain: every team pushed back by one roll moves
+ * in a single transaction, so that a concurrent roll can never leave half a
+ * chain on the board (B moved back onto C's square while C stayed there). If
+ * any of the teams has been written since it was read, nothing is written and
+ * OieConflictError is raised: the caller reads the board again and recomputes
+ * the chain against where the teams now stand.
+ *
+ * Beyond MAX_TRANSACTION_ITEMS teams (a chain longer than any real board will
+ * see), the writes are split in transactions of that size, each one atomic,
+ * the whole no longer.
+ */
+export async function putTeamStates(
+  changes: { next: OieTeamState; expectedVersion: number }[]
+): Promise<OieTeamState[]> {
+  const items = changes.map(({ next, expectedVersion }) => ({
+    item: sansUndefined({ ...next, version: expectedVersion + 1 }) as OieTeamState,
+    expectedVersion,
+  }));
+
+  for (let start = 0; start < items.length; start += MAX_TRANSACTION_ITEMS) {
+    const lot = items.slice(start, start + MAX_TRANSACTION_ITEMS);
     try {
-      const after = await putTeamState(next, before.version);
-      return { before, after };
-    } catch (err) {
-      if (!(err instanceof OieConflictError) || attempt === attempts) throw err;
+      await dynamoDb.send(
+        new TransactWriteCommand({
+          TransactItems: lot.map(({ item, expectedVersion }) => ({
+            Put: {
+              TableName: OIE_TEAM_STATE_TABLE,
+              Item: item,
+              ConditionExpression:
+                expectedVersion === 0
+                  ? 'attribute_not_exists(teamId) OR version = :expected'
+                  : 'version = :expected',
+              ExpressionAttributeValues: { ':expected': expectedVersion },
+            },
+          })),
+        })
+      );
+    } catch (err: any) {
+      if (
+        err?.name === 'TransactionCanceledException' ||
+        err?.name === 'ConditionalCheckFailedException'
+      ) {
+        throw new OieConflictError('Une équipe a bougé pendant le recul en chaîne.');
+      }
+      throw err;
     }
   }
-  return null;
+
+  return items.map(({ item }) => item);
 }
 
 // ==================== EVENTS ====================

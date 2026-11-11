@@ -33,6 +33,8 @@ const ENIGME = {
   solution: 'Lire les heures par symétrie, puis convertir en lettres.',
   hints: INDICES,
   points: 20,
+  isActive: true,
+  hintsEnabled: true,
 };
 
 const DEMANDE = {
@@ -246,6 +248,34 @@ describe('traitement d\'une demande', () => {
 
     expect(issue.issue).toBe('failed');
     expect(conclusions[0].failureReason).toMatch(/introuvable/);
+  });
+
+  it('marque `failed` sans appeler le modèle quand les indices ont été fermés', async () => {
+    const claude = fauxClaude({ hintId: 'h1', justification: '' });
+    const { ctx, conclusions } = contexte(claude, {
+      chargerEnigme: async () => ({ ...ENIGME, hintsEnabled: false }),
+    });
+
+    const issue = await traiterDemande(DEMANDE, ctx);
+
+    expect(issue).toEqual({ issue: 'failed', raison: 'Indices fermés' });
+    expect(claude.appels).toHaveLength(0);
+    expect(conclusions).toHaveLength(1);
+    expect(conclusions[0]).toMatchObject({ id: 'r1', status: 'failed', failureReason: 'Indices fermés' });
+    expect(conclusions[0].hintText).toBeUndefined();
+  });
+
+  it('marque `failed` quand la date d\'ouverture n\'est pas encore venue', async () => {
+    const claude = fauxClaude({ hintId: 'h1', justification: '' });
+    const { ctx, conclusions } = contexte(claude, {
+      chargerEnigme: async () => ({ ...ENIGME, hintsAvailableFrom: '2999-01-01' }),
+    });
+
+    const issue = await traiterDemande(DEMANDE, ctx);
+
+    expect(issue.issue).toBe('failed');
+    expect(claude.appels).toHaveLength(0);
+    expect(conclusions[0].failureReason).toBe('Indices fermés');
   });
 
   it('laisse la demande à celui qui a gagné le verrou', async () => {

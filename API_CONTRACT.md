@@ -1,7 +1,7 @@
 # API Contract
 
 **Last updated by**: backend agent
-**Last updated**: 2026-10-10
+**Last updated**: 2026-11-11
 **Base URL**: `https://rpg0alko8b.execute-api.eu-west-1.amazonaws.com/prod`
 
 ---
@@ -658,10 +658,16 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 ```
 
 **Notes**:
-- `correctPassword`, `solution` et `hints` ne sont JAMAIS exposés aux clients
+- `correctPassword`, `solution`, `hints` et `hintsAvailableFrom` ne sont JAMAIS
+  exposés aux clients (la date d'ouverture des indices n'est pas annoncée aux
+  équipes)
 - `hintsCount` : nombre d'indices pré-écrits existants. Le joueur en a besoin pour
   savoir s'il peut demander un indice ; le texte des indices reste côté serveur
-- Returns all active enigmas
+- `hintsEnabled` peut figurer dans la réponse (réglage brut de l'orga) ; le
+  frontend joueur ne s'en sert pas et lit `hintsAvailable` sur `GET /hints/{enigmaId}`
+- Ne renvoie que les intrigues publiées (`isActive !== false`) depuis le
+  2026-11-11. Les intrigues non publiées ne sont visibles que par
+  `GET /admin/enigmas`
 
 #### GET /enigmas/{enigmaId}
 
@@ -689,10 +695,12 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 ```
 
 **Notes**:
-- `correctPassword`, `solution` et `hints` ne sont JAMAIS exposés aux clients
+- `correctPassword`, `solution`, `hints` et `hintsAvailableFrom` ne sont JAMAIS
+  exposés aux clients
 
 **Errors**:
-- `404`: Enigma not found
+- `404`: Enigma not found, ou intrigue non publiée (`isActive === false`) depuis
+  le 2026-11-11
 
 #### GET /enigmas/by-difficulty
 
@@ -1019,6 +1027,7 @@ Same handlers as `POST /admin/parcours`, `PUT /admin/parcours/{parcoursId}` and 
 - "Incorrect ! Peut-être qu'une petite pause café vous aidera ?"
 - "Nope ! Retour à l'énigme, détective !"
 - _(20 different humorous messages total, selected randomly)_
+- Depuis le 2026-11-11, la liste est modifiable par l'orga (`/admin/settings/wrong-password-messages`) ; ces 20 messages restent la liste par défaut.
 
 **Response** (200) - Already Solved:
 ```json
@@ -1189,7 +1198,8 @@ qui rend le prompt hacking sans objet.
 
 **Errors**:
 - `403`: L'utilisateur n'a pas d'équipe, ou l'équipe n'a pas réglé son inscription
-- `404`: Enigma not found
+- `404`: Enigma not found, ou intrigue non publiée (`isActive === false`) depuis
+  le 2026-11-11
 
 #### POST /hints/{enigmaId}/request
 
@@ -1442,6 +1452,62 @@ qui rend le prompt hacking sans objet.
 - If game status doesn't exist, it will be initialized automatically
 - Only one admin needs to start the game for all users
 - After starting, frontend clients will detect game is active via `GET /game/status`
+
+#### Admin Settings
+
+##### GET /admin/settings/wrong-password-messages
+
+**Status**: ✅ Implemented (2026-11-11)
+**Purpose**: Lire les messages servis au hasard quand une équipe donne un mauvais mot de passe
+**Authentication**: Required (admin only)
+
+**Response** (200) — même forme pour GET, PUT et DELETE :
+```json
+{
+  "messages": ["Raté ! Mais ne vous découragez pas !", "..."],
+  "isDefault": false,
+  "updatedAt": "ISO 8601 timestamp | null",
+  "updatedBy": "uuid (admin userId) | null",
+  "defaults": ["Oups ! Ce n'est pas le bon code. Essayez encore !", "..."],
+  "limits": { "maxMessages": 100, "maxLength": 300 }
+}
+```
+- `messages` : la liste en vigueur. Sans liste enregistrée (ou liste vide), ce sont les 20 messages par défaut et `isDefault` vaut `true`.
+- `defaults` : la liste par défaut, toujours renvoyée.
+
+**Errors**: `401` Authentication required, `403` Admin access required, `500`.
+
+##### PUT /admin/settings/wrong-password-messages
+
+**Status**: ✅ Implemented (2026-11-11)
+**Purpose**: Remplacer la liste
+**Authentication**: Required (admin only)
+
+**Request**:
+```json
+{ "messages": ["string", "..."] }
+```
+
+**Validation** (400 `{ "error": "..." }` sinon, rien n'est écrit) :
+- `messages` est un tableau ; chaque entrée est une chaîne, non vide une fois trimée, d'au plus 300 caractères ;
+- les messages sont trimés et les doublons supprimés (première occurrence gardée, ordre conservé) ;
+- après dédoublonnage : au moins 1 message, au plus 100.
+
+**Response** (200) : la liste enregistrée (forme du GET, `isDefault: false`).
+
+**Errors**: `400` validation ou JSON invalide, `401`, `403`, `500`.
+
+##### DELETE /admin/settings/wrong-password-messages
+
+**Status**: ✅ Implemented (2026-11-11)
+**Purpose**: Revenir aux messages par défaut (supprime la liste enregistrée)
+**Authentication**: Required (admin only)
+
+**Response** (200) : forme du GET, avec `isDefault: true` et `messages` = `defaults`.
+
+**Notes**:
+- Effet immédiat, sans cache : chaque mot de passe faux (`POST /progress/attempt`) relit la liste (un GetItem sur la table game-status).
+- Si la lecture échoue, la tentative répond quand même avec un message par défaut.
 
 #### Admin Statistics
 
@@ -2436,24 +2502,31 @@ enchaînement.
   5-4 → 53) sont supprimés. L'effet `oie` ne porte plus de champ `total`.
 - **Pont** (6, 23, 47) : on ne s'y arrête pas, l'équipe passe directement en
   face (12, 30, 53), dont la question l'attend. `to` est la case d'en face ;
-  l'effet `pont` suit l'`avance`. Une équipe délogée envoyée sur un pont le
-  traverse aussi.
+  l'effet `pont` suit l'`avance`. Une équipe qui recule sur un pont (case
+  occupée) y reste, sans le traverser.
 - **Puits** (31) : trois jours sans lancer (`nextRollAllowedDay` = J+4), levés
   plus tôt si une autre équipe y tombe. Il ne bloque plus sans échéance.
 - **Rebond** : l'effet porte `manques`, le nombre d'essais manqués au 63 celui-ci
   compris. Chaque dépassement compte, y compris un rebond bien avant la fin :
   au troisième, c'est `metteur_en_scene` au lieu d'un rebond.
-- **Case occupée** : si une ou plusieurs équipes se trouvent sur la case
-  d'arrivée, elles partent sur la case d'où vient l'équipe qui lance (`from`),
-  et l'effet de cette case s'applique à elles (puits, prison, loge, oie...).
-  Elles doivent répondre à la question de leur nouvelle case, perdent un lancer
-  d'oie en attente, et sont libérées de toute pénalité liée à la case quittée :
-  c'est ainsi qu'une équipe sort du puits ou de la prison. Pas de réaction en
-  chaîne. Ni la case 0 ni la case 63 ne délogent personne, une équipe ayant
-  gagné non plus, ni un rebond qui ramène l'équipe sur sa propre case.
-  `releases` raconte ces délogements et leurs suites, en phrases prêtes à
-  afficher ; chacun est journalisé (`deplacement`, ou `liberation` pour le
-  puits et la prison).
+- **Case occupée** (revu le 2026-11-11) : si une ou plusieurs équipes se
+  trouvent sur la case d'arrivée finale (`to`), chacune **recule d'une case**.
+  Si cette case est occupée à son tour, ses occupantes reculent aussi d'une
+  case, et ainsi de suite, jusqu'à une case libre ou la case 0, partagée, sous
+  laquelle on ne descend jamais. Seul le recul se propage : la case où l'on
+  recule n'a **aucun effet** (ni oie, ni pont, ni puits, ni prison, ni loge,
+  ni répétition). Les équipes reculées doivent répondre à la question de leur
+  nouvelle case, perdent un lancer d'oie en attente, et sont libérées de toute
+  pénalité liée à la case quittée : c'est ainsi qu'une équipe sort du puits ou
+  de la prison. Ni la case 0 ni la case 63 ne poussent personne, une équipe
+  ayant gagné n'est jamais poussée, et un rebond qui ramène l'équipe sur sa
+  propre case ne pousse personne. Toute la chaîne est écrite en une seule
+  transaction. `releases` raconte chaque recul, dans l'ordre de la chaîne, en
+  phrases prêtes à afficher (« A arrive en case 25 : B recule en case 24 »,
+  « B arrive en case 24 : C recule en case 23 (recul en chaîne n° 2) ») ;
+  chacun est un événement distinct du journal (`deplacement`, ou `liberation`
+  pour une équipe tirée du puits ou de la prison), dont `detail` vaut
+  `{ kind: 'recul', dislodgedBy, pushedBy: string[], from, to, rang }`.
 - **Case 63** : `reachedFinish: true`. Si la case 63 porte une question
   (le cas normal), `awaitsFinalQuestion: true`, `finished: false`, et la
   question finale passe en attente : voir `POST /oie/answer`. Sur un plateau
@@ -2567,6 +2640,8 @@ L'opération est tracée dans le journal du plateau.
 | Date | Endpoint | Change | Type | Impact |
 |------|----------|--------|------|--------|
 | 2026-11-11 | GET /parcours/{id}/access, GET /progress/parcours, POST /parcours/{id}/attempt | Une tournée s'ouvre dès que l'équipe a résolu **une** des intrigues requises encore existantes (et non plus toutes) ; `requiredEnigmasCount` n'est plus que le nombre d'intrigues cochées. Messages de `POST /parcours/{id}/attempt` neutres (sans « tournée ») ; corps invalide en 400 « Corps invalide ». `GET /parcours/{id}` renvoie 404 pour une tournée non publiée ; `GET /admin/parcours` renvoie `hasPassword` | **Breaking** | Des tournées verrouillées s'ouvrent pour les équipes qui ont résolu une partie de leurs intrigues ; `isUnlocked` ne se déduit plus de `requiredEnigmas.every(solved)` mais de `some(solved)` |
+| 2026-11-11 | GET /enigmas, GET /enigmas/{enigmaId}, GET /hints/{enigmaId} | Les intrigues non publiées disparaissent côté joueur : `GET /enigmas` ne les liste plus, `GET /enigmas/{id}` et `GET /hints/{id}` répondent 404. `hintsAvailableFrom` est retiré des réponses joueur | Bug Fix + Breaking | **Breaking** : un client qui comptait sur les intrigues non publiées dans `GET /enigmas` ne les voit plus (le frontend joueur les filtrait déjà, l'admin passe par `/admin/enigmas`). Côté worker, une demande en attente sur une intrigue dont les indices ont été fermés entre-temps est conclue `failed` (« Indices fermés ») |
+| 2026-11-11 | GET/PUT/DELETE /admin/settings/wrong-password-messages, POST /progress/attempt | Messages de mauvais mot de passe modifiables par l'orga : la liste est stockée en base (item `settings#wrong-password-messages` de la table game-status), les 20 messages historiques restent la liste par défaut | Feature | Aucun changement de forme pour `POST /progress/attempt` : `message` est tiré de la liste configurée. Nouvelle page admin « Mauvais mots de passe » |
 | 2026-11-11 | POST /parcours/{parcoursId}/attempt, POST et DELETE /parcours/{parcoursId}/complete, GET /parcours, GET /parcours/{id}, GET /progress/parcours, GET/POST/PUT /admin/parcours | Tournées validées par un mot de passe de fin de tournée (`correctPassword`, saisi dans l'admin, comparé comme celui des intrigues) ; nouvelle route `POST /parcours/{id}/attempt` ; `hasPassword` dans les réponses joueurs ; tentatives journalisées dans la nouvelle table `ParcoursAttempts` | Feature + **Breaking** | **Breaking** : `POST` et `DELETE /parcours/{id}/complete` sont supprimés, le joueur ne peut plus marquer ni démarquer une tournée à la main (les tournées déjà réalisées le restent). `correctPassword` n'est jamais renvoyé aux joueurs |
 | 2026-11-11 | GET /parcours, GET /parcours/{id}, GET /parcours/{id}/access, GET /progress/parcours, POST/PUT /admin/parcours | Tournées débloquées par des intrigues : toutes les intrigues requises encore existantes, recalculé à chaque lecture ; `requiredEnigmaIds` facultatif à la création (vide = libre) ; numéro automatique ; le PDF n'est plus donné que pour une tournée ouverte ; une intrigue requise non publiée est titrée « Intrigue à venir » ; la mise à jour retire sans erreur les intrigues supprimées | Feature + **Breaking** | **Breaking** : `pdfUrl` disparaît de `GET /parcours` et `GET /parcours/{id}` ; `GET /progress/parcours` liste toutes les tournées dans `parcours`, avec `isUnlocked` et `requiredEnigmas` ; `GET /parcours/{id}/access` renvoie 404 pour une tournée non publiée |
 | 2026-11-11 | GET /hints/{enigmaId}, POST /hints/{enigmaId}/request, POST /enigmas, PUT /enigmas/{id}, PUT /admin/enigmas/{id} | Ouverture des indices par énigme : deux champs sur l'énigme, `hintsEnabled` (booléen, fermé par défaut) et `hintsAvailableFrom` (AAAA-MM-JJ, jour de Paris, `null` ou `""` pour l'effacer). `GET /hints` renvoie `hintsAvailable` ; la demande d'indice répond 403 tant que c'est fermé | Feature + Breaking | **Breaking** : une énigme sans réglage n'offre plus d'indice. Les énigmes existantes doivent être ouvertes depuis l'admin. Une date mal formée est refusée en 400 |
@@ -2575,6 +2650,7 @@ L'opération est tracée dans le journal du plateau.
 | 2026-10-10 | GET /oie, POST /oie/roll, POST /oie/answer, GET /admin/oie/teams | Règles v2 après les essais des organisateurs : l'oie fait relancer les dés (lancer gratuit, `bonusRolls`), règle du premier neuf supprimée, puits à trois tours, question finale en case 63 | **Breaking** | Effet `oie` sans `total` ; `finished` d'un lancer ne signifie plus « en 63 » mais « intrigue gagnée » (voir `reachedFinish`, `awaitsFinalQuestion`) ; la victoire passe par `POST /oie/answer` ; nouveaux statuts `question_finale` et `relance_oie` |
 | 2026-10-25 | GET /oie, POST /oie/roll | Deuxième série d'essais : règle de la case occupée, fil limité aux mouvements (100 lignes), jour de reprise dans les messages de pénalité, compte des essais manqués au 63 | Feature | Effet `rebond` avec `manques` ; `releases` couvre désormais tous les délogements, pas seulement puits et prison |
 | 2026-10-25 | GET /oie, POST /oie/roll | Les ponts : 6 vers 12, 23 vers 30, 47 vers 53 | Feature | Nouveau type de case `pont` et nouvel effet `pont` ; les cases 6, 23 et 47 ne portent plus de question |
+| 2026-11-11 | POST /oie/roll | Case occupée : l'occupant recule d'une case, en chaîne, sans effet de case | Feature | Forme de la réponse inchangée ; `releases` contient une phrase par recul, sans phrases d'effet de case ; `detail` des événements de recul : `kind: 'recul'`, `pushedBy`, `rang` |
 | 2026-09-12 | POST /hints/{enigmaId}/request, GET /hints/{enigmaId} | Mode `queue` : la demande part en attente (202) et un worker extérieur la traite via `claude -p`, faute de clé d'API pour l'essai. Ajout de `status` et `failureReason` aux demandes. Le coût en points passe à 0 et n'affecte plus `totalPoints` | Feature + Breaking | **Breaking** : `POST /hints/.../request` peut désormais répondre 202 sans indice ; le client doit lire `status` et interroger `GET /hints/{enigmaId}`. `hintsPenalty` disparaît de GET /teams/stats |
 | 2026-09-12 | POST /hints/{enigmaId}/request, GET /hints/{enigmaId}, GET /admin/hints/requests | Nouvelle récupération d'indices : l'équipe décrit son avancement, un modèle choisit l'indice pré-écrit adapté. Remplace POST /hints/{enigmaId}/use et GET /admin/hints/usage, supprimés | Feature + Breaking | **Breaking** : les deux anciens endpoints n'existent plus ; `hintPdfUrl` et `hasHint` disparaissent de l'énigme au profit de `hintsCount`, `hintUsed`/`hintUsedAt` de la progression au profit de `hintsRequested`/`lastHintAt`. La pénalité de points, jusqu'ici annoncée mais jamais appliquée, est désormais déduite de `totalPoints` dans GET /teams/stats |
 | 2026-01-02 | GET /admin/attempts | Fixed pagination bug (Scan → Query) + added stats object + removed legacy count/total fields | Bug Fix + Breaking | **Critical fix**: Now returns ALL attempts (not just 1MB), shows correct success counts; **Breaking**: Removed `count` and `total` root fields - use `stats.totalAttempts` instead; **Frontend must use stats object for all statistics** |

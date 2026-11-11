@@ -52,6 +52,39 @@ const AdminEnigmas: React.FC = () => {
     },
   });
 
+  // Ouvrir ou fermer les indices d'une intrigue depuis la liste, sans passer par
+  // le formulaire. Seul `hintsEnabled` part : le serveur ne réécrit que les
+  // champs reçus (SET partiel), titre, mot de passe et indices restent intacts.
+  // La liste bascule tout de suite, puis se recale sur le serveur.
+  const [erreurBascule, setErreurBascule] = useState('');
+  const basculeIndicesMutation = useMutation({
+    mutationFn: ({ enigmaId, hintsEnabled }: { enigmaId: string; hintsEnabled: boolean }) =>
+      adminEnigmasAPI.update(enigmaId, { hintsEnabled }),
+    onMutate: async ({ enigmaId, hintsEnabled }) => {
+      setErreurBascule('');
+      await queryClient.cancelQueries({ queryKey: ['adminEnigmas'] });
+      const avant = queryClient.getQueryData<{ enigmas: EnigmaWithStats[]; count: number }>(['adminEnigmas']);
+      if (avant) {
+        queryClient.setQueryData(['adminEnigmas'], {
+          ...avant,
+          enigmas: avant.enigmas.map((e) => (e.enigmaId === enigmaId ? { ...e, hintsEnabled } : e)),
+        });
+      }
+      return { avant };
+    },
+    onError: (err: any, { hintsEnabled }, contexte) => {
+      if (contexte?.avant) queryClient.setQueryData(['adminEnigmas'], contexte.avant);
+      setErreurBascule(
+        `Impossible de ${hintsEnabled ? 'ouvrir' : 'fermer'} les indices : ${
+          err?.response?.data?.error || err?.message || 'erreur inconnue'
+        }`
+      );
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminEnigmas'] });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: adminEnigmasAPI.delete,
     onSuccess: () => {
@@ -472,6 +505,7 @@ const AdminEnigmas: React.FC = () => {
                       ? `Les équipes pourront demander un indice à partir du ${new Date(formData.hintsAvailableFrom + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}, à minuit (heure de Paris).`
                       : 'Les équipes peuvent demander un indice dès maintenant.'}
                   {formData.hintsEnabled && indices.length === 0 && ' Attention : aucun indice n’est encore rédigé, le bouton restera masqué.'}
+                  {formData.hintsEnabled && !(formData.solution || '').trim() && ' Attention : la solution détaillée est vide, le modèle choisira l’indice sans repère sur la démarche attendue.'}
                 </small>
               </div>
             </div>
@@ -549,6 +583,11 @@ const AdminEnigmas: React.FC = () => {
       {!showForm && (
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="enigmas-list">
+          {erreurBascule && (
+            <div className="admin-form-error" role="alert" data-testid="admin-enigmas-hints-toggle-error">
+              {erreurBascule}
+            </div>
+          )}
           <table data-testid="admin-enigmas-table" className="admin-table">
             <thead>
               <tr>
@@ -556,7 +595,7 @@ const AdminEnigmas: React.FC = () => {
                 <th style={{ width: '50px' }}>#</th>
                 <th>Titre</th>
                 <th style={{ width: '150px' }}>Stats</th>
-                <th style={{ width: '120px' }}>Indices</th>
+                <th style={{ width: '220px' }}>Indices</th>
                 <th style={{ width: '100px' }}></th>
               </tr>
             </thead>
@@ -599,6 +638,16 @@ const AdminEnigmas: React.FC = () => {
                               )}
                               {enigma.hintsEnabled !== true ? (
                                 <span className="hints-state hints-state-ferme">fermés</span>
+                              ) : !(enigma.hints || []).some((h) => (h.text || '').trim()) ? (
+                                /* Ouverts, mais rien à donner : le bouton reste
+                                   masqué côté équipe. On le signale. */
+                                <span
+                                  className="hints-state admin-badge--warning"
+                                  data-testid={`admin-enigmas-hints-empty-${enigma.enigmaId}`}
+                                  title="Aucun indice rédigé : les équipes ne voient pas le bouton"
+                                >
+                                  ouverts, sans indice
+                                </span>
                               ) : enigma.hintsAvailableFrom && enigma.hintsAvailableFrom > new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' }) ? (
                                 <span className="hints-state hints-state-planifie">
                                   dès le {new Date(enigma.hintsAvailableFrom + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
@@ -606,6 +655,24 @@ const AdminEnigmas: React.FC = () => {
                               ) : (
                                 <span className="hints-state hints-state-ouvert">ouverts</span>
                               )}
+                              <button
+                                type="button"
+                                className="btn btn-small btn-secondary"
+                                data-testid={`admin-enigmas-hints-toggle-${enigma.enigmaId}`}
+                                aria-label={`${enigma.hintsEnabled === true ? 'Fermer' : 'Ouvrir'} les indices de « ${enigma.title} »`}
+                                disabled={
+                                  basculeIndicesMutation.isPending &&
+                                  basculeIndicesMutation.variables?.enigmaId === enigma.enigmaId
+                                }
+                                onClick={() =>
+                                  basculeIndicesMutation.mutate({
+                                    enigmaId: enigma.enigmaId,
+                                    hintsEnabled: enigma.hintsEnabled !== true,
+                                  })
+                                }
+                              >
+                                {enigma.hintsEnabled === true ? 'Fermer' : 'Ouvrir'}
+                              </button>
                             </span>
                           </td>
                           <td className="actions">

@@ -85,6 +85,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <span>Indices</span>
           </Link>
 
+          <Link data-testid="admin-nav-wrong-password-messages"
+            to="/admin/wrong-password-messages"
+            className={`admin-nav-item ${isActive('/wrong-password-messages') ? 'active' : ''}`}
+          >
+            <span className="nav-icon">🙊</span>
+            <span>Mauvais mots de passe</span>
+          </Link>
+
           {/* Jeu de l'oie : seulement pour une edition qui le declare */}
           {edition.enigmeOie && (
             <Link data-testid="admin-nav-oie"

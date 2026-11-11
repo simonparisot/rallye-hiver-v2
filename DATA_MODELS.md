@@ -546,6 +546,27 @@ interface GameStatus {
 
 **Purpose**: Global flag to control when the Rallye d'Hiver game becomes accessible to players. Admin initiates game start.
 
+### WrongPasswordMessagesSettings (item de configuration)
+**Table**: la même, `rallye-hiver-backend-game-status`
+**Primary Key**: `gameId` = `"settings#wrong-password-messages"` (valeur fixe)
+
+La table ne sert qu'à des items uniques lus par clé : on y range aussi cette
+configuration, sans changer le schéma de clé. Aucun code ne scanne la table ;
+le statut du jeu reste lu par `GetItem` sur `"rallye-2025"` et ne voit jamais cet item.
+
+```typescript
+interface WrongPasswordMessagesSettings {
+  gameId: 'settings#wrong-password-messages'; // PK
+  messages: string[];   // 1 à 100 messages trimés, ≤ 300 caractères, sans doublon, ordre de l'orga
+  updatedAt: string;    // ISO 8601
+  updatedBy?: string;   // userId de l'admin
+}
+```
+
+**Access Patterns**:
+- Mot de passe faux (`POST /progress/attempt`) : GetItem par clé, sans cache (0,5 RCU par tentative fausse). Item absent ou liste vide → les 20 messages par défaut du code (`DEFAULT_WRONG_PASSWORD_MESSAGES`, `backend/src/utils/wrongPasswordMessages.ts`).
+- Admin : GetItem (GET), PutItem (PUT), DeleteItem (DELETE = retour aux messages par défaut).
+
 ---
 
 ## Entity Relationships
@@ -775,6 +796,25 @@ identifiant, et le fil raconterait l'histoire dans le désordre.
 
 `detail` ne quitte jamais le serveur : le fil envoyé aux joueurs ne porte que
 `message`.
+
+Case occupée (depuis le 2026-11-11) : chaque recul de la chaîne est une ligne
+à part, `type` `deplacement` (ou `liberation` pour une équipe tirée du puits ou
+de la prison), `teamId` celui de l'équipe qui recule, dans l'ordre de la
+chaîne, avec :
+
+```typescript
+detail: {
+  kind: 'recul',
+  dislodgedBy: string,   // équipe qui a lancé et déclenché la chaîne
+  pushedBy: string[],    // équipe(s) arrivée(s) sur la case : le lanceur au rang 1
+  from: number,          // case quittée
+  to: number,            // from - 1, jamais sous 0
+  rang: number           // 1 pour les occupants de la case d'arrivée, 2 ensuite...
+}
+```
+
+Les lignes `case_speciale` portant `detail.dislodgedBy` ne sont plus produites :
+une équipe qui recule ne subit pas l'effet de sa nouvelle case.
 
 ### Ce que le serveur ne dit jamais
 

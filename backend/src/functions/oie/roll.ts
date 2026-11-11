@@ -1,33 +1,35 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { success, error } from '../../utils/response';
-import { OieAccessError, narrateEffect, requirePlayer } from './context';
-import { OieTeamState } from '../../types/oie';
+import { OieAccessError, narrateEffect, narratePush, requirePlayer } from './context';
+import { OiePush, OieTeamState } from '../../types/oie';
 import { finishRankAmong, markEnigmaSolved } from './finish';
 import {
   addDays,
   bonusRolls,
-  dislodgedState,
   FINISH_SQUARE,
   findSquare,
   parisDay,
-  resolveDislodge,
+  pushedState,
   resolveMove,
+  resolvePushChain,
   rollDice,
   rollRefusal,
   rollsUsedOn,
   squareHasQuestion,
-  teamsToDislodge,
 } from './rules';
 import {
   OieConflictError,
-  changeTeamState,
   getAllTeamStates,
   getBoard,
   getTeamState,
   logEvent,
   putTeamState,
+  putTeamStates,
 } from './store';
 import { buildBoardView, getTeamNames } from './view';
+
+/** Attempts at writing the occupied-square chain before giving up on it. */
+const PUSH_ATTEMPTS = 3;
 
 /**
  * POST /oie/roll
@@ -142,63 +144,80 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       });
     }
 
-    // Case occupee : l'equipe qui s'y trouvait part sur la case d'ou vient
-    // celle qui arrive, et subit ce que cette case reserve. C'est aussi ce qui
-    // tire une equipe du puits ou de la prison.
+    // Case occupee : chaque equipe qui s'y trouvait recule d'une case, et si
+    // cette case est prise a son tour, ses occupantes reculent aussi, jusqu'a
+    // une case libre ou la case 0. Seul le recul se propage : la case ou l'on
+    // recule ne fait rien. C'est aussi ce qui tire une equipe du puits ou de
+    // la prison.
+    //
+    // Toute la chaine s'ecrit en une transaction, chaque equipe sous sa
+    // version : un autre lancer simultane ne peut pas en laisser la moitie sur
+    // le plateau. En cas de conflit, le plateau est relu (lecture coherente)
+    // et la chaine recalculee d'apres la ou les equipes se trouvent alors.
     const releases: string[] = [];
-    const toDislodge = teamsToDislodge(allStates, player.teamId, state.position, move.position);
-    if (toDislodge.length > 0) {
-      const names = await getTeamNames();
-      const destination = state.position;
-      const outcome = resolveDislodge(destination);
-      const hasQuestion = squareHasQuestion(findSquare(board.squares, outcome.position));
+    let pushes = resolvePushChain(allStates, player.teamId, state.position, move.position);
+    let applied: { push: OiePush; before: OieTeamState }[] = [];
+    let snapshot = allStates;
 
-      for (const occupant of toDislodge) {
-        const changed = await changeTeamState(occupant.teamId, today, nowIso, (current) =>
-          // Relu a chaque essai : si l'equipe a bouge entre-temps, on la laisse.
-          current.position === move.position && !current.finishedAt
-            ? dislodgedState(current, outcome, hasQuestion, today, nowIso)
-            : null
+    for (let attempt = 1; pushes.length > 0 && attempt <= PUSH_ATTEMPTS; attempt += 1) {
+      const byId = new Map(snapshot.map((other) => [other.teamId, other]));
+      const changes = pushes.map((push) => {
+        const before = byId.get(push.teamId) as OieTeamState;
+        const hasQuestion = squareHasQuestion(findSquare(board.squares, push.to));
+        return { push, before, next: pushedState(before, push.to, hasQuestion, today, nowIso) };
+      });
+
+      try {
+        await putTeamStates(
+          changes.map((change) => ({ next: change.next, expectedVersion: change.before.version }))
         );
-        if (!changed) continue;
+        applied = changes;
+        break;
+      } catch (err) {
+        if (!(err instanceof OieConflictError)) throw err;
+        if (attempt === PUSH_ATTEMPTS) {
+          // Le lancer est deja ecrit et compte : le refuser maintenant ferait
+          // croire a l'equipe qu'elle n'a pas joue. Les equipes restent la ou
+          // elles sont, quitte a partager une case, et l'incident est trace.
+          console.error('Oie: recul en chaine abandonne apres conflits', { pushes });
+          break;
+        }
+        snapshot = await getAllTeamStates(true);
+        pushes = resolvePushChain(snapshot, player.teamId, state.position, move.position);
+      }
+    }
 
-        const occupantName = names.get(occupant.teamId)?.teamName || 'Une équipe';
-        const { before } = changed;
-        const message = before.inPuits
-          ? `${player.teamName} tombe dans le puits et en tire ${occupantName}, qui part en case ${destination}`
-          : before.inPrison
-            ? `${player.teamName} prend la place de ${occupantName} en prison : ${occupantName} sort et part en case ${destination}`
-            : `${player.teamName} tombe sur ${occupantName} en case ${move.position} : ${occupantName} part en case ${destination}`;
+    if (applied.length > 0) {
+      const names = await getTeamNames();
+      const nameOf = (teamId: string) =>
+        teamId === player.teamId ? player.teamName : names.get(teamId)?.teamName || 'Une équipe';
+
+      for (const { push, before } of applied) {
+        const pushedName = nameOf(push.teamId);
+        const message = narratePush(push.pushedBy.map(nameOf), pushedName, push, before);
         releases.push(message);
 
+        // Un evenement par recul, dans l'ordre de la chaine : qui pousse qui,
+        // de quelle case vers quelle case, et a quel rang.
         await logEvent({
           type: before.inPuits || before.inPrison ? 'liberation' : 'deplacement',
-          teamId: occupant.teamId,
-          teamName: occupantName,
+          teamId: push.teamId,
+          teamName: pushedName,
           userId: player.userId,
           occurredAt: horodatage(),
           message,
-          detail: { dislodgedBy: player.teamId, from: move.position, to: outcome.position },
+          detail: {
+            kind: 'recul',
+            dislodgedBy: player.teamId,
+            pushedBy: push.pushedBy,
+            from: push.from,
+            to: push.to,
+            rang: push.rang,
+          },
         });
-
-        // Ce que la case d'arrivee fait a l'equipe delogee, raconte comme pour
-        // n'importe quel lancer : puits, prison, loge, oie, souffleur.
-        for (const effect of outcome.effects) {
-          const suite = narrateEffect(occupantName, effect);
-          if (!suite) continue;
-          releases.push(suite);
-          await logEvent({
-            type: 'case_speciale',
-            teamId: occupant.teamId,
-            teamName: occupantName,
-            userId: player.userId,
-            occurredAt: horodatage(),
-            message: suite,
-            detail: { effect, dislodgedBy: player.teamId },
-          });
-        }
       }
     }
+
 
     // Arrivee en 63 : la question finale entre en scene, et le journal le dit,
     // pour que les autres equipes voient que la course n'est pas finie.

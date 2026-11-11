@@ -45,6 +45,7 @@ import {
   ModelCaller,
 } from '../src/services/hintSelector';
 import { EnigmaHint } from '../src/types';
+import { indicesOuverts } from '../src/utils/hintAvailability';
 
 // ---------------------------------------------------------------- Arguments
 
@@ -316,6 +317,14 @@ export async function traiterDemande(demande: any, ctx: ContexteTraitement): Pro
     const enigme = await ctx.depots.chargerEnigme(demande.enigmaId);
     if (!enigme) {
       const raison = 'Énigme introuvable';
+      await conclure({ status: 'failed', failureReason: raison, completedAt: new Date().toISOString() });
+      return { issue: 'failed', raison };
+    }
+
+    // L'organisateur a pu fermer les indices entre la demande et son
+    // traitement : la règle vaut au moment de servir, pas seulement à l'accueil.
+    if (!indicesOuverts(enigme)) {
+      const raison = 'Indices fermés';
       await conclure({ status: 'failed', failureReason: raison, completedAt: new Date().toISOString() });
       return { issue: 'failed', raison };
     }

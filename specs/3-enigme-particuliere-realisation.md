@@ -51,8 +51,8 @@ sont acceptés indifféremment.
 | 6, 23, 47 | Le pont | Pas de question sur le pont : on passe directement en 12, 30 ou 53, dont la question attend l'équipe (ajouté le 2026-10-25) |
 | 14, 39, 50, 60 | Le souffleur | La question dispose d'un indice, que l'équipe peut demander |
 | 19 | La loge | On passe un tour |
-| 31 | Le puits | On passe trois tours, sauf si une autre équipe y tombe et vous en déloge |
-| 52 | La prison | On passe deux tours, sauf si une autre équipe y tombe et vous en déloge |
+| 31 | Le puits | On passe trois tours, sauf si une autre équipe y arrive et vous fait reculer d'une case |
+| 52 | La prison | On passe deux tours, sauf si une autre équipe y arrive et vous fait reculer d'une case |
 | 58 | La répétition | Retour à la case 0 |
 | 63 | Rideau | Arrivée, à atteindre pile ; la question finale y attend |
 
@@ -164,27 +164,52 @@ Un bouton « Demander au souffleur », sans coût ni contrepartie. La demande es
 enregistrée (`hintedSquares`, et une ligne dans le journal), de sorte qu'un mode
 d'attribution des points pourra en tenir compte plus tard.
 
-### 7. La case occupée renvoie l'occupant d'où vient l'arrivant — ajouté le 2026-10-25
+### 7. La case occupée fait reculer l'occupant d'une case, en chaîne — ajouté le 2026-10-25, revu le 2026-11-11
 
-Règle du jeu oubliée par la première version, relevée aux essais : quand une
-équipe arrive sur une case occupée, case spéciale ou non, l'équipe qui s'y
-trouvait part sur la case d'où vient l'arrivante. Choix faits pour les cas que
-la remarque laissait ouverts :
+Règle du jeu oubliée par la première version, relevée aux essais, puis changée
+à la demande de Simon le 2026-11-11 : quand une équipe termine son déplacement
+sur une case occupée, case spéciale ou non, chaque équipe qui s'y trouvait
+**recule d'une case**. Si cette case est elle-même occupée, ses occupantes
+reculent à leur tour d'une case, et ainsi de suite (A arrive sur B, B recule
+sur C, C recule sur D...). Choix faits pour les cas que la demande laissait
+ouverts :
 
-- la case où part l'équipe délogée garde ses pouvoirs : le puits, la prison ou
-  la loge la retiennent, une oie lui donne un lancer ;
-- elle doit répondre à la question de sa nouvelle case, comme sur toute case où
-  l'on arrive ;
-- quitter sa case la libère de ce qui l'y retenait : c'est ainsi qu'on sort du
-  puits ou de la prison, désormais vers la case de l'arrivante plutôt que sur
-  place, ce qui est la règle classique du puits ; un lancer d'oie en attente
-  est perdu avec l'oie ;
-- toutes les équipes présentes partent, pas seulement la première ;
-- pas de réaction en chaîne : arriver délogée sur une case occupée ne déloge
-  personne à son tour ;
+- **seul le recul se propage** : la case où l'on recule ne fait rien, ni oie,
+  ni pont, ni souffleur, ni loge, ni puits, ni prison, ni répétition. Une
+  équipe reculée sur le puits n'y tombe pas, sur le pont elle reste sur le
+  pont ;
+- comme avant, l'équipe reculée doit répondre à la question de sa nouvelle
+  case (si elle en porte une), comme sur toute case où l'on arrive ;
+- comme avant, quitter sa case la libère de ce qui l'y retenait : c'est ainsi
+  qu'on sort du puits ou de la prison, une case en arrière (30 ou 51) ; la
+  pénalité de la loge est levée de même, et un lancer d'oie en attente est
+  perdu avec l'oie. Le quota du jour, les compteurs et les essais manqués au
+  63 ne bougent pas ;
+- toutes les équipes présentes reculent ensemble, et poussent ensemble les
+  occupantes de la case suivante ;
+- seule la case d'arrivée **finale** pousse : après un pont, la case d'en
+  face ; après une oie, l'oie (on y reste en attendant le lancer qu'elle
+  offre) ; après la répétition, la case 0. Les cases traversées ne poussent
+  personne ;
 - ni la case 0, d'où tout le monde part, ni la 63, où attendent les équipes
-  face à la question finale, ne délogent personne ; une équipe ayant gagné non
-  plus, ni un rebond qui ramène l'équipe sur sa propre case.
+  face à la question finale, ne poussent personne ; une équipe ayant gagné
+  non plus, ni un rebond qui ramène l'équipe sur sa propre case ;
+- la chaîne s'arrête sur la case 0, que plusieurs équipes peuvent partager, et
+  ne descend jamais dessous. Chaque pas descend d'une case et chaque équipe
+  recule au plus une fois : la chaîne termine toujours (`resolvePushChain`,
+  boucle bornée, sans récursion) ;
+- chaque recul est un événement distinct du journal (`deplacement`, ou
+  `liberation` pour une équipe tirée du puits ou de la prison), dans l'ordre de
+  la chaîne, avec qui pousse qui, de quelle case vers quelle case, et le rang.
+
+Cas limites, tels que le code les traite :
+
+- une équipe qui arrive au puits occupé y tombe (trois tours), et l'occupante
+  remonte en 30, libre ; de même pour la prison (51) ;
+- une équipe **poussée** sur le puits occupé (de 32 vers 31) n'y tombe pas,
+  mais en fait tout de même reculer l'occupante, qui en sort, libre ;
+- une équipe poussée sur la répétition (de 59 vers 58) y reste, sans retour en
+  0 ; poussée sur une oie, elle ne gagne pas de lancer.
 
 ### 8. Le rang d'arrivée est figé à la bonne réponse finale
 
@@ -253,9 +278,17 @@ conditionnée à la version lue. Deux membres d'une même équipe peuvent clique
 « Lancer les dés » au même instant : un seul lancer est compté, le second reçoit
 un 409 avec un message qui invite à recharger.
 
-La libération d'une équipe du puits ou de la prison est elle aussi
-conditionnelle (`inPuits = true`), pour que deux arrivées simultanées ne puissent
-pas libérer deux fois ni libérer la nouvelle venue.
+Le recul en chaîne de la case occupée (voir l'hypothèse 7) s'écrit après le
+lancer, en **une seule transaction** DynamoDB (`TransactWriteItems`, via
+`putTeamStates`) : chaque équipe reculée sous la version lue, tout ou rien. Si
+une équipe de la chaîne a bougé entre-temps, rien n'est écrit, le plateau est
+relu en lecture cohérente et la chaîne recalculée, trois essais au plus. Après
+trois conflits, le lancer reste acquis (il est déjà écrit) et la chaîne est
+abandonnée, tracée dans les logs : des équipes peuvent alors partager une case,
+jamais une demi-chaîne. Au-delà de 100 équipes dans une même chaîne (limite
+d'une transaction), l'écriture est découpée en lots de 100, chacun atomique.
+C'est aussi ce qui libère une équipe du puits ou de la prison : la version
+empêche deux arrivées simultanées de la libérer deux fois.
 
 ### L'énigme dans la liste
 
