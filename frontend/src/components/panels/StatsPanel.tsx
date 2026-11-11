@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
+import { accorder, useEdition } from '../../editions';
 import { getTeamStats } from '../../services/gameService';
 import { teamAPI, paymentAPI, userAPI } from '../../services/api';
 import PendingRequests from '../user/PendingRequests';
@@ -13,6 +14,7 @@ interface StatsPanelProps {
 
 const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false }) => {
   const { user, logout, refreshUser } = useAuth();
+  const v = useEdition().vocabulaire;
   const queryClient = useQueryClient();
   const [teamName, setTeamName] = useState('');
   const [createError, setCreateError] = useState('');
@@ -207,7 +209,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
             {stats ? (
               <>
                 <div data-testid="stats-compact-enigmas" className="compact-stat">
-                  <span className="compact-label">Intrigues:</span>
+                  <span className="compact-label">{v.enigme.Pluriel}:</span>
                   <span data-testid="stats-compact-enigmas-value" className="compact-value">{stats.enigmasSolved}/{stats.totalEnigmas}</span>
                 </div>
                 <div data-testid="stats-compact-points" className="compact-stat">
@@ -236,7 +238,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                   <p>
                     Pour participer au Rallye d'Hiver, vous devez rejoindre ou créer une équipe.
                     <br />
-                    Une fois dans une équipe et après avoir réglé les frais d'inscription (29€ par équipe), vous pourrez accéder aux intrigues et aux tournées !
+                    Une fois dans une équipe et après avoir réglé les frais d'inscription (29€ par équipe), vous pourrez accéder aux {v.enigme.pluriel} et aux {v.parcours.pluriel} !
                   </p>
                 </div>
 
@@ -330,7 +332,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                             <div data-testid="stats-enigmas-solved-value" className="stat-value">
                               {stats.enigmasSolved} / {stats.totalEnigmas}
                             </div>
-                            <div className="stat-label">intrigues résolues</div>
+                            <div className="stat-label">{v.enigme.pluriel} {accorder(v.enigme, 'résolues', 'résolus')}</div>
                           </div>
                           <div className="stat-jauge" aria-hidden="true">
                             <span style={{ width: `${stats.totalEnigmas ? (stats.enigmasSolved / stats.totalEnigmas) * 100 : 0}%` }} />
@@ -342,7 +344,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
                             <div data-testid="stats-parcours-completed-value" className="stat-value">
                               {stats.parcoursCompleted} / {stats.totalParcours}
                             </div>
-                            <div className="stat-label">tournées réalisées</div>
+                            <div className="stat-label">{v.parcours.pluriel} {accorder(v.parcours, 'réalisées', 'réalisés')}</div>
                           </div>
                           <div className="stat-jauge" aria-hidden="true">
                             <span style={{ width: `${stats.totalParcours ? (stats.parcoursCompleted / stats.totalParcours) * 100 : 0}%` }} />

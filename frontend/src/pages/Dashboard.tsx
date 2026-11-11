@@ -4,9 +4,11 @@ import { useAuth } from '../contexts/AuthContext';
 import PendingRequests from '../components/user/PendingRequests';
 import { getEnigmasWithProgress, getParcoursWithAccess } from '../services/gameService';
 import { teamAPI } from '../services/api';
+import { useEdition } from '../editions';
 import './Dashboard.css';
 
 const Dashboard: React.FC = () => {
+  const v = useEdition().vocabulaire;
   const { user } = useAuth();
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -102,7 +104,7 @@ const Dashboard: React.FC = () => {
               Voir mon équipe
             </Link>
             <Link data-testid="nav-content-link" to="/content" className="btn btn-secondary">
-              Accéder aux intrigues
+              Accéder aux {v.enigme.pluriel}
             </Link>
             <button data-testid="dashboard-download-button"
               onClick={handleDownloadAllContent}

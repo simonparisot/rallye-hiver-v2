@@ -1,9 +1,11 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { contentAPI } from '../services/api';
+import { useEdition } from '../editions';
 import './Content.css';
 
 const Content: React.FC = () => {
+  const v = useEdition().vocabulaire;
   const { data: accessData, isLoading: accessLoading } = useQuery({
     queryKey: ['access'],
     queryFn: () => contentAPI.checkAccess(),
@@ -26,7 +28,7 @@ const Content: React.FC = () => {
     );
   }
 
-  if (enigmaLoading) return <div data-testid="content-loading" className="loading">Chargement des intrigues...</div>;
+  if (enigmaLoading) return <div data-testid="content-loading" className="loading">Chargement des {v.enigme.pluriel}...</div>;
 
   return (
     <div data-testid="content-page" className="content">
@@ -36,7 +38,7 @@ const Content: React.FC = () => {
       <div className="enigmas">
         <div className="info-message">
           <h2>🎮 Le jeu a été déplacé!</h2>
-          <p>Rendez-vous dans l'onglet "Jeu" pour accéder aux intrigues et tournées.</p>
+          <p>Rendez-vous dans l'onglet "Jeu" pour accéder aux {v.enigme.pluriel} et aux {v.parcours.pluriel}.</p>
           <a data-testid="content-game-link" href="/game" className="btn btn-primary">Accéder au jeu</a>
         </div>
       </div>

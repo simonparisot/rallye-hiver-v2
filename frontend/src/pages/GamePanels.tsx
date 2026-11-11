@@ -15,7 +15,7 @@ import ModaleMotDePasse from '../components/ModaleMotDePasse';
 import { Enigma, Parcours } from '../types';
 import { getEnigmasWithProgress, getEnigmasPreview, getParcoursWithAccess, getParcoursPreview } from '../services/gameService';
 import './GamePanels.css';
-import { edition } from '../editions';
+import { editionOfficielle, useEdition, Vocabulaire } from '../editions';
 
 /**
  * Les trois panneaux dépliants sont remplacés par une navigation par sections.
@@ -30,14 +30,17 @@ type Section = 'enigmes' | 'parcours' | 'equipe';
 // « réservé » : la section n'a de contenu qu'une fois l'équipe rejointe et
 // l'inscription réglée. Avant cela l'onglet reste visible — il dit ce qui
 // attend — mais il est inerte.
-const SECTIONS: { id: Section; libelle: string; reserve?: boolean }[] = [
-  { id: 'enigmes', libelle: 'Intrigues', reserve: true },
-  { id: 'parcours', libelle: 'Tournées', reserve: true },
-  { id: 'equipe', libelle: 'Ma troupe' },
+// Les libellés suivent le vocabulaire de l'habillage affiché.
+const SECTIONS: { id: Section; libelle: (v: Vocabulaire) => string; reserve?: boolean }[] = [
+  { id: 'enigmes', libelle: (v) => v.enigme.Pluriel, reserve: true },
+  { id: 'parcours', libelle: (v) => v.parcours.Pluriel, reserve: true },
+  { id: 'equipe', libelle: (v) => v.monEquipe },
 ];
 
 const GamePanels: React.FC = () => {
   const { user, loading } = useAuth();
+  // L'édition affichée : logo et libellés suivent la bascule de thème.
+  const edition = useEdition();
   const [section, setSection] = useState<Section>('enigmes');
   // La sélection remonte ici : sur téléphone, c'est le menu qui la pilote, et
   // il vit en dehors des panneaux.
@@ -98,7 +101,7 @@ const GamePanels: React.FC = () => {
      l'intrigue ne serait lu : on ne charge pas son PDF pour rien. */
   useEffect(() => {
     if (!hasAccess || enigmeId !== null) return;
-    const premiere = enigmas.find((e) => e.id !== edition.enigmeOie?.enigmaId);
+    const premiere = enigmas.find((e) => e.id !== editionOfficielle.enigmeOie?.enigmaId);
     if (premiere) setEnigmeId(premiere.id);
   }, [hasAccess, enigmeId, enigmas]);
 
@@ -186,10 +189,10 @@ const GamePanels: React.FC = () => {
                   className={`onglet ${section === s.id ? 'actif' : ''} ${verrouille ? 'onglet-verrouille' : ''}`}
                   aria-current={section === s.id}
                   disabled={verrouille}
-                  title={verrouille ? 'Rejoignez une troupe pour y accéder' : undefined}
+                  title={verrouille ? `Rejoignez ${edition.vocabulaire.equipe.un} pour y accéder` : undefined}
                   onClick={() => setSection(s.id)}
                 >
-                  {s.libelle}
+                  {s.libelle(edition.vocabulaire)}
                 </button>
               );
             })}

@@ -1,0 +1,139 @@
+/* ---------------------------------------------------------------------------
+   Édition 2027 — habillage neutre, direction « L'Affiche d'hiver »
+
+   Le thème 2027 reste secret jusqu'au lancement du 21 décembre 2026, et au
+   delà pour une équipe qui ne l'a pas encore débloqué. Ce qui s'affiche avant
+   ne doit pas permettre de le deviner : cette feuille est la direction
+   « L'Affiche » (themes/2027.css) dont on a retiré tout ce qui renvoie au
+   thème, et rien d'autre.
+
+   Ce qui est gardé, parce que ça tient à la lisibilité et pas au thème :
+   la structure d'affiche (cartouches cernés d'un trait, ombre portée nette et
+   décalée, papier clair), le bleu encre de l'action, le jaune qui signale ce
+   qui reste à faire, le vert discret du fait accompli, les mêmes contrastes.
+
+   Ce qui est retiré :
+   — le vermillon, remplacé par une sarcelle froide, couleur d'hiver qui ne
+     désigne rien ; elle reprend tous ses emplois (titres, onglet actif,
+     intrigue tentée) ;
+   — le lambrequin (hauteur nulle, aucune image) ;
+   — le papier chaud, refroidi en papier neige, et le jaune d'or, rendu plus
+     citron ;
+   — les polices : Abril Fatface est une didone d'affiche de spectacle. Les
+     titres passent en Archivo Black, une grotesque grasse d'affichage
+     routier ou sportif ; le texte en Source Sans 3, une linéale de lecture.
+   — le logo des deux masques, remplacé par un monogramme typographique
+     (public/logo-rallye.svg), déclaré dans editions/2027-neutre.ts.
+
+   Cette feuille déclare exactement les mêmes variables que themes/2027.css :
+   une seule oubliée invalide en silence la déclaration qui l'emploie. Le
+   contrôle se fait avec `node scripts/verifier-variables-theme.mjs`.
+
+   Elle est aussi posée sur :root sans attribut : c'est l'habillage affiché
+   par défaut, et il doit l'être avant que le script ait posé data-edition,
+   sans quoi le thème officiel apparaîtrait le temps d'un éclair au
+   chargement.
+   --------------------------------------------------------------------------- */
+:root,
+:root[data-edition='2027-neutre'] {
+  /* --- Les couleurs ---
+     Les noms historiques (« comédie », « tragédie »…) sont conservés : ce sont
+     ceux que lisent les composants. Seules les valeurs changent, et rien de
+     ces noms ne parvient à l'écran. */
+  --theatre-comedie: #17263F;        /* bleu encre : l'action */
+  --theatre-comedie-clair: #33486A;
+  --theatre-comedie-sombre: #0E1A2D;
+  --theatre-tragedie: #0E7C86;       /* sarcelle d'hiver : aplats et grands titres (4,7:1) */
+  --theatre-tragedie-sombre: #0A646C;
+  /* Variante des petits textes colorés : 6,6:1 sur le papier. */
+  --theatre-tragedie-texte: #0A646C;
+  /* Aplats portant du texte blanc : 8,4:1. */
+  --theatre-tragedie-fonce: #08565D;
+  --theatre-dorure: #FFD23F;         /* jaune citron : ce qui reste à faire */
+  --theatre-dorure-claire: #FFE89A;
+  --theatre-dorure-encre: #5A4500;   /* texte lisible sur le jaune */
+
+  /* --- Le papier et l'encre --- */
+  --theatre-salle: #17263F;          /* l'encre */
+  --theatre-programme: #FAFAF7;      /* papier neige, à peine chaud */
+  --theatre-programme-2: #EEF1F2;    /* papier en retrait : ce qui est fait */
+  --theatre-scene: #FFFFFF;          /* surfaces surélevées */
+  --theatre-filet: #DCE2E6;          /* bordures discrètes */
+  --theatre-coulisse: #4E5C73;       /* texte secondaire */
+  --theatre-coulisse-pale: #626E82;  /* 4,9:1 sur le papier */
+  --theatre-fait: #27694C;           /* vert du fait accompli, en retrait */
+  --theatre-fait-pale: #E4F3EC;
+
+  /* --- Remappage des variables historiques --- */
+  --color-primary-blue: var(--theatre-comedie);
+  --color-primary-red: var(--theatre-tragedie);
+  --color-primary-yellow: var(--theatre-dorure);
+  --color-primary-green: var(--theatre-fait);
+  --color-secondary-orange: var(--theatre-dorure);
+  --color-secondary-purple: var(--theatre-comedie-clair);
+  --color-neutral-black: var(--theatre-salle);
+  --color-neutral-gray: var(--theatre-programme-2);
+  --color-neutral-white: var(--theatre-scene);
+
+  /* Archivo Black pour les titres, Source Sans 3 pour le texte : voir
+     l'en-tête. Elles sont chargées par editions/2027-neutre.ts ; les déclarer
+     ici ne suffit pas. */
+  --font-display: 'Archivo Black', 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Source Sans 3', 'Helvetica Neue', Arial, sans-serif;
+  --font-secondary: 'Source Sans 3', 'Helvetica Neue', Arial, sans-serif;
+
+  --font-weight-fort: 700;
+
+  --border-width-thin: 1px;
+  --border-width-medium: 1.5px;
+  --border-width-thick: 2px;
+  --border-color: var(--theatre-filet);
+
+  /* L'ombre nette et décalée de l'affiche : elle tient à la structure, pas au
+     thème, et c'est elle qui fait la parenté avec l'habillage officiel. */
+  --ombre-affiche: 3px 3px 0 var(--theatre-salle);
+  --ombre-affiche-haute: 5px 5px 0 var(--theatre-salle);
+  --ombre-douce: 0 1px 2px rgba(23, 38, 63, .06), 0 10px 24px -18px rgba(23, 38, 63, .5);
+  --shadow: var(--ombre-douce);
+  --shadow-lg: var(--ombre-douce);
+
+  --primary-color: var(--theatre-comedie);
+  --primary-hover: var(--theatre-comedie-sombre);
+  --secondary-color: var(--theatre-dorure);
+  --success-color: var(--theatre-fait);
+  --danger-color: #B3261E;
+
+  /* --- États d'une intrigue ou d'une tournée --- */
+  --etat-resolu-fond: var(--theatre-fait-pale);
+  --etat-resolu-texte: var(--theatre-fait);
+  --etat-resolu-libelle: var(--theatre-fait);
+  --etat-tente-fond: var(--theatre-scene);
+  --etat-tente-trait: var(--theatre-tragedie);
+  --etat-tente-texte: var(--theatre-tragedie-texte);
+  --etat-vierge-fond: var(--theatre-programme-2);
+  --etat-vierge-texte: var(--theatre-coulisse);
+
+  /* Archivo Black reste lisible plus petit qu'une didone, mais reste une
+     grasse : on ne la laisse pas descendre dans le texte courant. */
+  --display-taille-mini: 20px;
+
+  /* --- Le décor ---
+     Papier neige et deux halos froids, très pâles. Aucune image. */
+  --fond-couleur: var(--theatre-programme);
+  --fond-image:
+    radial-gradient(ellipse 900px 520px at 12% -6%, rgba(14, 124, 134, .07), transparent 62%),
+    radial-gradient(ellipse 900px 520px at 88% -6%, rgba(51, 72, 106, .07), transparent 62%);
+  --fond-taille: auto;
+  --fond-repetition: no-repeat;
+
+  --barre-fond: rgba(250, 250, 247, .93);
+  --barre-trait: var(--theatre-salle);
+
+  /* --- Le lambrequin : neutralisé ---
+     Le feston de rideau trahirait le thème. Hauteur nulle et aucune image :
+     la barre se termine sur son seul trait d'encre. */
+  --lambrequin-hauteur: 0px;
+  --lambrequin-image: none;
+  --lambrequin-taille: auto;
+  --lambrequin-position: 0 0;
+}

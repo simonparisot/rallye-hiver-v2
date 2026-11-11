@@ -39,6 +39,13 @@ export interface Edition {
   };
 
   /**
+   * Les mots du jeu : ce qu'on résout, ce qu'on parcourt, avec qui. Ils
+   * suivent le thème (en 2027, les intrigues, les tournées, la troupe) et
+   * doivent donc changer avec l'habillage. Voir editions/vocabulaire.ts.
+   */
+  vocabulaire: Vocabulaire;
+
+  /**
    * Intrigue jouée sur un plateau de jeu de l'oie partagé — essai de 2027.
    *
    * C'est le seul point d'entrée de cette intrigue dans l'application : sans ce
@@ -47,6 +54,27 @@ export interface Edition {
    * ignore tout de `src/oie/`.
    */
   enigmeOie?: EnigmeOie;
+
+  /**
+   * Habillage neutre, affiché tant que le thème de l'édition doit rester
+   * secret — avant le lancement, puis pour une équipe qui ne l'a pas encore
+   * débloqué. Il remplace le thème, les textes et le titre du jeu de l'oie ;
+   * tout ce qui relève du jeu (gameId, dates, route du plateau) reste celui
+   * de l'édition.
+   *
+   * Sans ce champ, l'édition s'affiche toujours avec son thème officiel.
+   * La bascule entre les deux est décrite dans editions/index.ts.
+   */
+  habillageNeutre?: Habillage;
+}
+
+/** Ce qui change entre l'habillage officiel d'une édition et son habillage neutre. */
+export interface Habillage {
+  theme: Edition['theme'];
+  copy: Edition['copy'];
+  vocabulaire: Vocabulaire;
+  /** Titre de la page du jeu de l'oie, quand l'édition en a un. */
+  titreOie?: string;
 }
 
 /** Configuration de l'intrigue jouée sur un plateau de jeu de l'oie partagé. */
@@ -67,4 +95,50 @@ export interface EnigmeOie {
 
   /** Titre affiché en tête de la page du plateau. */
   titre: string;
+}
+
+/**
+ * Un nom du jeu, avec toutes les formes dont les phrases ont besoin.
+ *
+ * On ne substitue jamais un mot dans une phrase figée : « une tournée » est
+ * féminin, « un parcours » masculin et invariable au pluriel. Chaque forme est
+ * donc écrite en entier, et les accords passent par `accorder()`.
+ */
+export interface Nom {
+  /** « intrigue », « parcours » */
+  singulier: string;
+  /** « intrigues », « parcours » */
+  pluriel: string;
+  /** « Intrigue », « Parcours » : titres, débuts de phrase. */
+  Singulier: string;
+  /** « Intrigues », « Parcours » */
+  Pluriel: string;
+  /** « une intrigue », « un parcours » */
+  un: string;
+  /** « cette intrigue », « ce parcours » */
+  ce: string;
+  /** « l'intrigue », « le parcours » */
+  le: string;
+  /** « de l'intrigue », « du parcours » */
+  du: string;
+  /** « les intrigues », « les parcours » */
+  les: string;
+  /** « d'intrigues », « de parcours » : après une quantité. */
+  dePluriel: string;
+  /** Genre grammatical, pour `accorder()`. */
+  feminin: boolean;
+}
+
+/** Le vocabulaire du jeu sous un habillage donné. */
+export interface Vocabulaire {
+  /** Ce qu'on résout : intrigue (thème) ou énigme (neutre). */
+  enigme: Nom;
+  /** Ce qu'on parcourt à pied : tournée (thème) ou parcours (neutre). */
+  parcours: Nom;
+  /** Le groupe de joueurs : troupe (thème) ou équipe (neutre). */
+  equipe: Nom;
+  /** Celui qui donne les indices : souffleur (thème) ou aide (neutre). */
+  souffleur: Nom;
+  /** Onglet de l'équipe : « Ma troupe », « Mon équipe ». Le possessif change. */
+  monEquipe: string;
 }

@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import GamePanels from './pages/GamePanels';
-import { edition } from './editions';
+import { edition, useEdition } from './editions';
 import './App.css';
 
 // Lazy load admin code only when needed
@@ -30,6 +30,10 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  // S'abonne à la bascule de thème : à chaque bascule, l'arbre se redessine,
+  // y compris les composants qui lisent encore la constante `edition`.
+  useEdition();
+
   return (
     <QueryClientProvider client={queryClient}>
       <Router>

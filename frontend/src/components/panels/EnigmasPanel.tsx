@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Enigma } from '../../types';
-import { edition } from '../../editions';
+import { accorder, editionOfficielle, useEdition } from '../../editions';
 import { getEnigmasWithProgress, getEnigmasPreview, submitPasswordAttempt } from '../../services/gameService';
 import { teamAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -51,11 +51,12 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const v = useEdition().vocabulaire;
 
   // Édition 2027 : une des vingt intrigues se joue sur un plateau de jeu de l'oie
   // partagé. Elle reste une intrigue ordinaire dans cette liste, mais son entrée
   // mène au plateau au lieu d'ouvrir un PDF et un champ de mot de passe.
-  const enigmeOie = edition.enigmeOie;
+  const enigmeOie = editionOfficielle.enigmeOie;
   const estEnigmeOie = (enigmaId: string) =>
     !!enigmeOie?.enigmaId && enigmaId === enigmeOie.enigmaId;
 
@@ -157,10 +158,10 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
     return (
       <div className={`enigmas-panel ${isCompact ? 'panel-compact' : ''}`} data-testid="enigma-panel">
         <div className="panel-header">
-          <h2>Intrigues</h2>
+          <h2>{v.enigme.Pluriel}</h2>
         </div>
         <div className="panel-content">
-          <div className="loading-state" data-testid="enigma-loading">Chargement des intrigues...</div>
+          <div className="loading-state" data-testid="enigma-loading">Chargement des {v.enigme.pluriel}...</div>
         </div>
       </div>
     );
@@ -170,10 +171,10 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
     return (
       <div className={`enigmas-panel ${isCompact ? 'panel-compact' : ''}`} data-testid="enigma-panel">
         <div className="panel-header">
-          <h2>Intrigues</h2>
+          <h2>{v.enigme.Pluriel}</h2>
         </div>
         <div className="panel-content">
-          <div className="error-state" data-testid="enigma-error">Erreur lors du chargement des intrigues. Veuillez réessayer.</div>
+          <div className="error-state" data-testid="enigma-error">Erreur lors du chargement des {v.enigme.pluriel}. Veuillez réessayer.</div>
         </div>
       </div>
     );
@@ -182,12 +183,12 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
   return (
     <div className={`enigmas-panel ${isCompact ? 'panel-compact' : ''}`} data-testid="enigma-panel">
       <div className="panel-header">
-        <h2>Intrigues</h2>
+        <h2>{v.enigme.Pluriel}</h2>
       </div>
       <div className="panel-content">
         {!hasAccess && (
           <div className="access-blocked-message" data-testid="enigma-access-blocked">
-            Pour accéder aux intrigues, rejoignez ou créez une équipe depuis « Ma troupe », puis réglez les frais d'inscription.
+            Pour accéder aux {v.enigme.pluriel}, rejoignez ou créez une équipe depuis « {v.monEquipe} », puis réglez les frais d'inscription.
           </div>
         )}
         {!isExpanded ? (
@@ -264,7 +265,7 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                 <div className="enigma-details" data-testid="enigma-details">
                   {selectedEnigma.isSolved && (
                     <div className="enigma-solved-banner" data-testid="enigma-solved-banner">
-                      ✅ Intrigue déjà résolue
+                      ✅ {v.enigme.Singulier} déjà {accorder(v.enigme, 'résolue', 'résolu')}
                     </div>
                   )}
                   {/* La barre de réponse et l'indice précèdent l'énoncé :
@@ -304,13 +305,13 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                   ) : (
                     <div className="enigma-pdf-placeholder" data-testid="enigma-pdf-placeholder">
                       <p>PDF non disponible</p>
-                      <p className="pdf-note">Le PDF de cette intrigue n'est pas encore disponible</p>
+                      <p className="pdf-note">Le PDF de {v.enigme.ce} n'est pas encore disponible</p>
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="enigma-placeholder" data-testid="enigma-placeholder">
-                  <p>Sélectionnez une intrigue pour afficher son énoncé</p>
+                  <p>Sélectionnez {v.enigme.un} pour afficher son énoncé</p>
                 </div>
               )}
             </div>

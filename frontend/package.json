@@ -29,7 +29,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "verifier-editions": "node scripts/verifier-variables-theme.mjs && node scripts/verifier-vocabulaire.mjs"
   },
   "eslintConfig": {
     "extends": [

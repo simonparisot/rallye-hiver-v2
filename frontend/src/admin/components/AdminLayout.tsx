@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
-import { edition } from '../../editions';
+import { useEdition } from '../../editions';
 import './AdminLayout.css';
 
 interface AdminLayoutProps {
@@ -10,6 +10,7 @@ interface AdminLayoutProps {
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { adminUser, logout } = useAdminAuth();
+  const edition = useEdition();
   const location = useLocation();
   const navigate = useNavigate();
 

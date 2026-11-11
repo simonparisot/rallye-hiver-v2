@@ -1,6 +1,6 @@
 import React from 'react';
 import './InfoPanel.css';
-import { edition } from '../../editions';
+import { useEdition } from '../../editions';
 
 interface GeneralInfoPanelProps {
   isExpanded: boolean;
@@ -8,6 +8,7 @@ interface GeneralInfoPanelProps {
 }
 
 const GeneralInfoPanel: React.FC<GeneralInfoPanelProps> = ({ isExpanded, isCompact }) => {
+  const edition = useEdition();
   return (
     <div data-testid="general-info-panel" className={`info-panel ${isCompact ? 'panel-compact' : ''}`}>
       <div className="panel-header">
@@ -25,7 +26,7 @@ const GeneralInfoPanel: React.FC<GeneralInfoPanelProps> = ({ isExpanded, isCompa
                 Chaque année depuis presque 60 ans, le Rallye d'Hiver vous propose de découvrir un Paris pittoresque à travers le prisme d'une thématique particulière (précédemment la Musique, l'eau, les dames…).
               </p>
               <p>
-                En pratique, des équipes de 2 à 7 personnes ont les trois mois d'hiver pour résoudre une vingtaine d'intrigues qui les conduisent sur des lieux en rapport avec le thème du Rallye. Là, les équipes doivent répondre à un questionnaire qui guide leur découverte du lieu. C'est l'occasion de se cultiver en s'amusant, et d'occuper les longues soirées d'hiver et les weekend brumeux !
+                En pratique, des équipes de 2 à 7 personnes ont les trois mois d'hiver pour résoudre une vingtaine {edition.vocabulaire.enigme.dePluriel} qui les conduisent sur des lieux en rapport avec le thème du Rallye. Là, les équipes doivent répondre à un questionnaire qui guide leur découverte du lieu. C'est l'occasion de se cultiver en s'amusant, et d'occuper les longues soirées d'hiver et les weekend brumeux !
               </p>
               <p>
                 {edition.copy.intro}

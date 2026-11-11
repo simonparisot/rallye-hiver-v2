@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Enigma } from '../../types';
 import { hintsAPI } from '../../services/api';
+import { useEdition } from '../../editions';
 import './HintRequestSection.css';
 
 /**
@@ -52,6 +53,7 @@ const IconeIndice: React.FC = () => (
 
 const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
   const queryClient = useQueryClient();
+  const v = useEdition().vocabulaire;
   const [ouvert, setOuvert] = useState(false);
   const [avancement, setAvancement] = useState('');
   const [confirmation, setConfirmation] = useState(false);
@@ -246,15 +248,15 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
                 où il sera rebranché, cette phrase devra annoncer le montant. */}
             {!ouverts && (
               <p className="souffleur-alerte" data-testid="hint-closed" role="status">
-                Les demandes d'indice sont fermées pour cette intrigue. Vous pouvez relire ci-dessous
-                les indices que votre troupe a déjà reçus.
+                Les demandes d'indice sont fermées pour {v.enigme.ce}. Vous pouvez relire ci-dessous
+                les indices que votre {v.equipe.singulier} a déjà reçus.
               </p>
             )}
 
             {ouverts && (
             <div className="souffleur-intro" data-testid="hint-cost-warning">
               <p>
-                <b>Bloqué sur cette intrigue ?</b> Décrivez où vous en êtes : un indice choisi
+                <b>Bloqué sur {v.enigme.ce} ?</b> Décrivez où vous en êtes : un indice choisi
                 pour votre situation s'affichera ici, en quelques secondes.
               </p>
               <p>Les indices ne coûtent aucun point.</p>
@@ -301,7 +303,7 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
 
             {enAttente && tropLong && (
               <p className="souffleur-alerte" data-testid="hint-slow" role="status">
-                L'indice tarde à arriver. Votre demande n'est pas perdue : revenez sur cette intrigue
+                L'indice tarde à arriver. Votre demande n'est pas perdue : revenez sur {v.enigme.ce}
                 dans quelques minutes pour le retrouver.
               </p>
             )}
@@ -396,7 +398,7 @@ const HintRequestSection: React.FC<HintRequestSectionProps> = ({ enigma }) => {
             )}
 
             {epuise && !enAttente && (
-              <p className="souffleur-aide">Tous les indices de cette intrigue ont été donnés.</p>
+              <p className="souffleur-aide">Tous les indices de {v.enigme.ce} ont été donnés.</p>
             )}
 
             {messageErreur && (

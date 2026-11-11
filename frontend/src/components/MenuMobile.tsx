@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Enigma, Parcours } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { accorder, useEdition } from '../editions';
 import './MenuMobile.css';
 
 /**
@@ -39,6 +40,7 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
   onChoisirEnigme, onChoisirParcours, onAllerTroupe, onMotDePasse,
 }) => {
   const { user, logout } = useAuth();
+  const v = useEdition().vocabulaire;
   const [ouvert, setOuvert] = useState(false);
   // Tout est replié à l'ouverture. Déplier la section en cours mettait vingt
   // lignes sous les yeux avant qu'on ait rien demandé, et repoussait « Ma
@@ -112,10 +114,10 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
                   disabled={!acces}
                   onClick={() => basculer('enigmes')}
                 >
-                  <span className="menu-entete-titre">Intrigues</span>
+                  <span className="menu-entete-titre">{v.enigme.Pluriel}</span>
                   {acces
                     ? <span className="menu-compte">{resolues}/{enigmas.length}</span>
-                    : <span className="menu-compte">Troupe requise</span>}
+                    : <span className="menu-compte">{v.equipe.Singulier} {accorder(v.equipe, 'requise', 'requis')}</span>}
                   <Chevron ouvert={!!deplie.enigmes} />
                 </button>
                 {acces && deplie.enigmes && (
@@ -130,7 +132,7 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
                         >
                           <span className={`menu-numero ${e.isSolved ? '' : 'menu-numero-a-faire'}`}>{e.order}</span>
                           <span className="menu-libelle">{e.title}</span>
-                          {e.isSolved && <span className="menu-coche" aria-label="résolue">✓</span>}
+                          {e.isSolved && <span className="menu-coche" aria-label={accorder(v.enigme, 'résolue', 'résolu')}>✓</span>}
                         </button>
                       </li>
                     ))}
@@ -148,10 +150,10 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
                   disabled={!acces}
                   onClick={() => basculer('parcours')}
                 >
-                  <span className="menu-entete-titre">Tournées</span>
+                  <span className="menu-entete-titre">{v.parcours.Pluriel}</span>
                   {acces
                     ? <span className="menu-compte">{realises}/{parcours.length}</span>
-                    : <span className="menu-compte">Troupe requise</span>}
+                    : <span className="menu-compte">{v.equipe.Singulier} {accorder(v.equipe, 'requise', 'requis')}</span>}
                   <Chevron ouvert={!!deplie.parcours} />
                 </button>
                 {acces && deplie.parcours && (
@@ -166,7 +168,7 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
                         >
                           <span className="menu-numero">{p.order || i + 1}</span>
                           <span className="menu-libelle">{p.title}</span>
-                          {p.isCompleted && <span className="menu-coche" aria-label="réalisé">✓</span>}
+                          {p.isCompleted && <span className="menu-coche" aria-label={accorder(v.parcours, 'réalisée', 'réalisé')}>✓</span>}
                         </button>
                       </li>
                     ))}
@@ -182,7 +184,7 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
                   data-testid="menu-section-troupe"
                   onClick={() => { onAllerTroupe(); setOuvert(false); }}
                 >
-                  <span className="menu-entete-titre">Ma troupe</span>
+                  <span className="menu-entete-titre">{v.monEquipe}</span>
                 </button>
               </section>
 
