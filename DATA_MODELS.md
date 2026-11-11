@@ -169,16 +169,26 @@ réordonnancement change `order`, pas `id`.
 **Primary Key**: `parcoursId` (UUID)
 **GSI**: `parcoursNumber-index` on `parcoursNumber`
 
+Une tournée, dans l'interface. Le code garde `parcours`.
+
 ```typescript
 interface Parcours {
   parcoursId: string;          // UUID, primary key
-  parcoursNumber: number;      // Sequential identifier (1-10)
+  parcoursNumber: number;      // Ordre d'affichage, entier >= 1. À la création
+                               // sans numéro : max(parcoursNumber) + 1
   title: string;               // Parcours title/name
   description?: string;        // Short description
-  pdfUrl: string;              // S3 URL to parcours PDF
-  requiredEnigmaIds: string[]; // Array of enigma IDs that unlock this
-  requiredEnigmasCount: number;    // How many required enigmas must be solved
-  isActive: boolean;           // Whether parcours is active (default: true)
+  pdfUrl: string;              // S3 URL to parcours PDF (jamais donnée à une
+                               // équipe pour qui la tournée est verrouillée)
+  requiredEnigmaIds: string[]; // Intrigues à résoudre TOUTES pour ouvrir la
+                               // tournée. Vide (ou absent) : tournée libre
+  requiredEnigmasCount: number;// Dérivé : requiredEnigmaIds.length. Jamais lu
+                               // dans une requête
+  correctPassword?: string;    // Mot de passe de fin de tournée, saisi dans
+                               // l'admin. Vide ou absent : la tournée ne peut
+                               // pas encore être validée. Jamais renvoyé aux
+                               // joueurs, qui ne reçoivent que `hasPassword`
+  isActive: boolean;           // Publiée (default: true)
   createdAt: string;           // ISO 8601 timestamp
   updatedAt: string;           // ISO 8601 timestamp
   gameId?: string;             // For multi-season support
@@ -195,13 +205,19 @@ interface Parcours {
   "pdfUrl": "https://s3.amazonaws.com/rallye-hiver-parcours/2025/parcours-01.pdf",
   "requiredEnigmaIds": ["e123e4567-...", "e234e5678-...", "e345e6789-..."],
   "requiredEnigmasCount": 3,
+  "correctPassword": "MOLIERE1673",
   "isActive": true,
   "createdAt": "2025-01-15T10:00:00Z",
   "updatedAt": "2025-01-15T10:00:00Z"
 }
 ```
 
-**Unlock Logic**: Parcours unlocks when team has solved `requiredEnigmasCount` of the enigmas in `requiredEnigmaIds`
+**Vue joueur** (`GET /parcours`, `GET /parcours/{id}`, `GET /progress/parcours`) :
+`correctPassword` est retiré et remplacé par `hasPassword: boolean` ; `pdfUrl`
+n'apparaît que dans `/progress/parcours`, pour une tournée ouverte
+(`backend/src/utils/parcoursAccess.ts`, `forPlayers`).
+
+**Unlock Logic**: voir « Parcours Unlocking » plus bas.
 
 ---
 
@@ -262,13 +278,22 @@ d'indice), retirés avec l'ancien mécanisme.
 **Primary Key**: `teamId` (String)
 **Sort Key**: `parcoursId` (String)
 
+Cet enregistrement **ne donne pas** l'accès : l'accès est recalculé à chaque
+lecture (voir « Parcours Unlocking »). Il sert à dater le déblocage et à porter
+la réalisation de la tournée.
+
 ```typescript
 interface TeamParcoursAccess {
   teamId: string;              // Team identifier (PK)
   parcoursId: string;          // Parcours identifier (SK)
-  hasAccess: boolean;          // Whether team has unlocked (default: true)
-  unlockedAt: string;          // ISO 8601 timestamp when unlocked
-  unlockedBy: string[];        // Array of enigma IDs that triggered unlock
+  hasAccess: boolean;          // Toujours true quand l'enregistrement existe
+  unlockedAt: string;          // ISO 8601 : déblocage constaté (ou, à défaut,
+                               // première validation)
+  unlockedBy: string[];        // Intrigues requises au moment du déblocage
+  completed?: boolean;         // Tournée réalisée : l'équipe a saisi le bon
+                               // mot de passe de fin de tournée
+  completedAt?: string;        // ISO 8601 : première validation (conservée
+                               // si l'équipe ressaisit le mot de passe)
   createdAt: string;           // ISO 8601 timestamp
 }
 ```
@@ -281,13 +306,26 @@ interface TeamParcoursAccess {
   "hasAccess": true,
   "unlockedAt": "2025-01-20T14:35:22Z",
   "unlockedBy": ["e123e4567-...", "e234e5678-...", "e345e6789-..."],
+  "completed": true,
+  "completedAt": "2025-01-21T16:02:40Z",
   "createdAt": "2025-01-20T14:35:22Z"
 }
 ```
 
+**Écritures** :
+- `POST /progress/attempt`, quand une intrigue résolue ouvre une tournée :
+  création avec `unlockedAt` / `unlockedBy`.
+- `POST /parcours/{parcoursId}/attempt`, sur le bon mot de passe : une seule
+  mise à jour (`completed: true`, `completedAt` si absent), qui crée
+  l'enregistrement s'il manque (tournée libre, ou déblocage antérieur à son
+  écriture).
+- Plus aucune route ne remet `completed` à faux : les anciennes
+  `POST/DELETE /parcours/{id}/complete` sont supprimées (2026-11-11). Les
+  tournées déjà marquées réalisées le restent.
+
 **Access Patterns**:
-- Get accessible parcours for team: Query by `teamId`
-- Check specific parcours access: GetItem with `teamId` + `parcoursId`
+- Get access records for team: Query by `teamId`
+- Check specific parcours record: GetItem with `teamId` + `parcoursId`
 
 ---
 
@@ -427,6 +465,38 @@ interface PasswordAttemptLog {
 
 ---
 
+### ParcoursAttemptLog
+**Table**: `rallye-hiver-backend-parcours-attempts-{stage}`
+**Primary Key**: `attemptId` (UUID)
+**GSIs**:
+- `teamId-attemptedAt-index`: PK=`teamId`, SK=`attemptedAt`
+- `parcoursId-attemptedAt-index`: PK=`parcoursId`, SK=`attemptedAt`
+
+Une ligne par tentative de mot de passe de fin de tournée
+(`POST /parcours/{parcoursId}/attempt`), juste ou fausse. Tentatives illimitées.
+
+```typescript
+interface ParcoursAttemptLog {
+  attemptId: string;           // UUID, primary key
+  teamId: string;              // Team identifier (indexed)
+  parcoursId: string;          // Parcours identifier (indexed)
+  password: string;            // Saisie brute
+  success: boolean;            // Whether password was correct
+  attemptedAt: string;         // ISO 8601 timestamp (sort key for GSIs)
+  attemptedBy?: string;        // User ID who made the attempt
+  ipAddress?: string;          // IP address for security tracking
+}
+```
+
+**Pourquoi une table à part** : la table `PasswordAttemptLog` est lue en entier
+(Scan) par le calcul de difficulté des intrigues, la chronologie des tentatives,
+la liste des tentatives, les statistiques d'équipes et d'utilisateurs ; tous
+supposent qu'une ligne porte une intrigue (`enigmaId`, `teamEnigmaKey`). Y
+mêler les tournées aurait faussé ces chiffres ou demandé un filtre dans chacun.
+Aucun écran d'administration ne lit encore cette table.
+
+---
+
 ## Game Control
 
 ### GameStatus
@@ -527,15 +597,40 @@ Parcours ─── (1:N) TeamParcoursAccess
   4. Check if any parcours should unlock
 
 ### Parcours Unlocking
-- Parcours unlocks when team has solved at least `parcours.requiredEnigmasCount` of the enigmas in `parcours.requiredEnigmaIds`
-- When unlocked, create entry in `TeamParcoursAccess`:
-  - `hasAccess: true`
-  - `unlockedAt: timestamp`
-  - `unlockedBy: [enigmaIds that were solved]`
+- Une tournée sans intrigue requise (`requiredEnigmaIds` vide ou absent) est
+  ouverte à toutes les équipes.
+- Sinon elle s'ouvre quand l'équipe a résolu **toutes** les intrigues requises
+  **qui existent encore**. Une intrigue supprimée depuis est ignorée (elle ne
+  peut plus être résolue) ; la mise à jour d'une tournée la retire de la liste
+  sans erreur.
+- La règle est **recalculée à chaque lecture** depuis `TeamEnigmaProgress`
+  (`backend/src/utils/parcoursAccess.ts`, `evaluateParcoursAccess`), lue en
+  lecture cohérente. Changer la liste en cours de rallye s'applique aussitôt,
+  dans un sens comme dans l'autre.
+- Une tournée non publiée (`isActive: false`) n'est ni listée aux joueurs ni
+  validable.
+- Le titre d'une intrigue requise non publiée est montré aux joueurs comme
+  « Intrigue à venir ».
+- Quand une intrigue résolue ouvre une tournée, un `TeamParcoursAccess` est
+  écrit pour dater le déblocage (`unlockedAt`, `unlockedBy`). Il ne donne pas
+  l'accès.
+
+### Parcours Completion
+- Une tournée se valide par le mot de passe trouvé à sa fin
+  (`POST /parcours/{parcoursId}/attempt`), sur une tournée publiée et ouverte
+  pour l'équipe, et qui a un mot de passe (sinon 409).
+- Bon mot de passe : `TeamParcoursAccess.completed = true`, `completedAt`
+  (première validation), `team.lastActivityAt` mis à jour. Toute tentative est
+  journalisée dans `ParcoursAttemptLog`.
+- Les tournées ne rapportent **aucun point**. La réalisation n'est comptée que
+  dans `GET /teams/stats` (`parcoursCompleted`).
 
 ### Password Matching
-- Passwords are matched **case-insensitively**
-- Normalize both stored and submitted passwords before comparison
+- Même règle pour les intrigues et les tournées
+  (`backend/src/utils/password.ts`, `normalizePassword`) : casse, accents,
+  ligatures (œ, æ), espaces et ponctuation ignorés ; seuls a-z et 0-9 comptent.
+- Un mot de passe attendu qui ne garde aucun caractère une fois normalisé
+  compte comme absent.
 
 ---
 
@@ -705,6 +800,10 @@ identifiant, et le fil raconterait l'histoire dans le désordre.
 - `teamId-attemptedAt-index`: PK=`teamId`, SK=`attemptedAt`
 - `enigmaId-attemptedAt-index`: PK=`enigmaId`, SK=`attemptedAt`
 - `teamEnigma-index`: PK=`teamEnigmaKey`, SK=`attemptedAt`
+
+**ParcoursAttemptLog Table**:
+- `teamId-attemptedAt-index`: PK=`teamId`, SK=`attemptedAt`
+- `parcoursId-attemptedAt-index`: PK=`parcoursId`, SK=`attemptedAt`
 
 **Teams Table** (optional for leaderboard):
 - `points-index`: PK=`points`, SK=`teamName` (for global ranking)

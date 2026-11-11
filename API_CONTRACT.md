@@ -801,8 +801,8 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 
 #### GET /parcours
 
-**Status**: ✅ Implemented (2025-11-16)
-**Purpose**: List all parcours
+**Status**: ✅ Implemented (2025-11-16, updated 2026-11-11)
+**Purpose**: List all parcours (tournées), as seen by any player
 **Authentication**: Required
 
 **Response** (200):
@@ -814,9 +814,9 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
       "parcoursNumber": number,
       "title": "string",
       "description": "string",
-      "pdfUrl": "string (S3 URL)",
-      "requiredEnigmaIds": ["uuid", "uuid", ...],
+      "requiredEnigmaIds": ["uuid", ...],
       "requiredEnigmasCount": number,
+      "hasPassword": boolean,
       "isActive": boolean,
       "createdAt": "ISO 8601 timestamp",
       "updatedAt": "ISO 8601 timestamp"
@@ -826,10 +826,15 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 }
 ```
 
+**Notes**:
+- `pdfUrl` is never returned here: the PDF address is enough to open it. Only `GET /progress/parcours` returns it, and only for parcours unlocked for the team.
+- `correctPassword` is never returned to players. `hasPassword` tells whether the end-of-parcours password has been set (a parcours without one cannot be validated yet).
+- API Gateway caches this response for 5 minutes.
+
 #### GET /parcours/{parcoursId}
 
-**Status**: ✅ Implemented (2025-11-16)
-**Purpose**: Get detailed parcours information
+**Status**: ✅ Implemented (2025-11-16, updated 2026-11-11)
+**Purpose**: Get one parcours (metadata only)
 **Authentication**: Required
 
 **Response** (200):
@@ -839,33 +844,55 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
     "parcoursId": "uuid",
     "parcoursNumber": number,
     "title": "string",
-    "pdfUrl": "string",
+    "description": "string",
     "requiredEnigmaIds": ["uuid", ...],
     "requiredEnigmasCount": number,
-    "isActive": boolean
+    "hasPassword": boolean,
+    "isActive": boolean,
+    "createdAt": "ISO 8601 timestamp",
+    "updatedAt": "ISO 8601 timestamp"
   }
 }
 ```
+
+**Notes**:
+- Same fields as `GET /parcours`: no `pdfUrl`, no `correctPassword`, `hasPassword` instead.
 
 **Errors**:
 - `404`: Parcours not found
 
 #### GET /parcours/{parcoursId}/access
 
-**Status**: ✅ Implemented (2025-11-16, updated 2025-11-16)
-**Purpose**: Check if team has access to parcours
+**Status**: ✅ Implemented (2025-11-16, updated 2026-11-11)
+**Purpose**: Check whether the user's team has unlocked a parcours
 **Authentication**: Required
 
-**Response** (200) - Has Access:
+**Response** (200) - Unlocked:
 ```json
 {
   "hasAccess": true,
-  "unlockedAt": "ISO 8601 timestamp",
-  "unlockedBy": []
+  "unlockedAt": "ISO 8601 timestamp | null",
+  "unlockedBy": ["enigmaId", ...],
+  "requiredEnigmas": [
+    { "enigmaId": "uuid", "enigmaNumber": number, "title": "string", "solved": true }
+  ]
 }
 ```
 
-**Response** (200) - No Access:
+**Response** (200) - Locked:
+```json
+{
+  "hasAccess": false,
+  "unlockedAt": null,
+  "unlockedBy": [],
+  "requiredEnigmas": [
+    { "enigmaId": "uuid", "enigmaNumber": number, "title": "string", "solved": boolean }
+  ],
+  "reason": "Required enigmas not solved"
+}
+```
+
+**Response** (200) - Not in a team:
 ```json
 {
   "hasAccess": false,
@@ -873,54 +900,71 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 }
 ```
 
-**Notes**:
-- As of 2025-11-16: All parcours are accessible without conditions
-- No enigmas need to be solved to access parcours
-- Only requirement is being in a team
-
-#### POST /parcours/{parcoursId}/complete
-
-**Status**: ✅ Implemented (2025-11-22)
-**Purpose**: Mark a parcours as completed (frontend-initiated)
-**Authentication**: Required
-
-**Response** (200):
-```json
-{
-  "message": "Parcours marked as completed",
-  "parcoursId": "uuid",
-  "completedAt": "ISO 8601 timestamp"
-}
-```
-
 **Errors**:
-- `400`: Missing parcoursId
-- `403`: User must be in a team
-- `404`: Parcours not found
+- `400`: Missing parcoursId parameter
+- `401`: Unauthorized
+- `404`: Parcours not found, or not published (`isActive: false`)
 
 **Notes**:
-- This endpoint is called by the frontend when a user marks a parcours as complete
-- Creates or updates the team's parcours access record with `completed: true`
-- Can be called multiple times (idempotent)
+- Access is recomputed on every read from the team's progress: a parcours is unlocked when the team has solved **all** the required enigmas that still exist. An empty `requiredEnigmaIds` means the parcours is open to every team. See DATA_MODELS.md, "Parcours Unlocking".
+- `requiredEnigmas` is sorted by `enigmaNumber`. The title of a required enigma that is not published yet is replaced by `"Intrigue à venir"`.
+- `unlockedAt` / `unlockedBy` come from the TeamParcoursAccess record, when one exists (written when an enigma attempt unlocks the parcours). They only date the unlock; they do not grant it.
 
-#### POST /parcours (Admin Only)
+#### POST /parcours/{parcoursId}/attempt
 
-**Status**: ✅ Implemented (2025-11-16)
-**Purpose**: Create new parcours
-**Authentication**: Required (admin only)
+**Status**: ✅ Implemented (2026-11-11)
+**Purpose**: Validate a parcours with the password the team finds at its end (replaces `POST/DELETE /parcours/{parcoursId}/complete`)
+**Authentication**: Required (team member)
 
 **Request**:
 ```json
 {
-  "parcoursNumber": number,
-  "title": "string",
-  "description": "string",
-  "pdfUrl": "string (S3 URL)",
-  "requiredEnigmaIds": ["uuid", ...],
-  "requiredEnigmasCount": number,
-  "isActive": boolean
+  "password": "string"
 }
 ```
+
+**Response** (200) - Correct password:
+```json
+{
+  "success": true,
+  "message": "Bravo ! Tournée validée.",
+  "alreadyCompleted": false
+}
+```
+`alreadyCompleted` is `true` when the team had already validated this parcours; nothing is rewritten then (the first `completedAt` is kept).
+
+**Response** (200) - Wrong password:
+```json
+{
+  "success": false,
+  "message": "string"
+}
+```
+A wrong password is a 200, as for `POST /progress/attempt`.
+
+**Errors**:
+- `400`: Missing parcoursId, or missing/empty `password`
+- `401`: Unauthorized
+- `403`: `User must be in a team`
+- `403`: `Parcours locked` (the parcours is not published, or not unlocked for the team)
+- `404`: Parcours not found
+- `409`: The parcours has no password yet (`hasPassword: false`), it cannot be validated
+
+**Notes**:
+- Password matching is the same as for enigmas (`backend/src/utils/password.ts`): case, accents, ligatures (œ, æ), whitespace and punctuation are ignored.
+- Unlimited attempts. Every attempt (right or wrong) is logged in the `ParcoursAttempts` table, separate from the enigma `PasswordAttempts` table so that enigma statistics (difficulty, timeline, attempts per enigma) are unaffected. Every attempt also updates the team's `lastActivityAt`.
+- A correct password sets `completed: true` and `completedAt` on the team's TeamParcoursAccess record, creating it if missing.
+- Parcours give no points. Completion is only counted in `GET /teams/stats` (`parcoursCompleted`).
+- No payment check (unlike `POST /progress/attempt`): an unpaid team only sees parcours in preview mode.
+
+#### ~~POST /parcours/{parcoursId}/complete~~, ~~DELETE /parcours/{parcoursId}/complete~~
+
+**Status**: ❌ Removed (2026-11-11)
+Replaced by `POST /parcours/{parcoursId}/attempt`. A player can no longer mark or unmark a parcours as completed by hand. Parcours already marked as completed stay completed.
+
+#### POST /parcours, PUT /parcours/{parcoursId}, DELETE /parcours/{parcoursId} (Admin Only)
+
+Same handlers as `POST /admin/parcours`, `PUT /admin/parcours/{parcoursId}` and `DELETE /admin/parcours/{parcoursId}`: see "Admin Parcours Management".
 
 ---
 
@@ -993,7 +1037,7 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 - Passwords are matched case-insensitively
 - All attempts are logged for admin review
 - Team's `solvedEnigmasCount` increments on correct answer
-- Parcours auto-unlock when requirements met (as of 2025-11-16, all parcours are unlocked by default)
+- A correct answer may unlock parcours: their TeamParcoursAccess record is written to date the unlock (access itself is recomputed on every read, see `GET /progress/parcours`)
 - **As of 2025-11-16**: Points system removed - no points awarded or tracked
 
 #### GET /progress
@@ -1026,41 +1070,50 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 
 #### GET /progress/parcours
 
-**Status**: ✅ Implemented (2025-11-16, updated 2025-11-22)
-**Purpose**: Get team's accessible parcours with completion status
+**Status**: ✅ Implemented (2025-11-16, updated 2026-11-11)
+**Purpose**: All published parcours, with their state for the user's team
 **Authentication**: Required
 
 **Response** (200):
 ```json
 {
   "teamId": "uuid",
-  "accessibleParcours": [
+  "parcours": [
     {
       "parcoursId": "uuid",
       "parcoursNumber": number,
       "title": "string",
-      "pdfUrl": "string",
+      "description": "string",
+      "pdfUrl": "string (only when isUnlocked)",
       "requiredEnigmaIds": ["uuid", ...],
-      "unlockedAt": "ISO 8601 timestamp",
-      "unlockedBy": [],
+      "requiredEnigmasCount": number,
+      "hasPassword": boolean,
+      "isActive": true,
+      "isUnlocked": boolean,
+      "requiredEnigmas": [
+        { "enigmaId": "uuid", "enigmaNumber": number, "title": "string", "solved": boolean }
+      ],
+      "unlockedAt": "ISO 8601 timestamp | null",
+      "unlockedBy": ["enigmaId", ...],
       "completed": boolean,
       "completedAt": "ISO 8601 timestamp | null"
     }
   ],
+  "accessibleParcours": ["same objects, only those with isUnlocked: true"],
   "count": number
 }
 ```
 
 **Errors**:
-- `403`: User must be in a team
+- `401`: Unauthorized
+- `403`: User is not in a team
 
 **Notes**:
-- As of 2025-11-16: Returns ALL active parcours
-- No lock conditions - all parcours immediately accessible
-- `unlockedBy` is always empty array
-- **As of 2025-11-22**: Includes `completed` status set by frontend via `POST /parcours/{parcoursId}/complete`
-- `completed` defaults to `false` if never marked
-- `completedAt` is `null` until parcours is marked as complete
+- `parcours` lists every published parcours, sorted by `parcoursNumber`, locked or not. `accessibleParcours` keeps only the unlocked ones (for older clients); `count` is its length.
+- `isUnlocked` is recomputed on every read: true when the team has solved all the required enigmas that still exist (always true when `requiredEnigmaIds` is empty).
+- `requiredEnigmas` details those enigmas, sorted by `enigmaNumber`; an unpublished one is titled `"Intrigue à venir"`.
+- `pdfUrl` is present only when `isUnlocked` is true. `correctPassword` is never returned; `hasPassword` says whether the parcours can be validated yet.
+- `completed` / `completedAt` are set when the team enters the end-of-parcours password (`POST /parcours/{parcoursId}/attempt`); `completed` is `false` and `completedAt` `null` until then.
 
 ---
 
@@ -1840,8 +1893,8 @@ Where:
 
 ##### GET /admin/parcours
 
-**Status**: ✅ Implemented (2025-11-22)
-**Purpose**: List all parcours with statistics
+**Status**: ✅ Implemented (2025-11-22, updated 2026-11-11)
+**Purpose**: List all parcours (including unpublished ones) with statistics
 **Authentication**: Required (admin only)
 
 **Response** (200):
@@ -1856,6 +1909,7 @@ Where:
       "pdfUrl": "string",
       "requiredEnigmaIds": ["uuid", ...],
       "requiredEnigmasCount": number,
+      "correctPassword": "string (may be empty)",
       "isActive": boolean,
       "teamsUnlocked": number
     }
@@ -1863,6 +1917,71 @@ Where:
   "count": number
 }
 ```
+
+**Notes**:
+- The admin gets `correctPassword` (players never do). An empty or missing value means the parcours cannot be validated yet; the admin list shows "⚠ sans mot de passe".
+- `teamsUnlocked` counts TeamParcoursAccess records, test teams excluded.
+
+##### POST /admin/parcours
+
+**Status**: ✅ Implemented (2026-11-11)
+**Purpose**: Create a parcours
+**Authentication**: Required (admin only)
+
+**Request**:
+```json
+{
+  "title": "string (required)",
+  "pdfUrl": "string (required, S3 URL from /admin/upload/generate-url)",
+  "description": "string (optional)",
+  "requiredEnigmaIds": ["uuid", ...],
+  "correctPassword": "string (optional)",
+  "parcoursNumber": number,
+  "isActive": boolean
+}
+```
+
+- `parcoursNumber` is optional: when absent, the parcours takes `max(parcoursNumber) + 1` (1 for the first one). When present it must be an integer ≥ 1.
+- `requiredEnigmaIds` is optional, default `[]` (open to every team). Otherwise the parcours opens once the team has solved all of them. `requiredEnigmasCount` is derived from it and never read from the request.
+- `correctPassword` is optional, trimmed, default `""` (no password: teams cannot validate the parcours yet).
+- `isActive` defaults to `true`.
+
+**Response** (200): `{ "message": "Parcours created successfully", "parcours": { ...all fields, correctPassword included } }`
+
+**Errors**:
+- `400`: `Champs obligatoires : title, pdfUrl`
+- `400`: `requiredEnigmaIds doit être une liste d'identifiants d'intrigues`
+- `400`: `Intrigues inconnues : id1, id2`
+- `400`: `parcoursNumber doit être un entier positif`
+- `400`: `correctPassword doit être une chaîne`
+- `401`, `403`: not authenticated, not an admin
+
+##### PUT /admin/parcours/{parcoursId}
+
+**Status**: ✅ Implemented (2026-11-11)
+**Purpose**: Update a parcours (only the fields sent are changed)
+**Authentication**: Required (admin only)
+
+**Request** (all optional): `title`, `description`, `pdfUrl`, `parcoursNumber`, `requiredEnigmaIds`, `correctPassword`, `isActive`.
+
+- `parcoursNumber`: integer ≥ 1 (used by drag-and-drop reordering).
+- `requiredEnigmaIds`: replaces the list; `requiredEnigmasCount` follows. An id that no longer exists but was already in the stored list (a deleted enigma) is silently dropped; only an unknown **new** id is refused.
+- `correctPassword`: trimmed; `""` removes the password.
+
+**Response** (200): `{ "message": "Parcours updated successfully", "parcours": { ...updated parcours } }`
+
+**Errors**:
+- `400`: Missing parcoursId, `Intrigues inconnues : …`, `requiredEnigmaIds doit être une liste d'identifiants d'intrigues`, `parcoursNumber doit être un entier positif`, `correctPassword doit être une chaîne`
+- `401`, `403`: not authenticated, not an admin
+- `404`: Parcours not found
+
+##### DELETE /admin/parcours/{parcoursId}
+
+**Status**: ✅ Implemented
+**Purpose**: Delete a parcours
+**Authentication**: Required (admin only)
+
+**Errors**: `401`, `403`, `404` (Parcours not found)
 
 #### Admin Attempts Monitoring
 
@@ -2444,6 +2563,8 @@ L'opération est tracée dans le journal du plateau.
 
 | Date | Endpoint | Change | Type | Impact |
 |------|----------|--------|------|--------|
+| 2026-11-11 | POST /parcours/{parcoursId}/attempt, POST et DELETE /parcours/{parcoursId}/complete, GET /parcours, GET /parcours/{id}, GET /progress/parcours, GET/POST/PUT /admin/parcours | Tournées validées par un mot de passe de fin de tournée (`correctPassword`, saisi dans l'admin, comparé comme celui des intrigues) ; nouvelle route `POST /parcours/{id}/attempt` ; `hasPassword` dans les réponses joueurs ; tentatives journalisées dans la nouvelle table `ParcoursAttempts` | Feature + **Breaking** | **Breaking** : `POST` et `DELETE /parcours/{id}/complete` sont supprimés, le joueur ne peut plus marquer ni démarquer une tournée à la main (les tournées déjà réalisées le restent). `correctPassword` n'est jamais renvoyé aux joueurs |
+| 2026-11-11 | GET /parcours, GET /parcours/{id}, GET /parcours/{id}/access, GET /progress/parcours, POST/PUT /admin/parcours | Tournées débloquées par des intrigues : toutes les intrigues requises encore existantes, recalculé à chaque lecture ; `requiredEnigmaIds` facultatif à la création (vide = libre) ; numéro automatique ; le PDF n'est plus donné que pour une tournée ouverte ; une intrigue requise non publiée est titrée « Intrigue à venir » ; la mise à jour retire sans erreur les intrigues supprimées | Feature + **Breaking** | **Breaking** : `pdfUrl` disparaît de `GET /parcours` et `GET /parcours/{id}` ; `GET /progress/parcours` liste toutes les tournées dans `parcours`, avec `isUnlocked` et `requiredEnigmas` ; `GET /parcours/{id}/access` renvoie 404 pour une tournée non publiée |
 | 2026-11-11 | GET /hints/{enigmaId}, POST /hints/{enigmaId}/request, POST /enigmas, PUT /enigmas/{id}, PUT /admin/enigmas/{id} | Ouverture des indices par énigme : deux champs sur l'énigme, `hintsEnabled` (booléen, fermé par défaut) et `hintsAvailableFrom` (AAAA-MM-JJ, jour de Paris, `null` ou `""` pour l'effacer). `GET /hints` renvoie `hintsAvailable` ; la demande d'indice répond 403 tant que c'est fermé | Feature + Breaking | **Breaking** : une énigme sans réglage n'offre plus d'indice. Les énigmes existantes doivent être ouvertes depuis l'admin. Une date mal formée est refusée en 400 |
 | 2026-09-12 | GET /oie, POST /oie/answer, POST /oie/roll, POST /oie/prompter | Énigme du jeu de l'oie : plateau partagé par toutes les équipes (édition 2027) | Feature | Une des vingt énigmes se joue sur un plateau commun ; arriver en case 63 marque l'énigme résolue dans `TeamEnigmaProgress`, donc le classement existant la compte |
 | 2026-09-12 | GET/PUT /admin/oie/board, GET /admin/oie/teams, POST /admin/oie/teams/{teamId}/reset | Administration du plateau : 63 questions, quota de lancers, état des équipes | Feature | Le quota `rollsPerDay` est modifiable à tout moment, sans déploiement |
