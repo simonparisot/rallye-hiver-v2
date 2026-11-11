@@ -5,6 +5,7 @@ import { accorder, useEdition } from '../../editions';
 import { getTeamStats } from '../../services/gameService';
 import { teamAPI, paymentAPI, userAPI } from '../../services/api';
 import PendingRequests from '../user/PendingRequests';
+import { BoutonReglesDuJeu } from '../ReglesDuJeu';
 import './StatsPanel.css';
 
 interface StatsPanelProps {
@@ -110,6 +111,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
       <div data-testid="stats-panel" className="stats-panel">
         <div className="panel-header">
           <h2>Tableau de bord</h2>
+          <BoutonReglesDuJeu />
         </div>
         <div className="panel-content">
           <div className="stats-full">
@@ -201,6 +203,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ isCompact, hideStats = false })
     <div data-testid="stats-panel" className={`stats-panel ${isCompact ? 'panel-compact' : ''}`}>
       <div className="panel-header">
         <h2>{!user?.teamId ? `Bienvenue, ${user?.displayName} !` : 'Tableau de bord'}</h2>
+        {!isCompact && <BoutonReglesDuJeu />}
       </div>
       <div className="panel-content">
         {/* Compact View */}

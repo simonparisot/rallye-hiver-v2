@@ -11,7 +11,9 @@
  * Ce qui est examiné : les fichiers .tsx et .ts de src/, commentaires retirés,
  * ainsi que les attributs qui ne s'affichent pas (className, data-testid, key,
  * htmlFor, id…). Un mot collé à une lettre, un tiret ou un souligné est un
- * identifiant (onAllerTroupe, souffleur-icone) et n'est pas signalé.
+ * identifiant (onAllerTroupe, souffleur-icone) et n'est pas signalé, de même
+ * qu'un mot précédé d'un point : c'est un accès de propriété
+ * (`v.souffleur.le`, la clé du vocabulaire), pas un texte affiché.
  *
  * Exclus : src/oie/ (inaccessible avant le lancement), src/admin/ (réservé
  * aux organisateurs), src/editions/ (c'est là que vit le vocabulaire), les
@@ -41,7 +43,7 @@ const MOTS = [
   'th[ée][âa]tral\\w*', 'rideaux?', 'sc[èe]nes?', 'actes?', 'r[ée]p[ée]titions?',
   'coulisses?', 'loges?', 'spectacles?', 'masques?', 'com[ée]diens?', 'acteurs?',
 ];
-const motif = new RegExp(`(?<![\\p{L}\\-_])(${MOTS.join('|')})(?![\\p{L}\\-_])`, 'giu');
+const motif = new RegExp(`(?<![\\p{L}\\-_.])(${MOTS.join('|')})(?![\\p{L}\\-_])`, 'giu');
 
 function parcourir(dossier) {
   return fs.readdirSync(dossier, { withFileTypes: true }).flatMap((e) =>
