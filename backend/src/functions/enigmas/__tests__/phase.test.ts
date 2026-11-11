@@ -7,11 +7,14 @@ jest.mock('../../../utils/dynamodb', () => ({
   getTeamById: jest.fn(),
   getAllEnigmas: jest.fn(),
   getEnigmaById: jest.fn(),
+  dynamoDb: { send: jest.fn() },
+  ENIGMA_DIFFICULTY_CACHE_TABLE: 'cache-difficulte',
 }));
 
 import * as db from '../../../utils/dynamodb';
 import { handler as lister } from '../list';
 import { handler as lire } from '../get';
+import { handler as parDifficulte } from '../byDifficulty';
 
 const AVANT = { isStarted: false, launchAt: '2099-01-01T00:00:00.000Z' };
 const LANCE = { isStarted: true };
@@ -84,5 +87,34 @@ describe('GET /enigmas/{id}', () => {
 
     expect(reponse.statusCode).toBe(attendu);
     if (attendu === 200) expect(corps(reponse).enigma).not.toHaveProperty('correctPassword');
+  });
+});
+
+describe('GET /enigmas/by-difficulty', () => {
+  test('avant le lancement : liste vide, sans lire le cache qui porte les titres des vraies intrigues', async () => {
+    (db.getGameStatus as jest.Mock).mockResolvedValue(AVANT);
+
+    const reponse = await parDifficulte(evenement());
+
+    expect(reponse.statusCode).toBe(200);
+    expect(corps(reponse)).toMatchObject({ enigmas: [], phase: 'avant-lancement' });
+    expect(db.dynamoDb.send).not.toHaveBeenCalled();
+  });
+
+  test('après le lancement : le cache est servi', async () => {
+    (db.getGameStatus as jest.Mock).mockResolvedValue(LANCE);
+    (db.dynamoDb.send as jest.Mock).mockResolvedValue({
+      Item: {
+        data: [{ enigmaId: 'e1', enigmaNumber: 1, title: 'La Tour', difficulty: 3, lastCalculated: new Date().toISOString() }],
+        cachedAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 3600_000).toISOString(),
+        ttl: Math.floor(Date.now() / 1000) + 3600,
+      },
+    });
+
+    const reponse = corps(await parDifficulte(evenement()));
+
+    expect(db.dynamoDb.send).toHaveBeenCalled();
+    expect(reponse.enigmas.map((e: any) => e.enigmaId)).toEqual(['e1']);
   });
 });

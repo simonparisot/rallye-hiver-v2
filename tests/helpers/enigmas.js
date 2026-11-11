@@ -14,7 +14,7 @@ export async function enigmaWithSolution() {
   }));
 
   const utilisable = (enigmas.Items ?? [])
-    .filter((e) => e.isActive && e.correctPassword)
+    .filter((e) => e.isActive && e.correctPassword && !e.isPreliminary)
     .sort((a, b) => a.enigmaNumber - b.enigmaNumber)[0];
 
   if (!utilisable) {
@@ -46,7 +46,7 @@ export async function enigmaWithHints() {
   }));
 
   const utilisable = (enigmas.Items ?? [])
-    .filter((e) => e.isActive && Array.isArray(e.hints) && e.hints.length > 0)
+    .filter((e) => e.isActive && Array.isArray(e.hints) && e.hints.length > 0 && !e.isPreliminary)
     .sort((a, b) => a.enigmaNumber - b.enigmaNumber)[0];
 
   if (!utilisable) return null;
@@ -72,7 +72,7 @@ export async function enigmaWithoutHints() {
   }));
 
   const utilisable = (enigmas.Items ?? [])
-    .filter((e) => e.isActive && (!Array.isArray(e.hints) || e.hints.length === 0))
+    .filter((e) => e.isActive && (!Array.isArray(e.hints) || e.hints.length === 0) && !e.isPreliminary)
     .sort((a, b) => a.enigmaNumber - b.enigmaNumber)[0];
 
   if (!utilisable) return null;

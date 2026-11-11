@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { oublierThemeMemorise } from '../editions';
 import {
   User,
   Team,
@@ -92,6 +93,7 @@ api.interceptors.response.use(
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('idToken');
+      oublierThemeMemorise(); // la mémoire du thème suit les jetons
       window.location.href = '/'; // Redirect to login
       return Promise.reject(error);
     }
@@ -122,6 +124,7 @@ api.interceptors.response.use(
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('idToken');
+      oublierThemeMemorise(); // la mémoire du thème suit les jetons
       window.location.href = '/'; // Redirect to login
       return Promise.reject(refreshError);
     } finally {

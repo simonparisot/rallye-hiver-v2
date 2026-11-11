@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { jwtDecode } from 'jwt-decode';
 import { GameStatus, User } from '../types';
 import { authAPI } from '../services/api';
-import { setThemeOfficiel } from '../editions';
+import { oublierThemeMemorise, setThemeOfficiel } from '../editions';
 
 interface AuthContextType {
   user: User | null;
@@ -94,6 +94,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('idToken');
+      oublierThemeMemorise(); // la mémoire du thème suit les jetons
     } finally {
       setLoading(false);
     }
@@ -128,6 +129,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // du statut. Après le lancement, il est à tous et reste.
     const statut = queryClient.getQueryData<GameStatus>(['gameStatus']);
     if (statut?.phase !== 'lance') setThemeOfficiel(false);
+    oublierThemeMemorise();
 
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');

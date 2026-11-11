@@ -39,6 +39,8 @@ describe('Cloisonnement du back-office', () => {
     '/admin/stats/password-attempts-timeline',
     '/admin/hints/requests',
     '/admin/auth/verify',
+    // Phase du jeu (2026-11-11)
+    '/admin/game/status',
   ];
 
   test('le compte utilisé pour ce test n\'est pas administrateur', async () => {
@@ -68,5 +70,20 @@ describe('Cloisonnement du back-office', () => {
     const reponse = await participant.post('/admin/game/start', {});
 
     expect([401, 403]).toContain(reponse.status);
+  });
+
+  test('un jeton de participant ne permet pas de revenir en avant-lancement', async () => {
+    // Hors production : un échec du cloisonnement refermerait le rallye.
+    if (currentEnvironment().name === 'prod') return;
+
+    const reponse = await participant.post('/admin/game/reset', {});
+
+    expect(reponse.status).toBe(403);
+  });
+
+  test('le statut du jeu côté administration est refusé à un participant', async () => {
+    const reponse = await participant.get('/admin/game/status');
+
+    expect(reponse.status).toBe(403);
   });
 });

@@ -54,15 +54,33 @@ function transformParcoursWithAccess(
 }
 
 /**
+ * Trie les intrigues par numéro et les transforme. Les préliminaires sont
+ * renumérotées 1, 2… selon leur rang : leur vrai numéro (23, 24…) trahirait
+ * le nombre d'intrigues du rallye. L'administration garde le vrai numéro.
+ */
+function numeroterPreliminaires(
+  enigmas: BackendEnigma[],
+  transformer: (enigma: BackendEnigma) => Enigma
+): Enigma[] {
+  let rang = 0;
+  return [...enigmas]
+    .sort((a, b) => a.enigmaNumber - b.enigmaNumber)
+    .map((enigma) => {
+      const vue = transformer(enigma);
+      return enigma.isPreliminary ? { ...vue, order: ++rang } : vue;
+    });
+}
+
+/**
  * Get all enigmas (preview mode without progress)
  */
 export async function getEnigmasPreview(): Promise<Enigma[]> {
   const enigmasResponse = await enigmaAPI.listEnigmas();
 
-  return enigmasResponse.enigmas
-    .filter(e => e.isActive)
-    .map(enigma => transformEnigmaWithProgress(enigma, undefined))
-    .sort((a, b) => a.order - b.order);
+  return numeroterPreliminaires(
+    enigmasResponse.enigmas.filter(e => e.isActive),
+    (enigma) => transformEnigmaWithProgress(enigma, undefined)
+  );
 }
 
 /**
@@ -78,10 +96,10 @@ export async function getEnigmasWithProgress(): Promise<Enigma[]> {
     progressResponse.progress.map(p => [p.enigmaId, p])
   );
 
-  return enigmasResponse.enigmas
-    .filter(e => e.isActive)
-    .map(enigma => transformEnigmaWithProgress(enigma, progressMap.get(enigma.enigmaId)))
-    .sort((a, b) => a.order - b.order);
+  return numeroterPreliminaires(
+    enigmasResponse.enigmas.filter(e => e.isActive),
+    (enigma) => transformEnigmaWithProgress(enigma, progressMap.get(enigma.enigmaId))
+  );
 }
 
 /**

@@ -3,6 +3,7 @@ import { success, error } from '../../utils/response';
 import { dynamoDb, ENIGMA_DIFFICULTY_CACHE_TABLE } from '../../utils/dynamodb';
 import { GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { calculateAllEnigmaDifficulties, EnigmaDifficultyData } from '../../utils/difficultyCalculator';
+import { phasePourUtilisateur } from '../../utils/gamePhase';
 
 const CACHE_KEY = 'difficulty-cache';
 const CACHE_TTL_HOURS = 24;
@@ -17,6 +18,13 @@ const CACHE_TTL_HOURS = 24;
  */
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
+    // Avant le lancement, aucune vraie intrigue n'existe pour les joueurs : le
+    // cache porte leurs titres, il n'est même pas lu (utils/gamePhase).
+    const phase = await phasePourUtilisateur(event.requestContext?.authorizer?.userId);
+    if (phase !== 'lance') {
+      return success({ enigmas: [], fromCache: false, calculatedAt: null, phase });
+    }
+
     // Check cache first
     const cachedData = await getCachedDifficulties();
 

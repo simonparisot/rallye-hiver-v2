@@ -65,7 +65,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         },
       })
     );
-    const totalAttempts = attemptsResult.Items?.length || 0;
+    // Les tentatives sur les préliminaires ne comptent pas (utils/gamePhase).
+    const totalAttempts = sansPreliminaires(attemptsResult.Items || [], preliminaires).length;
 
     // Get last activity timestamp (most recent attempt)
     const lastActivityAt =

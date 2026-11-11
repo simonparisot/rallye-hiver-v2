@@ -680,8 +680,17 @@ Parcours ─── (1:N) TeamParcoursAccess
   `Team.themeUnlockedAt` est posé une fois. Rien d'autre : ni
   `solvedEnigmasCount`, ni `lastActivityAt`, ni déblocage de tournée.
 - **Ne comptent nulle part** : `/teams/stats` (total, résolues, tentatives,
-  classement), `totalSolved` de `/progress`, difficulté, grille de
-  progression, vue d'ensemble et chronologie admin, comptes d'équipes admin.
+  classement), `totalSolved` de `/progress`, difficulté (et
+  `/enigmas/by-difficulty`, vide avant le lancement), grille de progression,
+  vue d'ensemble et chronologie admin, intrigues résolues et tentatives par
+  équipe (`/admin/teams`, `/admin/teams/{id}`), progression d'équipe admin
+  (`/admin/teams/{id}/progress`), tentatives par joueur (`/admin/users/all`),
+  classement (`solvedEnigmasCount` jamais incrémenté).
+- **Exception assumée, le journal** : les tentatives restent dans
+  `PasswordAttemptLog` et s'affichent dans les journaux admin
+  (`/admin/attempts`, par équipe, par intrigue), et `GET /admin/enigmas` garde
+  les statistiques propres à chaque préliminaire, signalée par son badge. Ce
+  sont des relevés, pas des scores.
 - **Tournées** : une préliminaire ne peut pas figurer dans `requiredEnigmaIds`
   (400), et une intrigue requise par une tournée ne peut pas devenir
   préliminaire (400).

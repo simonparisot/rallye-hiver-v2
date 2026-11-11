@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { getTeamById, getAllTeamProgress, getEnigmaById } from '../../../utils/dynamodb';
+import { getTeamById, getAllTeamProgress, getEnigmaById, getAllEnigmasForAdmin } from '../../../utils/dynamodb';
+import { idsPreliminaires, sansPreliminaires } from '../../../utils/gamePhase';
 import { requireAdmin } from '../../../utils/adminAuth';
 import { success, error } from '../../../utils/response';
 
@@ -31,7 +32,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     // Get all team progress
-    const progressResult = await getAllTeamProgress(teamId);
+    // Les préliminaires ne comptent pas dans la progression (utils/gamePhase).
+    const preliminaires = idsPreliminaires(await getAllEnigmasForAdmin());
+    const progressResult = sansPreliminaires(await getAllTeamProgress(teamId), preliminaires);
 
     // Enhance progress with enigma details
     const enhancedProgress = await Promise.all(

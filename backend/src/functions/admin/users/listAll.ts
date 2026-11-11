@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { dynamoDb, USERS_TABLE, TEAMS_TABLE, PASSWORD_ATTEMPTS_TABLE } from '../../../utils/dynamodb';
+import { dynamoDb, USERS_TABLE, TEAMS_TABLE, PASSWORD_ATTEMPTS_TABLE, getAllEnigmasForAdmin } from '../../../utils/dynamodb';
+import { idsPreliminaires, sansPreliminaires } from '../../../utils/gamePhase';
 import { isTestTeam, excludeTestTeams, excludeTestTeamRows } from '../../../utils/testTeams';
 import { ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { requireAdmin } from '../../../utils/adminAuth';
@@ -69,11 +70,13 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const attemptsResult = await dynamoDb.send(
       new ScanCommand({
         TableName: PASSWORD_ATTEMPTS_TABLE,
-        ProjectionExpression: 'attemptedBy, teamId',
+        ProjectionExpression: 'attemptedBy, teamId, enigmaId',
       })
     );
 
-    const attempts = excludeTestTeamRows(attemptsResult.Items || [], testTeamIds);
+    // Les tentatives sur les préliminaires ne comptent pas (utils/gamePhase).
+    const preliminaires = idsPreliminaires(await getAllEnigmasForAdmin());
+    const attempts = sansPreliminaires(excludeTestTeamRows(attemptsResult.Items || [], testTeamIds), preliminaires);
     const attemptsCountMap = new Map<string, number>();
 
     attempts.forEach((attempt: any) => {

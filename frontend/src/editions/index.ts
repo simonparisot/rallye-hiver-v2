@@ -77,12 +77,35 @@ function lireInterrupteurProvisoire(): boolean {
  * elle, une équipe qui a débloqué le thème verrait l'habillage neutre à chaque
  * rechargement, le temps que GET /game/status réponde. Elle n'est écrite que
  * par setThemeOfficiel ; le serveur la corrige dès sa réponse.
+ *
+ * Elle est attachée à l'utilisateur : on y range l'identifiant (`sub`) du jeton
+ * d'accès présent au moment du verdict, et elle ne s'applique que si un jeton
+ * du même utilisateur est encore là. Un visiteur ou un autre compte sur le
+ * même navigateur ne voit donc jamais le thème officiel par elle. Elle est
+ * effacée partout où les jetons sont purgés (oublierThemeMemorise).
  */
 const CLE_MEMOIRE = 'rallye-theme-officiel';
 
+/** `sub` du jeton d'accès présent, sans vérifier la signature (ce n'est qu'un repère d'affichage). */
+function sujetDuJeton(): string | null {
+  try {
+    const jeton = window.localStorage.getItem('accessToken');
+    if (!jeton) return null;
+    const charge = jeton.split('.')[1];
+    if (!charge) return null;
+    const json = atob(charge.replace(/-/g, '+').replace(/_/g, '/'));
+    const sub = JSON.parse(json)?.sub;
+    return typeof sub === 'string' && sub !== '' ? sub : null;
+  } catch {
+    return null;
+  }
+}
+
 function lireMemoire(): boolean {
   try {
-    return window.localStorage.getItem(CLE_MEMOIRE) === 'oui';
+    const memoire = window.localStorage.getItem(CLE_MEMOIRE);
+    const sujet = sujetDuJeton();
+    return !!memoire && !!sujet && memoire === sujet;
   } catch {
     return false;
   }
@@ -90,10 +113,24 @@ function lireMemoire(): boolean {
 
 function memoriser(officiel: boolean): void {
   try {
-    if (officiel) window.localStorage.setItem(CLE_MEMOIRE, 'oui');
+    const sujet = sujetDuJeton();
+    // Sans utilisateur connecté (visiteur après le lancement), rien à retenir.
+    if (officiel && sujet) window.localStorage.setItem(CLE_MEMOIRE, sujet);
     else window.localStorage.removeItem(CLE_MEMOIRE);
   } catch {
     // Stockage bloqué : le chargement suivant attendra le serveur.
+  }
+}
+
+/**
+ * Efface la mémoire du thème. À appeler partout où les jetons sont purgés sans
+ * passer par la déconnexion (jeton refusé, rafraîchissement échoué).
+ */
+export function oublierThemeMemorise(): void {
+  try {
+    window.localStorage.removeItem(CLE_MEMOIRE);
+  } catch {
+    // Stockage bloqué : rien n'a pu être mémorisé.
   }
 }
 

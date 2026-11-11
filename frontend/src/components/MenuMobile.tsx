@@ -34,11 +34,18 @@ interface MenuMobileProps {
   onChoisirParcours: (parcours: Parcours) => void;
   onAllerTroupe: () => void;
   onMotDePasse: () => void;
+  /**
+   * Faux avant le lancement : aucun parcours n'existe encore. L'entrée ouvre
+   * alors directement la section (qui le dit), sans liste à déplier.
+   */
+  lance?: boolean;
+  onAllerParcours?: () => void;
 }
 
 const MenuMobile: React.FC<MenuMobileProps> = ({
   section, acces, enigmas, parcours, enigmeId, parcoursId,
   onChoisirEnigme, onChoisirParcours, onAllerTroupe, onMotDePasse,
+  lance = true, onAllerParcours,
 }) => {
   const { user, logout } = useAuth();
   const v = useEdition().vocabulaire;
@@ -151,18 +158,23 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
                 <button
                   type="button"
                   className={`menu-entete ${section === 'parcours' ? 'menu-entete-actif' : ''} ${!acces ? 'menu-entete-verrouille' : ''}`}
-                  aria-expanded={acces && !!deplie.parcours}
+                  aria-expanded={acces && lance ? !!deplie.parcours : undefined}
                   data-testid="menu-section-parcours"
                   disabled={!acces}
-                  onClick={() => basculer('parcours')}
+                  onClick={() => {
+                    if (lance) basculer('parcours');
+                    else { onAllerParcours?.(); setOuvert(false); }
+                  }}
                 >
                   <span className="menu-entete-titre">{v.parcours.Pluriel}</span>
-                  {acces
-                    ? <span className="menu-compte">{realises}/{parcours.length}</span>
-                    : <span className="menu-compte">{v.equipe.Singulier} {accorder(v.equipe, 'requise', 'requis')}</span>}
-                  <Chevron ouvert={!!deplie.parcours} />
+                  {!acces
+                    ? <span className="menu-compte">{v.equipe.Singulier} {accorder(v.equipe, 'requise', 'requis')}</span>
+                    : lance
+                      ? <span className="menu-compte">{realises}/{parcours.length}</span>
+                      : <span className="menu-compte">Au lancement</span>}
+                  {lance && <Chevron ouvert={!!deplie.parcours} />}
                 </button>
-                {acces && deplie.parcours && (
+                {acces && lance && deplie.parcours && (
                   <ul className="menu-liste">
                     {parcours.map((p, i) => (
                       <li key={p.id}>

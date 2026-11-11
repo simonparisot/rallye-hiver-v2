@@ -189,6 +189,8 @@ const GamePanels: React.FC = () => {
             onChoisirEnigme={choisirEnigme}
             onChoisirParcours={choisirParcours}
             onAllerTroupe={() => setSection('equipe')}
+            lance={lance}
+            onAllerParcours={() => setSection('parcours')}
             onMotDePasse={() => setModaleMdp(true)}
           />
         </div>
