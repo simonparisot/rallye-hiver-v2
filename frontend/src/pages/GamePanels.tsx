@@ -91,6 +91,17 @@ const GamePanels: React.FC = () => {
     oriente.current = true;
   }, [loading, user, team, hasAccess]);
 
+  /* Tant que rien n'est choisi, la première intrigue est ouverte : arriver sur
+     une zone de lecture vide n'apprenait rien, il fallait encore cliquer pour
+     voir un énoncé. L'intrigue du jeu de l'oie est sautée — elle mène à son
+     plateau, pas à un énoncé. Sans accès, la section est fermée et rien de
+     l'intrigue ne serait lu : on ne charge pas son PDF pour rien. */
+  useEffect(() => {
+    if (!hasAccess || enigmeId !== null) return;
+    const premiere = enigmas.find((e) => e.id !== edition.enigmeOie?.enigmaId);
+    if (premiere) setEnigmeId(premiere.id);
+  }, [hasAccess, enigmeId, enigmas]);
+
   const choisirEnigme = (e: Enigma) => { setEnigmeId(e.id); setSection('enigmes'); };
   const choisirParcours = (p: Parcours) => { setParcoursId(p.id); setSection('parcours'); };
 
