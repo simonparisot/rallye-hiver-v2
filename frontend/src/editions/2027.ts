@@ -34,6 +34,32 @@ export const edition2027: Edition = {
     intro: "Vous êtes sur le site de l'édition 2027 du Rallye d'Hiver, qui lèvera le rideau au solstice d'hiver, le lundi 21 décembre 2026 à 21 h 50, et le baissera à l'équinoxe de printemps, le samedi 20 mars 2027 à 21 h 24.",
     duration: 'du 21 décembre 2026 au 20 mars 2027',
   },
+  // Le vocabulaire du théâtre : les énigmes deviennent des intrigues, les
+  // parcours des tournées, l'équipe une troupe. Il trahit le thème, et ne
+  // s'affiche donc qu'avec lui.
+  vocabulaire: {
+    enigme: {
+      singulier: 'intrigue', pluriel: 'intrigues', Singulier: 'Intrigue', Pluriel: 'Intrigues',
+      un: 'une intrigue', ce: 'cette intrigue', le: "l'intrigue", du: "de l'intrigue",
+      les: 'les intrigues', dePluriel: "d'intrigues", feminin: true,
+    },
+    parcours: {
+      singulier: 'tournée', pluriel: 'tournées', Singulier: 'Tournée', Pluriel: 'Tournées',
+      un: 'une tournée', ce: 'cette tournée', le: 'la tournée', du: 'de la tournée',
+      les: 'les tournées', dePluriel: 'de tournées', feminin: true,
+    },
+    equipe: {
+      singulier: 'troupe', pluriel: 'troupes', Singulier: 'Troupe', Pluriel: 'Troupes',
+      un: 'une troupe', ce: 'cette troupe', le: 'la troupe', du: 'de la troupe',
+      les: 'les troupes', dePluriel: 'de troupes', feminin: true,
+    },
+    souffleur: {
+      singulier: 'souffleur', pluriel: 'souffleurs', Singulier: 'Souffleur', Pluriel: 'Souffleurs',
+      un: 'un souffleur', ce: 'ce souffleur', le: 'le souffleur', du: 'du souffleur',
+      les: 'les souffleurs', dePluriel: 'de souffleurs', feminin: false,
+    },
+    monEquipe: 'Ma troupe',
+  },
   // Essai isolé de 2027 : une des vingt intrigues se joue sur un plateau de jeu
   // de l'oie partagé. Retirer ce champ suffit à faire disparaître le plateau,
   // sa route, son entrée d'administration et son lien dans la liste.

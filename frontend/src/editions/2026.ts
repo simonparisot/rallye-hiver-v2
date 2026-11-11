@@ -1,4 +1,5 @@
 import { Edition } from './types';
+import { vocabulaireNeutre } from './vocabulaire';
 
 /**
  * Édition 2026 — thème « bande dessinée ».
@@ -23,4 +24,5 @@ export const edition2026: Edition = {
     intro: "Vous êtes sur le site de l'édition 2026 du Rallye d'Hiver, qui débutera le 21 décembre 2025 et se terminera le 20 mars 2026.",
     duration: 'du 21 décembre 2025 au 20 mars 2026',
   },
+  vocabulaire: vocabulaireNeutre,
 };

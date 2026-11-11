@@ -1,6 +1,6 @@
 import React from 'react';
 import './InfoPanel.css';
-import { useEdition } from '../../editions';
+import { accorder, majuscule, useEdition } from '../../editions';
 
 interface EditionInfoPanelProps {
   isExpanded: boolean;
@@ -9,6 +9,7 @@ interface EditionInfoPanelProps {
 
 const EditionInfoPanel: React.FC<EditionInfoPanelProps> = ({ isExpanded, isCompact }) => {
   const edition = useEdition();
+  const v = edition.vocabulaire;
   return (
     <div data-testid="edition-info-panel" className={`info-panel ${isCompact ? 'panel-compact' : ''}`}>
       <div className="panel-header">
@@ -22,19 +23,19 @@ const EditionInfoPanel: React.FC<EditionInfoPanelProps> = ({ isExpanded, isCompa
         ) : (
           <div className="info-expanded">
             <section className="info-section">
-              <h3>Les Intrigues</h3>
+              <h3>Les {v.enigme.Pluriel}</h3>
               <p>
-                Le Rallye comprend environ <strong>20 intrigues</strong> à résoudre principalement depuis chez vous. Chaque intrigue donne un mot de passe, que vous pouvez soumettre sur ce site pour vérifier si vous avez résolu l'intrigue. Les intrigues sont de niveau de difficulté variable, mais ne nécessite aucun connaissance pointue. Seulement de la logique, de l'observation, de la communication (au sein de votre équipe) et une bonne dose de "<i>Et si j'essayais ça ...</i>".
+                Le Rallye comprend environ <strong>20 {v.enigme.pluriel}</strong> à résoudre principalement depuis chez vous. Chaque {v.enigme.singulier} donne un mot de passe, que vous pouvez soumettre sur ce site pour vérifier si vous avez résolu {v.enigme.le}. Les {v.enigme.pluriel} sont de niveau de difficulté variable, mais ne nécessite aucun connaissance pointue. Seulement de la logique, de l'observation, de la communication (au sein de votre équipe) et une bonne dose de "<i>Et si j'essayais ça ...</i>".
               </p>
             </section>
 
             <section className="info-section">
-              <h3>Les Tournées</h3>
+              <h3>Les {v.parcours.Pluriel}</h3>
               <p>
                 "<i>Un esprit sain dans un corps sain</i>". Pour arriver au bout de ce Rallye, il ne vous suffira pas de faire marcher votre intellect, mais également vos jambes ! Une dizaine de lieux sont à visiter, tous situés dans Paris ou en proximité. Ils sont sélectionnés pour leur intérêt, leur rapport certain avec le thème du Rallye et peuvent être en extérieur (parc, quartier,...) ou en intérieur (musée, monument, ..).
               </p>
               <p>
-                Chaque lieu se visite suivant une <b>Tournée</b> que vous pouvez télécharger et imprimer depuis ce site. Cette tournée vous donnera le nom du lieu à visiter, guidera votre marche et sera semé de questions. De quoi vous assurer une visite originale et pleinement active du lieu en question, tout en maintenant la compétition !
+                Chaque lieu se visite suivant {accorder(v.parcours, 'une', 'un')} <b>{v.parcours.Singulier}</b> que vous pouvez télécharger et imprimer depuis ce site. {majuscule(v.parcours.ce)} vous donnera le nom du lieu à visiter, guidera votre marche et sera {accorder(v.parcours, 'semée', 'semé')} de questions. De quoi vous assurer une visite originale et pleinement active du lieu en question, tout en maintenant la compétition !
               </p>
             </section>
 
@@ -55,7 +56,7 @@ const EditionInfoPanel: React.FC<EditionInfoPanelProps> = ({ isExpanded, isCompa
             <section className="info-section">
               <h3>Déroulement</h3>
               <p>
-                Vous disposez de <strong>3 mois</strong> ({edition.copy.duration}) pour résoudre les intrigues et faire les tournées à votre rythme. Parfait pour occuper les longues soirées d'hiver et les weekends brumeux !
+                Vous disposez de <strong>3 mois</strong> ({edition.copy.duration}) pour résoudre {v.enigme.les} et faire {v.parcours.les} à votre rythme. Parfait pour occuper les longues soirées d'hiver et les weekends brumeux !
               </p>
             </section>
           </div>

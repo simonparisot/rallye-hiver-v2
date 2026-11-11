@@ -3,7 +3,8 @@ import { Edition } from './types';
 import { edition2026 } from './2026';
 import { edition2027 } from './2027';
 
-export type { Edition, Habillage } from './types';
+export type { Edition, Habillage, Nom, Vocabulaire } from './types';
+export { accorder, majuscule } from './vocabulaire';
 
 const EDITIONS: Record<string, Edition> = {
   '2026': edition2026,
@@ -29,6 +30,7 @@ const editionNeutre: Edition | null = editionOfficielle.habillageNeutre
       ...editionOfficielle,
       theme: editionOfficielle.habillageNeutre.theme,
       copy: editionOfficielle.habillageNeutre.copy,
+      vocabulaire: editionOfficielle.habillageNeutre.vocabulaire,
       enigmeOie: editionOfficielle.enigmeOie && {
         ...editionOfficielle.enigmeOie,
         titre: editionOfficielle.habillageNeutre.titreOie ?? editionOfficielle.enigmeOie.titre,
@@ -45,8 +47,8 @@ const editionNeutre: Edition | null = editionOfficielle.habillageNeutre
    --------------------------------------------------------------------------- */
 
 /*
- * INTERRUPTEUR PROVISOIRE, RÉSERVÉ AUX TESTS — à retirer ou à restreindre
- * avant le lancement.
+ * INTERRUPTEUR PROVISOIRE, RÉSERVÉ AUX TESTS — À RETIRER AVANT LE LANCEMENT
+ * DU 21 DÉCEMBRE 2026.
  *
  * `?theme=officiel` dans l'URL affiche le thème officiel pour le reste de la
  * session de l'onglet (sessionStorage) ; `?theme=neutre` revient à l'habillage
@@ -128,7 +130,7 @@ export function useThemeOfficiel(): boolean {
  * vers useEdition().
  *
  * Ce qui relève du jeu (gameId, year, dates, enigmeOie) est celui de
- * l'édition. Ce qui relève de l'habillage (theme, copy) suit l'édition
+ * l'édition. Ce qui relève de l'habillage (theme, copy, vocabulaire) suit l'édition
  * affichée : sans quoi un composant non migré afficherait le logo officiel
  * sous l'habillage neutre et trahirait le thème. Un tel composant ne se
  * redessine pas tout seul à la bascule ; App s'abonne à useEdition() et
@@ -139,6 +141,7 @@ export const edition: Edition = Object.defineProperties(
   {
     theme: { get: () => editionAffichee().theme, enumerable: true },
     copy: { get: () => editionAffichee().copy, enumerable: true },
+    vocabulaire: { get: () => editionAffichee().vocabulaire, enumerable: true },
   }
 );
 

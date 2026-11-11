@@ -5,11 +5,12 @@ import { useEdition } from '../editions';
 
 const Landing: React.FC = () => {
   const edition = useEdition();
+  const v = edition.vocabulaire;
   return (
     <div className="landing">
       <div className="landing-hero">
         <h1>{edition.label}</h1>
-        <p>Rejoignez l'aventure annuelle d'intrigues !</p>
+        <p>Rejoignez l'aventure annuelle {v.enigme.dePluriel} !</p>
         <div className="landing-buttons">
           <Link to="/login" className="btn btn-primary">
             Se connecter
@@ -31,8 +32,8 @@ const Landing: React.FC = () => {
             <p>Un paiement unique par équipe pour accéder au jeu</p>
           </div>
           <div className="info-card">
-            <h3>3. Résolvez les intrigues</h3>
-            <p>Travaillez en équipe pour résoudre toutes les intrigues</p>
+            <h3>3. Résolvez {v.enigme.les}</h3>
+            <p>Travaillez en équipe pour résoudre toutes {v.enigme.les}</p>
           </div>
         </div>
       </div>

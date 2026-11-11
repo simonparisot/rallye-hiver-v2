@@ -1,4 +1,5 @@
 import { Habillage } from './types';
+import { vocabulaireNeutre } from './vocabulaire';
 
 /**
  * Habillage neutre de l'édition 2027, direction « L'Affiche d'hiver ».
@@ -24,5 +25,7 @@ export const habillageNeutre2027: Habillage = {
     intro: "Vous êtes sur le site de l'édition 2027 du Rallye d'Hiver, qui débutera au solstice d'hiver, le lundi 21 décembre 2026 à 21 h 50, et se terminera à l'équinoxe de printemps, le samedi 20 mars 2027 à 21 h 24.",
     duration: 'du 21 décembre 2026 au 20 mars 2027',
   },
+  // Énigmes, parcours, équipe : le vocabulaire d'avant 2027.
+  vocabulaire: vocabulaireNeutre,
   titreOie: "Le jeu de l'oie",
 };

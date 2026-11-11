@@ -1,6 +1,21 @@
 /**
  * Translate backend error messages from English to French
  */
+import { accorder, editionAffichee, majuscule } from '../editions';
+
+/**
+ * Les messages qui nomment une énigme ou un parcours suivent le vocabulaire de
+ * l'habillage affiché : ils sont donc calculés à l'appel, pas figés.
+ */
+function messagesDuJeu(): Record<string, string> {
+  const v = editionAffichee().vocabulaire;
+  return {
+    'Enigma not found': `${v.enigme.Singulier} introuvable`,
+    'Parcours not found': `${v.parcours.Singulier} introuvable`,
+    'Enigma already solved': `${majuscule(v.enigme.ce)} a déjà été ${accorder(v.enigme, 'résolue', 'résolu')}`,
+    'Parcours already completed': `${majuscule(v.parcours.ce)} a déjà été ${accorder(v.parcours, 'complétée', 'complété')}`,
+  };
+}
 
 const errorTranslations: Record<string, string> = {
   // Auth errors
@@ -29,11 +44,8 @@ const errorTranslations: Record<string, string> = {
 
   // Game errors
   'Game has not started': 'Le jeu n\'a pas encore commencé',
-  'Enigma not found': 'Intrigue introuvable',
-  'Parcours not found': 'Tournée introuvable',
+  // Les messages qui nomment une énigme ou un parcours : voir messagesDuJeu().
   'Invalid answer': 'Réponse incorrecte',
-  'Enigma already solved': 'Cette intrigue a déjà été résolue',
-  'Parcours already completed': 'Cette tournée a déjà été complétée',
 
   // Payment errors
   'Payment failed': 'Le paiement a échoué',
@@ -53,14 +65,16 @@ const errorTranslations: Record<string, string> = {
  * Returns the original message if no translation is found
  */
 export function translateError(errorMessage: string): string {
+  const traductions = { ...errorTranslations, ...messagesDuJeu() };
+
   // Direct match
-  if (errorTranslations[errorMessage]) {
-    return errorTranslations[errorMessage];
+  if (traductions[errorMessage]) {
+    return traductions[errorMessage];
   }
 
   // Try to find a partial match (case-insensitive)
   const lowerMessage = errorMessage.toLowerCase();
-  for (const [key, value] of Object.entries(errorTranslations)) {
+  for (const [key, value] of Object.entries(traductions)) {
     if (lowerMessage.includes(key.toLowerCase())) {
       return value;
     }

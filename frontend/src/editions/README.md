@@ -15,6 +15,7 @@ l'ajout d'une édition ne demande plus de toucher au cœur de l'application.
 |---|---|
 | `types.ts` | Le contrat `Edition` : ce qu'une édition doit déclarer. Chaque champ y est commenté. |
 | `2026.ts`, `2027.ts` | Une instance par édition : identifiant de jeu, année, thème, dates, textes. |
+| `vocabulaire.ts` | Le vocabulaire neutre du jeu (énigme, parcours, équipe, aide) et les aides `accorder()`, `majuscule()`. |
 | `2027-neutre.ts` | L'habillage neutre de 2027 : thème, textes et titre du jeu de l'oie qui ne trahissent pas le thème secret. |
 | `themes/2026.css`, `themes/2027.css`, `themes/2027-neutre.css` | Une feuille de style par thème ou habillage, qui ne définit que des variables CSS. |
 | `index.ts` | Choisit l'édition servie par le build, gère la bascule entre thème officiel et habillage neutre, applique le thème affiché. |
@@ -99,16 +100,52 @@ commenté dans `index.ts`.
 **L'interrupteur provisoire.** En attendant, `?theme=officiel` dans l'URL
 affiche le thème officiel pour la session de l'onglet (`sessionStorage`), et
 `?theme=neutre` revient à l'habillage neutre. Il n'est protégé par rien :
-quiconque connaît le paramètre voit le thème. Il est à retirer, ou à réserver
-à l'administration, avant le lancement.
+quiconque connaît le paramètre voit le thème. **Il est à retirer avant le
+lancement du 21 décembre 2026** (décision de Simon : on le garde d'ici là pour
+les aperçus).
+
+**Le vocabulaire suit l'habillage.** Les mots du jeu trahissent le thème
+autant que les couleurs : en 2027, on résout des *intrigues*, on fait des
+*tournées*, on joue en *troupe*. Chaque édition et chaque habillage déclarent
+donc un `vocabulaire` (type `Vocabulaire`) :
+
+| Clé | Thème officiel 2027 | Neutre (et 2026) |
+|---|---|---|
+| `enigme` | intrigue | énigme |
+| `parcours` | tournée | parcours |
+| `equipe` | troupe | équipe |
+| `souffleur` | souffleur | aide |
+| `monEquipe` | Ma troupe | Mon équipe |
+
+On ne substitue jamais un mot dans une phrase figée : « une tournée » est
+féminin, « un parcours » masculin et invariable au pluriel. Chaque nom (`Nom`)
+expose ses formes en entier (`singulier`, `pluriel`, `Singulier`, `Pluriel`,
+`un`, `ce`, `le`, `du`, `les`, `dePluriel`) et son genre ; les accords passent
+par `accorder(nom, féminin, masculin)` :
+
+```tsx
+const v = useEdition().vocabulaire;
+<div>{v.parcours.pluriel} {accorder(v.parcours, 'réalisées', 'réalisés')}</div>
+// « tournées réalisées » / « parcours réalisés »
+```
+
+Hors de React (messages d'erreur), `editionAffichee().vocabulaire`.
+
+`node scripts/verifier-vocabulaire.mjs` échoue si un mot du thème (intrigue,
+tournée, troupe, souffleur, théâtre, rideau, scène…) est écrit en dur dans un
+texte visible du site principal. Il ignore les commentaires, les attributs
+invisibles (`className`, `data-testid`…) et les identifiants, et exclut
+`src/oie/` (inaccessible avant le lancement), `src/admin/` (réservé aux
+organisateurs, qui gardent le vocabulaire du théâtre), `src/editions/`, et
+provisoirement `ParcoursPanel.tsx`, en cours de réécriture.
+`npm run verifier-editions` lance les deux contrôles.
 
 **Ce que l'habillage neutre ne cache pas.** Le build contient les deux
 habillages : le texte « Le théâtre », le chemin `/logo-2027.jpg` (servi
 publiquement depuis `public/`) et les illustrations du jeu de l'oie sont
 lisibles par qui inspecte le JavaScript ou devine l'URL. L'habillage neutre
-protège de la lecture du site, pas de son code source. Le vocabulaire des
-composants (intrigues, tournées, troupe, souffleur…) n'est pas non plus
-couvert : il est écrit en dur.
+protège de la lecture du site, pas de son code source. C'est un secret visuel, choisi comme tel : il suffit tant que personne ne va
+lire le code.
 
 **Le piège des variables, en double.** L'habillage neutre est une feuille de
 thème comme les autres : il doit déclarer exactement les mêmes variables que
