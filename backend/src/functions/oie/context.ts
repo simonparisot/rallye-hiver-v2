@@ -5,7 +5,7 @@
 
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { getTeamById, getUserById } from '../../utils/dynamodb';
-import { OieMoveEffect } from '../../types/oie';
+import { OieMoveEffect, OiePush } from '../../types/oie';
 import { MAX_OVERSHOOTS } from './rules';
 
 export interface OiePlayerContext {
@@ -86,4 +86,35 @@ export function narrateEffect(teamName: string, effect: OieMoveEffect): string |
     default:
       return null;
   }
+}
+
+/** "A", "A et B", "A, B et C". */
+function joinNames(names: string[]): string {
+  if (names.length <= 1) return names[0] || 'Une équipe';
+  return `${names.slice(0, -1).join(', ')} et ${names[names.length - 1]}`;
+}
+
+/**
+ * Sentence of one step back of the occupied-square chain: who pushes whom,
+ * from which square to which, and, past the first step, its rank in the chain.
+ * A team pushed off the puits or the prison is freed by it, and the sentence
+ * says so.
+ */
+export function narratePush(
+  pusherNames: string[],
+  pushedName: string,
+  push: OiePush,
+  before: { inPuits?: boolean; inPrison?: boolean }
+): string {
+  const pousseurs = joinNames(pusherNames);
+  const plusieurs = pusherNames.length > 1;
+  const chaine = push.rang > 1 ? ` (recul en chaîne n° ${push.rang})` : '';
+
+  if (before.inPuits) {
+    return `${pousseurs} ${plusieurs ? 'arrivent' : 'arrive'} au puits et en ${plusieurs ? 'tirent' : 'tire'} ${pushedName}, qui recule en case ${push.to}${chaine}`;
+  }
+  if (before.inPrison) {
+    return `${pousseurs} ${plusieurs ? 'prennent' : 'prend'} la place de ${pushedName} en prison : ${pushedName} sort et recule en case ${push.to}${chaine}`;
+  }
+  return `${pousseurs} ${plusieurs ? 'arrivent' : 'arrive'} en case ${push.from} : ${pushedName} recule en case ${push.to}${chaine}`;
 }

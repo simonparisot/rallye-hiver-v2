@@ -17,8 +17,8 @@ export type OieSquareType =
   | 'pont' // 6 -> 12, 23 -> 30, 47 -> 53: on passe directement en face, sans question
   | 'souffleur' // 14, 39, 50, 60: la question dispose d'un indice
   | 'loge' // 19: passer un tour
-  | 'puits' // 31: passer trois tours, sauf si une autre equipe y tombe et vous deloge
-  | 'prison' // 52: passer deux tours, sauf si une autre equipe y tombe et vous deloge
+  | 'puits' // 31: passer trois tours, sauf si une autre equipe y tombe et vous fait reculer d'une case
+  | 'prison' // 52: passer deux tours, sauf si une autre equipe y tombe et vous fait reculer d'une case
   | 'mort' // 58: la repetition, retour a la case 0
   | 'arrivee'; // 63
 
@@ -147,6 +147,20 @@ export type OieMoveEffect =
   | { kind: 'loge'; at: number }
   | { kind: 'souffleur'; at: number }
   | { kind: 'arrivee'; at: number };
+
+/**
+ * One step back of the occupied-square chain: `teamId` moves from `from` to
+ * `to` (= from - 1). `rang` is its place in the chain, 1 for the teams standing
+ * where the roller landed. `pushedBy` lists the team(s) that landed on `from`:
+ * the roller at rank 1, the teams pushed at the previous rank after.
+ */
+export interface OiePush {
+  teamId: string;
+  from: number;
+  to: number;
+  rang: number;
+  pushedBy: string[];
+}
 
 /** Result of applying a roll to a position, computed by the pure rules module. */
 export interface OieMoveResult {

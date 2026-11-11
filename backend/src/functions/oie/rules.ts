@@ -7,6 +7,7 @@
 import {
   OieMoveEffect,
   OieMoveResult,
+  OiePush,
   OieSquare,
   OieSquareType,
   OieTeamState,
@@ -176,7 +177,7 @@ export function rollDice(random: () => number = Math.random): [number, number] {
  * unexplainable jump to square 26.
  *
  * Nothing here touches the other teams: who stands on the square landed on,
- * and where it goes, is decided by teamsToDislodge and resolveDislodge below.
+ * and where it goes, is decided by resolvePushChain and pushedState below.
  *
  * @param startPosition where the team stands before the roll
  * @param total sum of the two dice
@@ -235,8 +236,8 @@ export function resolveMove(
 
 /**
  * Applies the rule of the square `result.position`, in place: effect, penalty,
- * extra roll, return to square 0. Shared by the team that rolls and by the
- * team it dislodges, so that a square behaves the same whoever lands on it.
+ * extra roll, return to square 0. Only the team that rolls undergoes it: a
+ * team pushed back by an occupied square does not (see pushedState).
  */
 function applySquare(result: OieMoveResult): void {
   const { effects } = result;
@@ -301,80 +302,104 @@ function applySquare(result: OieMoveResult): void {
 /**
  * Squares where any number of teams may stand together. Square 0 is where
  * every team starts; square 63 holds the teams facing the final question and
- * the winners, and nobody is sent back from the finish.
+ * the winners, and nobody is pushed off the finish.
  */
 export function isSharedSquare(squareNumber: number): boolean {
-  return squareNumber === 0 || squareNumber === FINISH_SQUARE;
+  return squareNumber <= 0 || squareNumber === FINISH_SQUARE;
 }
 
 /**
- * Teams dislodged by a team that has just landed on `to` coming from `from`.
+ * Pushes set off by a team that has just landed on `to` coming from `from`.
  *
- * Rule of the game: whoever stood on the square is sent to the square the
- * newcomer came from. That covers the puits and the prison too: the team held
- * there is freed by being sent away, which is the classic rule of the puits.
- * Nothing happens when the newcomer did not actually move (a rebound can bring
- * it back to its own square), nor on a shared square.
+ * Rule of the game (since 2026-11-11): whoever stood on the square steps back
+ * ONE square. If that square is taken too, its occupants step back one square
+ * in turn, and so on down the board. The push is all that travels down the
+ * chain: a team pushed back does not undergo the square it lands on (no oie,
+ * no pont, no puits...), see pushedState.
+ *
+ * `to` is the final square of the move, after the pont, the rebound or la
+ * mort: the squares crossed on the way push nobody. Nothing happens when the
+ * newcomer did not actually move (a rebound can bring it back to its own
+ * square), nor on a shared square: the chain stops on square 0, which any
+ * number of teams may share, and never goes below it. A team that has won is
+ * never pushed.
+ *
+ * The puits and the prison need no rule of their own: the team held there is
+ * pushed one square back like any other, and leaving the square frees it.
+ *
+ * Termination: the square under consideration strictly decreases at each
+ * step, from at most 62 down to 0, and each team moves at most once.
+ *
+ * Returned in chain order: rank 1 for the occupants of `to`, rank 2 for those
+ * of `to - 1`, etc. `pushedBy` names the team(s) that landed on the square:
+ * the arriving team at rank 1, the teams pushed at the previous rank after.
  */
-export function teamsToDislodge(
+export function resolvePushChain(
   states: OieTeamState[],
   arrivingTeamId: string,
   from: number,
   to: number
-): OieTeamState[] {
-  if (from === to || isSharedSquare(to)) return [];
-  return states.filter(
-    (other) => other.teamId !== arrivingTeamId && other.position === to && !other.finishedAt
-  );
+): OiePush[] {
+  const pushes: OiePush[] = [];
+  if (from === to) return pushes;
+
+  const moved = new Set<string>([arrivingTeamId]);
+  let square = to;
+  let pushers = [arrivingTeamId];
+  let rang = 1;
+
+  while (!isSharedSquare(square)) {
+    const occupants = states.filter(
+      (other) => !moved.has(other.teamId) && other.position === square && !other.finishedAt
+    );
+    if (occupants.length === 0) break;
+
+    const destination = square - 1;
+    occupants.forEach((occupant) => {
+      moved.add(occupant.teamId);
+      pushes.push({
+        teamId: occupant.teamId,
+        from: square,
+        to: destination,
+        rang,
+        pushedBy: pushers,
+      });
+    });
+
+    pushers = occupants.map((occupant) => occupant.teamId);
+    square = destination;
+    rang += 1;
+  }
+
+  return pushes;
 }
 
 /**
- * Where a dislodged team ends up, and what the square does to it.
+ * New state of a team pushed one square back.
  *
- * The square it is sent to keeps all its powers: sent onto the puits, it falls
- * in; onto an oie, it gets the extra roll. It never sets off a chain, though:
- * a dislodged team that lands where another one stands does not dislodge it in
- * turn, otherwise one roll could reshuffle the whole board.
+ * Same treatment as the former "dislodged" team, the square effect apart:
+ * leaving its square ends whatever held it there (puits, prison, loge), its
+ * pending oie roll goes with the oie it has left, and it must answer the
+ * question of its new square, as on any square a team arrives on. The square
+ * it is pushed onto does nothing to it: pushed onto the puits it does not
+ * fall in, onto an oie it gets no roll, onto a pont it stays on the pont.
+ * Quota, counters and overshoots are left as they were.
  */
-export function resolveDislodge(to: number): OieMoveResult {
-  const result: OieMoveResult = {
-    position: to,
-    finished: false,
-    overshootCount: 0, // sans objet ici, l'appelant garde celui de l'equipe
-    inPuits: false,
-    inPrison: false,
-    skippedDays: 0,
-    bonusRoll: false,
-    effects: [],
-  };
-  applySquare(result);
-  return result;
-}
-
-/**
- * New state of a dislodged team.
- *
- * Leaving its square ends whatever held it there (puits, prison, loge): only
- * the square it is sent to counts from now on. Its pending oie roll goes too,
- * since it belonged to the oie it has left. And it must answer the question of
- * its new square, as on any square a team arrives on.
- */
-export function dislodgedState(
+export function pushedState(
   state: OieTeamState,
-  outcome: OieMoveResult,
+  to: number,
   hasQuestion: boolean,
   today: string,
   now: string
 ): OieTeamState {
   return {
     ...state,
-    position: outcome.position,
+    position: to,
     questionPending: hasQuestion,
-    inPuits: outcome.inPuits,
-    inPrison: outcome.inPrison,
-    bonusRolls: outcome.bonusRoll ? 1 : 0,
-    nextRollAllowedDay:
-      outcome.skippedDays > 0 ? addDays(today, outcome.skippedDays + 1) : today,
+    inPuits: false,
+    inPrison: false,
+    bonusRolls: 0,
+    nextRollAllowedDay: today,
     updatedAt: now,
   };
 }
