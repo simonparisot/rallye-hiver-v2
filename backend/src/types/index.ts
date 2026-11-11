@@ -73,12 +73,24 @@ export interface Enigma {
   hintsEnabled?: boolean;
   /** Jour de Paris (AAAA-MM-JJ) à partir duquel les indices s'ouvrent. */
   hintsAvailableFrom?: string | null;
+  /**
+   * « Presque bons » mots de passe : saisis par une équipe, ils ne résolvent
+   * pas l'intrigue mais renvoient le message de l'organisateur au lieu du
+   * message de refus tiré au hasard. Comparés comme le vrai mot de passe.
+   * Jamais exposés aux joueurs (voir utils/nearMisses).
+   */
+  nearMisses?: NearMiss[];
   points: number;
   difficulty?: 'easy' | 'medium' | 'hard';
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
   gameId?: string;
+}
+
+export interface NearMiss {
+  password: string;
+  message: string;
 }
 
 export interface Parcours {
@@ -124,6 +136,8 @@ export interface PasswordAttemptLog {
   teamEnigmaKey: string; // composite: "teamId#enigmaId"
   password: string;
   success: boolean;
+  /** Mauvaise tentative qui correspondait à un « presque bon » de l'intrigue. */
+  nearMiss?: boolean;
   attemptedAt: string;
   attemptedBy?: string; // userId
   ipAddress?: string;

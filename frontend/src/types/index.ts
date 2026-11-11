@@ -113,6 +113,11 @@ export interface ParcoursListResponse {
 export interface PasswordAttemptResponse {
   success: boolean;
   message: string;
+  /**
+   * Vrai quand la saisie est un « presque bon » prévu par l'orga : l'intrigue
+   * n'est pas résolue (`success` faux), `message` est le sien.
+   */
+  nearMiss?: boolean;
   points?: number;
   totalTeamPoints?: number;
   attemptCount?: number;
@@ -237,6 +242,17 @@ export interface AuthTokens {
 export interface PendingRequest {
   teamId: string;
   teamName: string;
+}
+
+// ==================== PRESQUES BONS ====================
+
+/**
+ * « Presque bon » mot de passe d'une intrigue : ne la résout pas, mais renvoie
+ * le message de l'orga. Côté admin uniquement, jamais envoyé aux joueurs.
+ */
+export interface NearMiss {
+  password: string;
+  message: string;
 }
 
 // ==================== INDICES ====================

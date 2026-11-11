@@ -83,6 +83,7 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
   const [password, setPassword] = useState('');
   const [attemptMessage, setAttemptMessage] = useState('');
   const [attemptSuccess, setAttemptSuccess] = useState<boolean | null>(null);
+  const [attemptNearMiss, setAttemptNearMiss] = useState(false);
 
   const passwordMutation = useMutation({
     mutationFn: ({ enigmaId, password }: { enigmaId: string; password: string }) =>
@@ -118,6 +119,7 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
     setPassword('');
     setAttemptMessage('');
     setAttemptSuccess(null);
+    setAttemptNearMiss(false);
   }, [idSelectionne]);
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -132,6 +134,7 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
 
       setAttemptMessage(result.message);
       setAttemptSuccess(result.success);
+      setAttemptNearMiss(!result.success && result.nearMiss === true);
 
         // Le champ est vidé quand la réponse est la bonne : l'intrigue est close,
         // réafficher le mot de passe trouvé n'apporte rien.
@@ -141,6 +144,7 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
     } catch (error) {
       setAttemptMessage('Une erreur est survenue. Veuillez réessayer.');
       setAttemptSuccess(false);
+      setAttemptNearMiss(false);
     }
   };
 
@@ -295,6 +299,7 @@ const EnigmasPanel: React.FC<EnigmasPanelProps> = ({ isExpanded, isCompact, onEx
                   <ResultatTentative
                     message={attemptMessage || null}
                     reussi={attemptSuccess === true}
+                    chauffe={attemptNearMiss}
                     onFermer={() => setAttemptMessage('')}
                   />
                   {selectedEnigma.pdfUrl ? (

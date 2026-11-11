@@ -658,9 +658,9 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 ```
 
 **Notes**:
-- `correctPassword`, `solution`, `hints` et `hintsAvailableFrom` ne sont JAMAIS
-  exposés aux clients (la date d'ouverture des indices n'est pas annoncée aux
-  équipes)
+- `correctPassword`, `solution`, `hints`, `hintsAvailableFrom` et `nearMisses`
+  ne sont JAMAIS exposés aux clients (la date d'ouverture des indices n'est pas
+  annoncée aux équipes ; `nearMisses` depuis le 2026-11-11)
 - `hintsCount` : nombre d'indices pré-écrits existants. Le joueur en a besoin pour
   savoir s'il peut demander un indice ; le texte des indices reste côté serveur
 - `hintsEnabled` peut figurer dans la réponse (réglage brut de l'orga) ; le
@@ -695,8 +695,8 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 ```
 
 **Notes**:
-- `correctPassword`, `solution`, `hints` et `hintsAvailableFrom` ne sont JAMAIS
-  exposés aux clients
+- `correctPassword`, `solution`, `hints`, `hintsAvailableFrom` et `nearMisses`
+  ne sont JAMAIS exposés aux clients
 
 **Errors**:
 - `404`: Enigma not found, ou intrigue non publiée (`isActive === false`) depuis
@@ -740,9 +740,11 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 
 #### POST /enigmas (Admin Only)
 
-**Status**: ✅ Implemented (2025-11-16)
+**Status**: ✅ Implemented (2025-11-16, updated 2026-11-11)
 **Purpose**: Create new enigma
 **Authentication**: Required (admin only)
+
+Même handler que `POST /admin/enigmas`, la route qu'utilise le panneau d'administration.
 
 **Request**:
 ```json
@@ -754,6 +756,9 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
   "correctPassword": "string",
   "points": number,
   "difficulty": "'easy' | 'medium' | 'hard'",
+  "nearMisses": [
+    { "password": "string", "message": "string" }
+  ],
   "isActive": boolean
 }
 ```
@@ -766,9 +771,23 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 }
 ```
 
+**Notes**:
+- **Depuis le 2026-11-11** : `nearMisses`, « presques bons » mots de passe.
+  Liste sans limite de nombre de `{ password, message }`. Une équipe qui saisit
+  l'un d'eux ne résout pas l'intrigue mais reçoit `message` (voir
+  `POST /progress/attempt`). Validation, sinon `400` :
+  - `password` et `message` non vides une fois rognés (ils sont enregistrés rognés) ;
+  - `password` : 100 caractères au plus, au moins une lettre ou un chiffre ;
+    `message` : 500 caractères au plus ;
+  - aucun `password` ne peut égaler le vrai mot de passe une fois normalisé
+    (casse, accents, espaces et ponctuation ignorés, comme à la saisie) ;
+  - deux `password` de même forme normalisée sont refusés (pas de fusion) ;
+  - `null` vaut liste vide.
+- `nearMisses` absent : liste vide.
+
 #### PUT /enigmas/{enigmaId} (Admin Only)
 
-**Status**: ✅ Implemented (2025-11-16, updated 2025-11-29)
+**Status**: ✅ Implemented (2025-11-16, updated 2026-11-11)
 **Purpose**: Update enigma
 **Authentication**: Required (admin only)
 
@@ -781,12 +800,29 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
   "correctPassword": "string",
   "points": number,
   "difficulty": "'easy' | 'medium' | 'hard'",
+  "nearMisses": [
+    { "password": "string", "message": "string" }
+  ],
   "isActive": boolean,
   "enigmaNumber": number
 }
 ```
 
 **Notes**:
+- **Depuis le 2026-11-11** : `nearMisses`, « presques bons » mots de passe.
+  Liste sans limite de nombre de `{ password, message }`. Une équipe qui saisit
+  l'un d'eux ne résout pas l'intrigue mais reçoit `message` (voir
+  `POST /progress/attempt`). Validation, sinon `400` :
+  - `password` et `message` non vides une fois rognés (ils sont enregistrés rognés) ;
+  - `password` : 100 caractères au plus, au moins une lettre ou un chiffre ;
+    `message` : 500 caractères au plus ;
+  - aucun `password` ne peut égaler le vrai mot de passe une fois normalisé
+    (casse, accents, espaces et ponctuation ignorés, comme à la saisie) ;
+  - deux `password` de même forme normalisée sont refusés (pas de fusion) ;
+  - `null` vaut liste vide.
+- `nearMisses` envoyé : remplace toute la liste. Absent : la liste existante est
+  conservée (une mise à jour partielle comme `{ "hintsEnabled": true }` ne l'efface pas).
+  Changer `correctPassword` pour la forme normalisée d'un presque bon existant est refusé (`400`).
 - **As of 2025-11-29**: Added `enigmaNumber` field support for drag-and-drop reordering
 - **As of 2025-11-29**: Fixed CORS configuration to support preflight OPTIONS requests
 
@@ -1026,6 +1062,23 @@ Same handlers as `POST /admin/parcours`, `PUT /admin/parcours/{parcoursId}` and 
 - "Nope ! Retour à l'énigme, détective !"
 - _(20 different humorous messages total, selected randomly)_
 - Depuis le 2026-11-11, la liste est modifiable par l'orga (`/admin/settings/wrong-password-messages`) ; ces 20 messages restent la liste par défaut.
+
+**Response** (200) - Presque bon (depuis le 2026-11-11):
+```json
+{
+  "success": false,
+  "message": "string (message saisi par l'orga pour ce presque bon)",
+  "nearMiss": true
+}
+```
+- Si la saisie, normalisée comme le vrai mot de passe, égale l'un des
+  `nearMisses` de l'intrigue, `message` est celui de l'orga au lieu du message
+  tiré au hasard. L'intrigue n'est pas résolue. Le vrai mot de passe est
+  toujours vérifié d'abord.
+- La tentative est journalisée comme une mauvaise tentative (`success: false`)
+  avec `nearMiss: true` : les statistiques (difficulté, timeline, taux de
+  réussite) la comptent comme un échec, comme avant.
+- `nearMiss` est absent des autres réponses.
 
 **Response** (200) - Already Solved:
 ```json
@@ -1846,6 +1899,7 @@ qui rend le prompt hacking sans objet.
       "points": number,
       "difficulty": "'easy' | 'medium' | 'hard'",
       "isActive": boolean,
+      "nearMisses": [{ "password": "string", "message": "string" }],
       "totalAttempts": number,
       "successfulAttempts": number,
       "teamsSolved": number
@@ -1854,6 +1908,10 @@ qui rend le prompt hacking sans objet.
   "count": number
 }
 ```
+
+**Notes**:
+- `nearMisses` (depuis le 2026-11-11) : seule réponse qui renvoie les presques bons
+  mots de passe. Absent sur une intrigue créée avant.
 
 ##### GET /admin/enigmas/by-difficulty
 
@@ -1913,7 +1971,7 @@ Where:
 
 ##### PUT /admin/enigmas/{enigmaId}
 
-**Status**: ✅ Implemented (2025-11-29)
+**Status**: ✅ Implemented (2025-11-29, updated 2026-11-11)
 **Purpose**: Update enigma (admin-only endpoint with full CORS support)
 **Authentication**: Required (admin only)
 
@@ -1926,10 +1984,16 @@ Where:
   "correctPassword": "string",
   "points": number,
   "difficulty": "'easy' | 'medium' | 'hard'",
+  "nearMisses": [
+    { "password": "string", "message": "string" }
+  ],
   "isActive": boolean,
   "enigmaNumber": number
 }
 ```
+
+`nearMisses` : mêmes règles que `PUT /enigmas/{enigmaId}` (remplacement complet si
+envoyé, conservé si absent, `400` en cas de saisie invalide).
 
 **Response** (200):
 ```json
@@ -1946,6 +2010,7 @@ Where:
 
 **Errors**:
 - `400`: Missing enigmaId parameter
+- `400`: `nearMisses` invalide (voir `PUT /enigmas/{enigmaId}`)
 - `401`: Authentication required
 - `403`: Admin access required
 - `404`: Enigma not found
@@ -2077,6 +2142,7 @@ Where:
       "enigmaTitle": "string",
       "password": "string",
       "success": boolean,
+      "nearMiss": true,  // présent seulement sur un presque bon (depuis le 2026-11-11)
       "attemptedAt": "ISO 8601 timestamp",
       "attemptedBy": "uuid",
       "attemptedByName": "string"
@@ -2636,6 +2702,7 @@ L'opération est tracée dans le journal du plateau.
 
 | Date | Endpoint | Change | Type | Impact |
 |------|----------|--------|------|--------|
+| 2026-11-11 | POST /enigmas (= POST /admin/enigmas), PUT /enigmas/{id}, PUT /admin/enigmas/{id}, GET /admin/enigmas, POST /progress/attempt, GET /admin/attempts | « Presques bons » mots de passe par intrigue : champ `nearMisses` (`{ password, message }[]`, sans limite de nombre) saisi dans l'admin. Une saisie qui en égale un (même normalisation que le vrai mot de passe) reçoit le message de l'orga avec `nearMiss: true`, sans résoudre l'intrigue ; la tentative est journalisée `success: false, nearMiss: true` | Feature | Aucun changement pour les autres réponses. `nearMisses` n'est jamais renvoyé par `GET /enigmas` ni `GET /enigmas/{id}`. Validation en 400 : vide, trop long (100 / 500), égal au vrai mot de passe, doublon. Absent d'une mise à jour, il est conservé |
 | 2026-11-11 | GET /enigmas, GET /enigmas/{enigmaId}, GET /hints/{enigmaId} | Les intrigues non publiées disparaissent côté joueur : `GET /enigmas` ne les liste plus, `GET /enigmas/{id}` et `GET /hints/{id}` répondent 404. `hintsAvailableFrom` est retiré des réponses joueur | Bug Fix + Breaking | **Breaking** : un client qui comptait sur les intrigues non publiées dans `GET /enigmas` ne les voit plus (le frontend joueur les filtrait déjà, l'admin passe par `/admin/enigmas`). Côté worker, une demande en attente sur une intrigue dont les indices ont été fermés entre-temps est conclue `failed` (« Indices fermés ») |
 | 2026-11-11 | GET/PUT/DELETE /admin/settings/wrong-password-messages, POST /progress/attempt | Messages de mauvais mot de passe modifiables par l'orga : la liste est stockée en base (item `settings#wrong-password-messages` de la table game-status), les 20 messages historiques restent la liste par défaut | Feature | Aucun changement de forme pour `POST /progress/attempt` : `message` est tiré de la liste configurée. Nouvelle page admin « Mauvais mots de passe » |
 | 2026-11-11 | POST /parcours/{parcoursId}/attempt, POST et DELETE /parcours/{parcoursId}/complete, GET /parcours, GET /parcours/{id}, GET /progress/parcours, GET/POST/PUT /admin/parcours | Tournées validées par un mot de passe de fin de tournée (`correctPassword`, saisi dans l'admin, comparé comme celui des intrigues) ; nouvelle route `POST /parcours/{id}/attempt` ; `hasPassword` dans les réponses joueurs ; tentatives journalisées dans la nouvelle table `ParcoursAttempts` | Feature + **Breaking** | **Breaking** : `POST` et `DELETE /parcours/{id}/complete` sont supprimés, le joueur ne peut plus marquer ni démarquer une tournée à la main (les tournées déjà réalisées le restent). `correctPassword` n'est jamais renvoyé aux joueurs |

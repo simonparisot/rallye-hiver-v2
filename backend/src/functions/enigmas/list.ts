@@ -12,11 +12,12 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // Seules les intrigues publiees sortent d'ici. Ni le mot de passe, ni la
     // demarche de resolution, ni le texte des indices, ni la date d'ouverture
     // des indices (que l'orga n'a pas a annoncer) : le joueur n'apprend que le
-    // nombre d'indices existants, pour savoir s'il peut en demander un.
+    // nombre d'indices existants, pour savoir s'il peut en demander un. Les
+    // « presques bons » mots de passe restent aussi cote serveur.
     const sanitizedEnigmas = enigmas
       .filter((enigma: any) => enigma.isActive !== false)
       .map((enigma: any) => {
-        const { correctPassword, solution, hints, hintsAvailableFrom, ...rest } = enigma;
+        const { correctPassword, solution, hints, hintsAvailableFrom, nearMisses, ...rest } = enigma;
         return {
           ...rest,
           hintsCount: Array.isArray(hints) ? hints.length : 0,

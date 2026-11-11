@@ -152,6 +152,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           enigmaTitle: enigma?.title || 'Unknown Enigma',
           password: attempt.password,
           success: attempt.success,
+          ...(attempt.nearMiss ? { nearMiss: true } : {}),
           attemptedAt: attempt.attemptedAt,
           attemptedBy: attempt.attemptedBy || '',
           attemptedByName: user?.displayName || 'Unknown',

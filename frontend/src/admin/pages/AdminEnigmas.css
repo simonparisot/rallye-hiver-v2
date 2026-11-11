@@ -415,6 +415,13 @@
   box-sizing: border-box;
 }
 
+/* Presque bon : le mot de passe au-dessus du message qu'il déclenche. */
+.near-miss-password {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+}
+
 .hint-count {
   display: inline-block;
   min-width: 22px;
