@@ -18,7 +18,7 @@ export function normalizePassword(input: string): string {
   return input
     .toLowerCase()                     // 1. Convert to lowercase
     .normalize('NFD')                  // 2. Decompose accented characters
-    .replace(/[̀-ͯ]/g, '')  // 3. Remove diacritics (accents)
+    .replace(/[\u0300-\u036f]/g, '')  // 3. Remove diacritics (accents)
     .replace(/œ/g, 'oe')              // 4. Normalize ligature œ
     .replace(/æ/g, 'ae')              // 5. Normalize ligature æ
     .replace(/\s+/g, '')              // 6. Remove all whitespace

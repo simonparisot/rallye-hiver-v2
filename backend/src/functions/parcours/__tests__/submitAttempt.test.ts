@@ -14,9 +14,16 @@ jest.mock('../../../utils/dynamodb', () => ({
 }));
 jest.mock('../../../utils/adminAuth', () => ({ requireAdmin: jest.fn() }));
 jest.mock('uuid', () => ({ v4: () => 'tentative-1' }));
+// Les messages de mauvais mot de passe sont ceux des intrigues, modifiables
+// par l'organisation et lus en base : le module est remplacé.
+jest.mock('../../../utils/wrongPasswordMessages', () => ({
+  getWrongPasswordMessages: jest.fn(async () => ['Message choisi par l\'orga.']),
+  pickWrongPasswordMessage: jest.fn((messages: string[]) => messages[0]),
+}));
 
 import * as db from '../../../utils/dynamodb';
 import { handler } from '../submitAttempt';
+import { getWrongPasswordMessages, pickWrongPasswordMessage } from '../../../utils/wrongPasswordMessages';
 
 function evenement(corps: any, parcoursId = 'p1'): APIGatewayProxyEvent {
   return {
@@ -81,8 +88,9 @@ describe('POST /parcours/{parcoursId}/attempt', () => {
     const reponse = await handler(evenement({ password: 'Tartuffe' }));
 
     expect(reponse.statusCode).toBe(200);
-    expect(corps(reponse)).toEqual({ success: false, message: expect.any(String) });
-    expect(corps(reponse).message).not.toMatch(/malade/i);
+    expect(corps(reponse)).toEqual({ success: false, message: 'Message choisi par l\'orga.' });
+    expect(getWrongPasswordMessages).toHaveBeenCalled();
+    expect(pickWrongPasswordMessage).toHaveBeenCalledWith(['Message choisi par l\'orga.']);
     expect(db.markTeamParcoursCompleted).not.toHaveBeenCalled();
     expect(db.logParcoursAttempt).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
     expect(db.updateTeam).toHaveBeenCalled();
@@ -97,6 +105,29 @@ describe('POST /parcours/{parcoursId}/attempt', () => {
     expect(corps(reponse).error).toBe('Parcours locked');
     expect(db.logParcoursAttempt).not.toHaveBeenCalled();
     expect(db.markTeamParcoursCompleted).not.toHaveBeenCalled();
+  });
+
+  test('une intrigue résolue sur deux suffit : la tournée est ouverte et se valide', async () => {
+    (db.getParcoursById as jest.Mock).mockResolvedValue({
+      parcoursId: 'p1',
+      isActive: true,
+      requiredEnigmaIds: ['e1', 'e2'],
+      correctPassword: 'Le Malade imaginaire',
+    });
+    (db.getAllEnigmasForAdmin as jest.Mock).mockResolvedValue([
+      { enigmaId: 'e1', enigmaNumber: 1, title: 'Une', isActive: true },
+      { enigmaId: 'e2', enigmaNumber: 2, title: 'Deux', isActive: true },
+    ]);
+    (db.getAllTeamProgress as jest.Mock).mockResolvedValue([
+      { enigmaId: 'e1', solved: false },
+      { enigmaId: 'e2', solved: true },
+    ]);
+
+    const reponse = await handler(evenement({ password: 'le malade imaginaire' }));
+
+    expect(reponse.statusCode).toBe(200);
+    expect(corps(reponse).success).toBe(true);
+    expect(db.markTeamParcoursCompleted).toHaveBeenCalledWith('t1', 'p1', expect.any(String));
   });
 
   test('tournée non publiée : 403 aussi', async () => {
@@ -165,6 +196,36 @@ describe('POST /parcours/{parcoursId}/attempt', () => {
     expect((await handler(evenement({}))).statusCode).toBe(400);
     expect((await handler(evenement({ password: '   ' }))).statusCode).toBe(400);
     expect((await handler(evenement({ password: 12 }))).statusCode).toBe(400);
+  });
+
+  test('corps null, mal formé ou qui n\'est pas un objet : 400 « Corps invalide »', async () => {
+    for (const brut of ['null', '{pas du json', '"texte"', '42', '[]']) {
+      const reponse = await handler({
+        pathParameters: { parcoursId: 'p1' },
+        body: brut,
+        requestContext: { authorizer: { userId: 'u1' } },
+      } as unknown as APIGatewayProxyEvent);
+
+      expect(reponse.statusCode).toBe(400);
+      expect(corps(reponse)).toEqual({ error: 'Corps invalide' });
+    }
+    expect(db.getUserById).not.toHaveBeenCalled();
+  });
+
+  // Le mauvais mot de passe vient du module partagé (mocké ici) : ses messages
+  // par défaut parlent d'« énigme », ce qui est neutre. Les messages propres à
+  // cette route, eux, ne doivent pas employer le vocabulaire du théâtre.
+  test('les messages ne parlent pas de « tournée » : ils valent pour tous les thèmes', async () => {
+    const messages = [
+      corps(await handler(evenement({ password: 'Tartuffe' }))).message,
+      corps(await handler(evenement({ password: 'le malade imaginaire' }))).message,
+    ];
+    (db.getTeamParcoursAccess as jest.Mock).mockResolvedValue({ completed: true });
+    messages.push(corps(await handler(evenement({ password: 'le malade imaginaire' }))).message);
+    (db.getParcoursById as jest.Mock).mockResolvedValue({ parcoursId: 'p1', isActive: true, requiredEnigmaIds: [] });
+    messages.push(corps(await handler(evenement({ password: 'x' }))).error);
+
+    messages.forEach((m) => expect(m).not.toMatch(/tourn|parcours|intrigue|troupe/i));
   });
 
   test('sans utilisateur authentifié : 401', async () => {

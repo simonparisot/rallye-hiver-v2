@@ -281,30 +281,34 @@ const ParcoursPanel: React.FC<ParcoursPanelProps> = ({ isExpanded, isCompact, on
   );
 };
 
-/** « 🔒 2/4 » : ce qui manque pour ouvrir la tournée, d'un coup d'œil. */
+/**
+ * Un simple « 🔒 » : une seule intrigue résolue parmi celles listées suffit à
+ * ouvrir la tournée, un compte « n/m » laisserait croire qu'il les faut toutes.
+ */
 const VerrouCompteur: React.FC<{ parcours: Parcours }> = ({ parcours }) => (
   <span
     className="parcours-verrou"
     data-testid={`parcours-locked-badge-${parcours.order}`}
-    title={`${parcours.solvedEnigmas} intrigue${parcours.solvedEnigmas > 1 ? 's' : ''} résolue${parcours.solvedEnigmas > 1 ? 's' : ''} sur ${parcours.requiredEnigmas}`}
+    title="Se débloque en résolvant l'une des intrigues listées"
+    aria-label="Se débloque en résolvant l'une des intrigues listées"
+    role="img"
   >
-    <span aria-hidden="true">🔒</span> {parcours.solvedEnigmas}/{parcours.requiredEnigmas}
+    <span aria-hidden="true">🔒</span>
   </span>
 );
 
 /** Ce que voit une troupe qui ouvre une tournée encore fermée. */
 const TourneeVerrouillee: React.FC<{ parcours: Parcours }> = ({ parcours }) => {
   const requises = parcours.requiredEnigmasDetail || [];
-  const manquantes = parcours.requiredEnigmas - parcours.solvedEnigmas;
 
   return (
     <div className="parcours-locked-view" data-testid="parcours-locked-view">
       <div className="lock-icon" aria-hidden="true">🔒</div>
       <h4>{parcours.title}</h4>
       <p>
-        Cette tournée s'ouvrira quand votre troupe aura résolu{' '}
-        {requises.length > 1 ? 'les intrigues suivantes' : "l'intrigue suivante"}.
-        {manquantes > 0 && ` Encore ${manquantes} à résoudre.`}
+        {/* Une seule suffit : il n'y a plus de reste à afficher. */}
+        Cette tournée s'ouvrira dès que votre troupe aura résolu{' '}
+        {requises.length > 1 ? "l'une des intrigues suivantes" : "l'intrigue suivante"}.
       </p>
       <ul className="unlock-liste" data-testid="parcours-required-enigmas">
         {requises.map((e) => (

@@ -180,10 +180,14 @@ interface Parcours {
   description?: string;        // Short description
   pdfUrl: string;              // S3 URL to parcours PDF (jamais donnée à une
                                // équipe pour qui la tournée est verrouillée)
-  requiredEnigmaIds: string[]; // Intrigues à résoudre TOUTES pour ouvrir la
-                               // tournée. Vide (ou absent) : tournée libre
-  requiredEnigmasCount: number;// Dérivé : requiredEnigmaIds.length. Jamais lu
-                               // dans une requête
+  requiredEnigmaIds: string[]; // Intrigues qui ouvrent la tournée : UNE
+                               // seule résolue suffit. Vide (ou absent) :
+                               // tournée libre
+  requiredEnigmasCount: number;// Nombre d'intrigues cochées
+                               // (requiredEnigmaIds.length), recalculé à
+                               // chaque enregistrement et jamais lu dans une
+                               // requête. Purement informatif : il ne joue
+                               // AUCUN rôle dans la règle de déblocage
   correctPassword?: string;    // Mot de passe de fin de tournée, saisi dans
                                // l'admin. Vide ou absent : la tournée ne peut
                                // pas encore être validée. Jamais renvoyé aux
@@ -620,10 +624,16 @@ Parcours ─── (1:N) TeamParcoursAccess
 ### Parcours Unlocking
 - Une tournée sans intrigue requise (`requiredEnigmaIds` vide ou absent) est
   ouverte à toutes les équipes.
-- Sinon elle s'ouvre quand l'équipe a résolu **toutes** les intrigues requises
-  **qui existent encore**. Une intrigue supprimée depuis est ignorée (elle ne
-  peut plus être résolue) ; la mise à jour d'une tournée la retire de la liste
-  sans erreur.
+- Sinon elle s'ouvre dès que l'équipe a résolu **au moins une** des intrigues
+  requises **qui existent encore** (depuis le 2026-11-11 ; auparavant il les
+  fallait toutes). Une intrigue supprimée depuis est ignorée : elle ne compte
+  ni comme résolue ni comme requise. Si toutes les intrigues requises ont été
+  supprimées, la tournée est ouverte, comme avec une liste vide. La mise à
+  jour d'une tournée retire les intrigues supprimées de la liste sans erreur.
+- `requiredEnigmasCount` n'intervient pas : c'est seulement le nombre
+  d'intrigues cochées.
+- `TeamParcoursAccess.unlockedBy` note les intrigues requises déjà résolues
+  au moment où le déblocage est constaté.
 - La règle est **recalculée à chaque lecture** depuis `TeamEnigmaProgress`
   (`backend/src/utils/parcoursAccess.ts`, `evaluateParcoursAccess`), lue en
   lecture cohérente. Changer la liste en cours de rallye s'applique aussitôt,
@@ -650,8 +660,10 @@ Parcours ─── (1:N) TeamParcoursAccess
 - Même règle pour les intrigues et les tournées
   (`backend/src/utils/password.ts`, `normalizePassword`) : casse, accents,
   ligatures (œ, æ), espaces et ponctuation ignorés ; seuls a-z et 0-9 comptent.
-- Un mot de passe attendu qui ne garde aucun caractère une fois normalisé
-  compte comme absent.
+- **Tournées seulement** : un mot de passe de fin de tournée qui ne garde
+  aucun caractère une fois normalisé compte comme absent (`hasUsablePassword` :
+  `hasPassword: false`, validation refusée en 409). Les intrigues n'appliquent
+  pas cette règle.
 
 ---
 

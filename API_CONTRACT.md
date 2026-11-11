@@ -867,7 +867,7 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 - Same fields as `GET /parcours`: no `pdfUrl`, no `correctPassword`, `hasPassword` instead.
 
 **Errors**:
-- `404`: Parcours not found
+- `404`: Parcours not found, or not published (`isActive: false`)
 
 #### GET /parcours/{parcoursId}/access
 
@@ -914,7 +914,7 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 - `404`: Parcours not found, or not published (`isActive: false`)
 
 **Notes**:
-- Access is recomputed on every read from the team's progress: a parcours is unlocked when the team has solved **all** the required enigmas that still exist. An empty `requiredEnigmaIds` means the parcours is open to every team. See DATA_MODELS.md, "Parcours Unlocking".
+- Access is recomputed on every read from the team's progress: a parcours is unlocked when the team has solved **at least one** of the required enigmas that still exist (since 2026-11-11). An empty `requiredEnigmaIds`, or a list whose enigmas have all been deleted, means the parcours is open to every team. `requiredEnigmasCount` plays no part in the rule. See DATA_MODELS.md, "Parcours Unlocking".
 - `requiredEnigmas` is sorted by `enigmaNumber`. The title of a required enigma that is not published yet is replaced by `"Intrigue à venir"`.
 - `unlockedAt` / `unlockedBy` come from the TeamParcoursAccess record, when one exists (written when an enigma attempt unlocks the parcours). They only date the unlock; they do not grant it.
 
@@ -935,7 +935,7 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
 ```json
 {
   "success": true,
-  "message": "Bravo ! Tournée validée.",
+  "message": "Bravo ! Mot de passe validé.",
   "alreadyCompleted": false
 }
 ```
@@ -948,20 +948,22 @@ Tokens are obtained from login and expire after 24 hours. Refresh tokens valid f
   "message": "string"
 }
 ```
-A wrong password is a 200, as for `POST /progress/attempt`.
+A wrong password is a 200, as for `POST /progress/attempt`, and `message` is drawn from the same editable list of wrong-password messages (`/admin/settings/wrong-password-messages`).
 
 **Errors**:
 - `400`: Missing parcoursId, or missing/empty `password`
+- `400`: `Corps invalide` (body is `null`, not valid JSON, or not an object)
 - `401`: Unauthorized
 - `403`: `User must be in a team`
 - `403`: `Parcours locked` (the parcours is not published, or not unlocked for the team)
 - `404`: Parcours not found
-- `409`: The parcours has no password yet (`hasPassword: false`), it cannot be validated
+- `409`: `Ce mot de passe n'est pas encore disponible.` The parcours has no password yet (`hasPassword: false`), it cannot be validated
 
 **Notes**:
 - Password matching is the same as for enigmas (`backend/src/utils/password.ts`): case, accents, ligatures (œ, æ), whitespace and punctuation are ignored.
 - Unlimited attempts. Every attempt (right or wrong) is logged in the `ParcoursAttempts` table, separate from the enigma `PasswordAttempts` table so that enigma statistics (difficulty, timeline, attempts per enigma) are unaffected. Every attempt also updates the team's `lastActivityAt`.
 - A correct password sets `completed: true` and `completedAt` on the team's TeamParcoursAccess record, creating it if missing.
+- Messages are neutral (no edition vocabulary such as "tournée"): the front end shows them as is, whatever the theme.
 - Parcours give no points. Completion is only counted in `GET /teams/stats` (`parcoursCompleted`).
 - No payment check (unlike `POST /progress/attempt`): an unpaid team only sees parcours in preview mode.
 
@@ -1119,7 +1121,7 @@ Same handlers as `POST /admin/parcours`, `PUT /admin/parcours/{parcoursId}` and 
 
 **Notes**:
 - `parcours` lists every published parcours, sorted by `parcoursNumber`, locked or not. `accessibleParcours` keeps only the unlocked ones (for older clients); `count` is its length.
-- `isUnlocked` is recomputed on every read: true when the team has solved all the required enigmas that still exist (always true when `requiredEnigmaIds` is empty).
+- `isUnlocked` is recomputed on every read: true when the team has solved at least one of the required enigmas that still exist (always true when none of them exists, e.g. `requiredEnigmaIds` is empty).
 - `requiredEnigmas` details those enigmas, sorted by `enigmaNumber`; an unpublished one is titled `"Intrigue à venir"`.
 - `pdfUrl` is present only when `isUnlocked` is true. `correctPassword` is never returned; `hasPassword` says whether the parcours can be validated yet.
 - `completed` / `completedAt` are set when the team enters the end-of-parcours password (`POST /parcours/{parcoursId}/attempt`); `completed` is `false` and `completedAt` `null` until then.
@@ -1976,6 +1978,7 @@ Where:
       "requiredEnigmaIds": ["uuid", ...],
       "requiredEnigmasCount": number,
       "correctPassword": "string (may be empty)",
+      "hasPassword": boolean,
       "isActive": boolean,
       "teamsUnlocked": number
     }
@@ -1985,7 +1988,7 @@ Where:
 ```
 
 **Notes**:
-- The admin gets `correctPassword` (players never do). An empty or missing value means the parcours cannot be validated yet; the admin list shows "⚠ sans mot de passe".
+- The admin gets `correctPassword` (players never do), and `hasPassword`, computed with the same rule as `POST /parcours/{parcoursId}/attempt` (a password that is empty once normalized counts as missing). When `hasPassword` is false the parcours cannot be validated yet; the admin list shows "⚠ sans mot de passe".
 - `teamsUnlocked` counts TeamParcoursAccess records, test teams excluded.
 
 ##### POST /admin/parcours
@@ -2008,7 +2011,7 @@ Where:
 ```
 
 - `parcoursNumber` is optional: when absent, the parcours takes `max(parcoursNumber) + 1` (1 for the first one). When present it must be an integer ≥ 1.
-- `requiredEnigmaIds` is optional, default `[]` (open to every team). Otherwise the parcours opens once the team has solved all of them. `requiredEnigmasCount` is derived from it and never read from the request.
+- `requiredEnigmaIds` is optional, default `[]` (open to every team). Otherwise the parcours opens as soon as the team has solved any one of them. `requiredEnigmasCount` is the number of listed enigmas, derived from it, never read from the request, and has no role in the unlock rule.
 - `correctPassword` is optional, trimmed, default `""` (no password: teams cannot validate the parcours yet).
 - `isActive` defaults to `true`.
 
@@ -2636,6 +2639,7 @@ L'opération est tracée dans le journal du plateau.
 
 | Date | Endpoint | Change | Type | Impact |
 |------|----------|--------|------|--------|
+| 2026-11-11 | GET /parcours/{id}/access, GET /progress/parcours, POST /parcours/{id}/attempt | Une tournée s'ouvre dès que l'équipe a résolu **une** des intrigues requises encore existantes (et non plus toutes) ; `requiredEnigmasCount` n'est plus que le nombre d'intrigues cochées. Messages de `POST /parcours/{id}/attempt` neutres (sans « tournée ») ; corps invalide en 400 « Corps invalide ». `GET /parcours/{id}` renvoie 404 pour une tournée non publiée ; `GET /admin/parcours` renvoie `hasPassword` | **Breaking** | Des tournées verrouillées s'ouvrent pour les équipes qui ont résolu une partie de leurs intrigues ; `isUnlocked` ne se déduit plus de `requiredEnigmas.every(solved)` mais de `some(solved)` |
 | 2026-11-11 | GET /enigmas, GET /enigmas/{enigmaId}, GET /hints/{enigmaId} | Les intrigues non publiées disparaissent côté joueur : `GET /enigmas` ne les liste plus, `GET /enigmas/{id}` et `GET /hints/{id}` répondent 404. `hintsAvailableFrom` est retiré des réponses joueur | Bug Fix + Breaking | **Breaking** : un client qui comptait sur les intrigues non publiées dans `GET /enigmas` ne les voit plus (le frontend joueur les filtrait déjà, l'admin passe par `/admin/enigmas`). Côté worker, une demande en attente sur une intrigue dont les indices ont été fermés entre-temps est conclue `failed` (« Indices fermés ») |
 | 2026-11-11 | GET/PUT/DELETE /admin/settings/wrong-password-messages, POST /progress/attempt | Messages de mauvais mot de passe modifiables par l'orga : la liste est stockée en base (item `settings#wrong-password-messages` de la table game-status), les 20 messages historiques restent la liste par défaut | Feature | Aucun changement de forme pour `POST /progress/attempt` : `message` est tiré de la liste configurée. Nouvelle page admin « Mauvais mots de passe » |
 | 2026-11-11 | POST /parcours/{parcoursId}/attempt, POST et DELETE /parcours/{parcoursId}/complete, GET /parcours, GET /parcours/{id}, GET /progress/parcours, GET/POST/PUT /admin/parcours | Tournées validées par un mot de passe de fin de tournée (`correctPassword`, saisi dans l'admin, comparé comme celui des intrigues) ; nouvelle route `POST /parcours/{id}/attempt` ; `hasPassword` dans les réponses joueurs ; tentatives journalisées dans la nouvelle table `ParcoursAttempts` | Feature + **Breaking** | **Breaking** : `POST` et `DELETE /parcours/{id}/complete` sont supprimés, le joueur ne peut plus marquer ni démarquer une tournée à la main (les tournées déjà réalisées le restent). `correctPassword` n'est jamais renvoyé aux joueurs |

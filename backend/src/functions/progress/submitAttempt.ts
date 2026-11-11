@@ -142,7 +142,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
             parcoursId: parcours.parcoursId,
             hasAccess: true,
             unlockedAt: now,
-            unlockedBy: requiredEnigmas.map((e) => e.enigmaId),
+            // Une seule intrigue résolue suffit : on note celles qui l'ont ouverte.
+            unlockedBy: requiredEnigmas.filter((e) => e.solved).map((e) => e.enigmaId),
             createdAt: now,
           });
 
