@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Enigma, Parcours } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { accorder, useEdition } from '../editions';
+import ReglesDuJeu from './ReglesDuJeu';
 import './MenuMobile.css';
 
 /**
@@ -47,6 +48,10 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
   // troupe » et le compte hors de l'écran. C'est à qui ouvre le menu de dire
   // ce qu'il cherche.
   const [deplie, setDeplie] = useState<Record<string, boolean>>({});
+  // Les règles s'ouvrent à la place du tiroir ; à leur fermeture, le focus
+  // revient au bouton du menu, puisque l'entrée du tiroir a disparu.
+  const [regles, setRegles] = useState(false);
+  const burger = useRef<HTMLButtonElement>(null);
 
   // Le tiroir prend tout l'écran : laisser la page défiler dessous donnerait
   // l'impression que le menu glisse.
@@ -82,6 +87,7 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
     <>
       <button
         type="button"
+        ref={burger}
         className="menu-burger"
         data-testid="menu-burger"
         aria-label="Menu"
@@ -188,6 +194,19 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
                 </button>
               </section>
 
+              {/* --- Les règles du jeu --- */}
+              <section className="menu-section">
+                <button
+                  type="button"
+                  className="menu-entete"
+                  data-testid="menu-regles"
+                  aria-haspopup="dialog"
+                  onClick={() => { setOuvert(false); setRegles(true); }}
+                >
+                  <span className="menu-entete-titre">Règles du jeu</span>
+                </button>
+              </section>
+
               {/* --- Le compte --- */}
               <section className="menu-section menu-section-compte">
                 <p className="menu-identite">
@@ -222,6 +241,8 @@ const MenuMobile: React.FC<MenuMobileProps> = ({
         </div>,
         document.body
       )}
+
+      <ReglesDuJeu ouverte={regles} onFermer={() => setRegles(false)} retourFocus={burger} />
     </>
   );
 };

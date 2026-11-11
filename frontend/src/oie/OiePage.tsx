@@ -10,11 +10,12 @@ import Plateau from './components/Plateau';
 import CarteAction from './components/CarteAction';
 import ResultatLancer from './components/ResultatLancer';
 import FilEvenements from './components/FilEvenements';
+import ReglesOie from './components/ReglesOie';
 import './OiePage.css';
 
 /**
- * Ce que le bouton du panneau annonce, panneau fermé : la carte d'action vit
- * désormais derrière lui, il doit donc dire s'il y a quelque chose à faire.
+ * Ce que la languette annonce, panneau fermé : la carte d'action vit derrière
+ * elle, elle doit donc dire s'il y a quelque chose à faire.
  */
 function resumeEquipe(me: OieMyView): { texte: string; aAgir: boolean } {
   if (me.finishedAt) return { texte: 'Intrigue résolue', aAgir: false };
@@ -58,20 +59,33 @@ const OiePage: React.FC = () => {
   // Le panneau de l'équipe est masqué par défaut : le plateau prend toute la
   // largeur, et le panneau s'ouvre par-dessus quand on veut agir.
   const [panneauOuvert, setPanneauOuvert] = useState(false);
-  const boutonPanneauRef = useRef<HTMLButtonElement>(null);
+  const languetteRef = useRef<HTMLButtonElement>(null);
   const fermerPanneauRef = useRef<HTMLButtonElement>(null);
+  const rendreLeFocus = useRef(false);
+
+  // Les règles s'ouvrent depuis l'en-tête. Tant qu'elles sont ouvertes, Échap
+  // les ferme, elles seules : le panneau, s'il est ouvert, reste ouvert.
+  const [reglesOuvertes, setReglesOuvertes] = useState(false);
+  const reglesOuvertesRef = useRef(false);
+  reglesOuvertesRef.current = reglesOuvertes;
 
   const fermerPanneau = useCallback(() => {
     setPanneauOuvert(false);
-    // Le focus revient là d'où l'on a ouvert, pour le clavier.
-    boutonPanneauRef.current?.focus();
+    rendreLeFocus.current = true;
   }, []);
 
   useEffect(() => {
-    if (!panneauOuvert) return undefined;
+    if (!panneauOuvert) {
+      // Le focus revient à la languette, d'où l'on a ouvert, pour le clavier.
+      // Elle est masquée tant que le panneau est ouvert : on attend qu'elle
+      // réapparaisse.
+      if (rendreLeFocus.current) languetteRef.current?.focus();
+      rendreLeFocus.current = false;
+      return undefined;
+    }
     fermerPanneauRef.current?.focus();
     const echap = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') fermerPanneau();
+      if (event.key === 'Escape' && !reglesOuvertesRef.current) fermerPanneau();
     };
     document.addEventListener('keydown', echap);
     return () => document.removeEventListener('keydown', echap);
@@ -211,8 +225,38 @@ const OiePage: React.FC = () => {
             de l'intrigue.
           </p>
         </div>
-        <Link className="oie-bouton-secondaire" to="/" data-testid="oie-retour">Retour au jeu</Link>
+        {/* Les règles, à côté du titre : on les trouve en arrivant, avant
+            d'avoir ouvert le panneau, et l'en-tête est dans le flux de la
+            page, à gauche de la gouttière de la languette : il ne recouvre ni
+            le plateau ni la languette. */}
+        <div className="oie-entete-actions">
+          {plateau && (
+            <button
+              type="button"
+              className="oie-regles-ouvrir"
+              data-testid="oie-regles-ouvrir"
+              aria-haspopup="dialog"
+              onClick={() => setReglesOuvertes(true)}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                   strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5v14z" />
+                <path d="M4 19.5A2.5 2.5 0 006.5 22H20v-5" />
+              </svg>
+              Consulter les règles du jeu de l'oie
+            </button>
+          )}
+          <Link className="oie-bouton-secondaire" to="/" data-testid="oie-retour">Retour au jeu</Link>
+        </div>
       </header>
+
+      {plateau && (
+        <ReglesOie
+          ouverte={reglesOuvertes}
+          onFermer={() => setReglesOuvertes(false)}
+          lancersParJour={plateau.me.rollsPerDay}
+        />
+      )}
 
       {erreur && (
         <p className="oie-message oie-message-erreur" data-testid="oie-erreur">{erreur}</p>
@@ -230,32 +274,13 @@ const OiePage: React.FC = () => {
 
       {plateau && (
         <div className="oie-scene">
-          {/* La barre reste en haut de l'écran pendant qu'on parcourt le
-              plateau : c'est par elle que l'on rejoint la carte d'action. */}
-          <div className="oie-barre">
-            <button
-              type="button"
-              ref={boutonPanneauRef}
-              className={`oie-bouton-panneau ${resumeEquipe(plateau.me).aAgir ? 'oie-bouton-panneau-a-agir' : ''}`}
-              onClick={() => (panneauOuvert ? fermerPanneau() : setPanneauOuvert(true))}
-              aria-expanded={panneauOuvert}
-              aria-controls="oie-panneau"
-              data-testid="oie-bouton-panneau"
-            >
-              <span className="oie-chevron" aria-hidden="true">‹</span>
-              <span className="oie-bouton-panneau-textes">
-                <span className="oie-bouton-panneau-titre">Votre équipe</span>
-                <span className="oie-bouton-panneau-etat" data-testid="oie-etat-equipe">
-                  {resumeEquipe(plateau.me).texte}
-                </span>
-              </span>
-            </button>
-          </div>
-
           {/* La languette, collée au bord droit de l'écran, dit d'un coup d'œil
-              qu'un panneau se déplie de ce côté-là. */}
+              qu'un panneau se déplie de ce côté-là, et ce que l'équipe a à
+              faire : elle remplace le bouton qui le disait au-dessus du
+              plateau, et qui faisait doublon. */}
           <button
             type="button"
+            ref={languetteRef}
             className={`oie-languette ${resumeEquipe(plateau.me).aAgir ? 'oie-languette-a-agir' : ''}`}
             onClick={() => setPanneauOuvert(true)}
             hidden={panneauOuvert}
@@ -265,7 +290,12 @@ const OiePage: React.FC = () => {
             data-testid="oie-languette"
           >
             <span className="oie-chevron" aria-hidden="true">‹</span>
-            <span className="oie-languette-texte" aria-hidden="true">Votre équipe</span>
+            <span className="oie-languette-textes" aria-hidden="true">
+              <span className="oie-languette-texte">Votre équipe</span>
+              <span className="oie-languette-etat" data-testid="oie-etat-equipe">
+                {resumeEquipe(plateau.me).texte}
+              </span>
+            </span>
           </button>
 
           <Plateau

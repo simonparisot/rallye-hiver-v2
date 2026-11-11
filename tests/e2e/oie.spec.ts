@@ -12,10 +12,10 @@ import { test, expect } from './fixtures.js';
  */
 /**
  * La carte d'action, le classement et le fil vivent dans un panneau masqué par
- * défaut, ouvert par le bouton « Votre équipe » au-dessus du plateau.
+ * défaut, ouvert par la languette « Votre équipe » sur le bord droit.
  */
 async function ouvrirPanneau(page) {
-  await page.getByTestId('oie-bouton-panneau').click();
+  await page.getByTestId('oie-languette').click();
   await expect(page.getByTestId('oie-panneau')).toBeVisible();
 }
 
@@ -40,7 +40,8 @@ test.describe('Jeu de l\'oie', () => {
     await page.goto('/oie');
 
     await expect(page.getByTestId('oie-plateau')).toBeVisible();
-    await expect(page.locator('.oie-pion-mien').first()).toBeVisible();
+    // Sigle au bureau, pastille qui compte les équipes sur téléphone.
+    await expect(page.locator('.oie-pion-mien:visible').first()).toBeVisible();
   });
 
   test('la carte d\'action dit ce qu\'il y a à faire', async ({ page }) => {
@@ -115,7 +116,7 @@ test.describe('Jeu de l\'oie', () => {
     await page.goto('/oie');
     await expect(page.getByTestId('oie-plateau')).toBeVisible();
 
-    // Fermé, le bouton dit quand même ce que l'équipe a à faire.
+    // Fermé, la languette dit quand même ce que l'équipe a à faire.
     await expect(page.getByTestId('oie-panneau')).toBeHidden();
     await expect(page.getByTestId('oie-etat-equipe')).not.toBeEmpty();
 
@@ -124,7 +125,7 @@ test.describe('Jeu de l\'oie', () => {
 
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('oie-panneau')).toBeHidden();
-    await expect(page.getByTestId('oie-bouton-panneau')).toBeFocused();
+    await expect(page.getByTestId('oie-languette')).toBeFocused();
   });
 
   test('aucune erreur de console pendant la visite du plateau', async ({ page, erreursConsole, requetesEchouees }) => {

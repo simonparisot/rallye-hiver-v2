@@ -111,7 +111,11 @@ const Plateau: React.FC<PlateauProps> = ({ squares, teams, caseSurlignee }) => {
       <div className="oie-plateau" data-testid="oie-plateau">
         {squares.map((square) => {
           const place = PLACES[square.squareNumber];
-          const pions = parCase.get(square.squareNumber) || [];
+          // Mon pion d'abord : sur une case bondée, c'est lui qu'on cherche,
+          // il ne doit pas finir caché dans le « +n ».
+          const pions = [...(parCase.get(square.squareNumber) || [])].sort(
+            (a, b) => Number(b.isMine) - Number(a.isMine)
+          );
           const mienne = pions.some((pion) => pion.isMine);
           const libelle = LIBELLES[square.type];
           const illustration = illustrationDeCase(square.squareNumber);
@@ -154,6 +158,18 @@ const Plateau: React.FC<PlateauProps> = ({ squares, teams, caseSurlignee }) => {
                   {pions.length > 3 && (
                     <span className="oie-pion oie-pion-reste">+{pions.length - 3}</span>
                   )}
+                </span>
+              )}
+              {/* Sous 900 px, la case ne loge plus les sigles : une seule
+                  pastille compte les équipes, dorée si la mienne en est (voir
+                  OiePage.css). Les noms restent dans le classement du panneau. */}
+              {pions.length > 0 && (
+                <span
+                  className={`oie-pion oie-pion-compte ${mienne ? 'oie-pion-mien' : ''}`}
+                  title={pions.map((pion) => pion.teamName).join(', ')}
+                  data-testid={`oie-compte-${square.squareNumber}`}
+                >
+                  {pions.length}
                 </span>
               )}
             </div>

@@ -1,0 +1,29 @@
+/* ---------------------------------------------------------------------------
+   Les règles du jeu : le bouton qui les ouvre. La fenêtre et la mise en
+   page du texte sont dans FenetreLecture.css, partagées avec les règles du
+   jeu de l'oie.
+
+   Tout passe par les variables du thème : aucune couleur en dur.
+   --------------------------------------------------------------------------- */
+
+/* --- Le bouton, dans le panneau de l'équipe --- */
+.regles-ouvrir {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  /* Sous le bouton, de l'air avant la première carte du panneau. */
+  margin: 10px 0 20px;
+  padding: 9px 15px;
+  cursor: pointer;
+  background: var(--theatre-scene);
+  color: var(--theatre-salle);
+  border: var(--border-width-medium) var(--border-style) var(--theatre-salle);
+  border-radius: 999px;
+  box-shadow: var(--ombre-affiche);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: var(--font-weight-fort);
+}
+.regles-ouvrir:hover { background: var(--theatre-programme-2); }
+.regles-ouvrir:focus-visible { outline: 3px solid var(--theatre-tragedie); outline-offset: 2px; }
+.regles-ouvrir svg { width: 17px; height: 17px; flex: none; }
