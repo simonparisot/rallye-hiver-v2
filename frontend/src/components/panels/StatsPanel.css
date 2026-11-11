@@ -20,10 +20,27 @@
   color: var(--theatre-tragedie);
 }
 
+/* Les compteurs en grille de deux colonnes égales : empilés sur toute la
+   largeur, trois cartes occupaient l'écran d'un téléphone pour trois chiffres.
+   Au-delà de 860 px, GamePanels.css passe la grille à trois colonnes. */
 .stats-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* Un état de chargement ou d'erreur occupe la rangée entière. */
+.stats-container > .loading-state,
+.stats-container > .error-state {
+  grid-column: 1 / -1;
+}
+
+/* Le compteur resté seul sur sa rangée la prend en entier plutôt que de
+   laisser une case vide à sa droite. */
+@media (max-width: 860px) {
+  .stats-container > .stat-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
 }
 
 /* Unified Dashboard - Stats + Discord + Team */
@@ -57,20 +74,22 @@
   opacity: 0.9;
 }
 
+/* Chiffre, libellé puis jauge, alignés à gauche et sur toute la largeur.
+   L'ancien « align-items: center », hérité d'une carte en ligne, centrait
+   chaque contenu selon sa propre largeur une fois la carte passée en
+   colonne : chiffres décalés d'une carte à l'autre et jauge réduite à zéro
+   pixel de large, donc invisible. */
 .stat-card {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  min-width: 0;
   padding: 16px;
   background: var(--theatre-programme-2);
   border-radius: 10px;
   border-left: 4px solid var(--theatre-comedie);
   transition: all 0.2s;
-}
-
-.stat-card:hover {
-  background: var(--theatre-programme-2);
-  transform: translateX(4px);
 }
 
 .stat-card.highlight {
@@ -82,8 +101,11 @@
   font-size: 32px;
 }
 
+/* Le contenu pousse la jauge en bas : à hauteur égale, les jauges d'une
+   même rangée tombent sur la même ligne. */
 .stat-content {
   flex: 1;
+  min-width: 0;
 }
 
 .stat-value {
@@ -545,6 +567,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
 }
 
 .members-list li:last-child,
@@ -555,6 +578,24 @@
 .request-actions {
   display: flex;
   gap: 8px;
+}
+
+/* Les demandes reçues prennent le même cadre que la liste des membres juste
+   au-dessus : sans lui, ce bloc restait un rectangle au filet pâle, seul de
+   son espèce dans le panneau. Limité à .section : dans la vue d'attente
+   (.feuille), la liste des membres garde son cadre pâle, et les demandes
+   doivent continuer de lui ressembler. */
+.section .stats-panel .pending-requests-section {
+  background: var(--theatre-scene);
+  border: 2px solid var(--theatre-salle);
+  border-radius: 12px;
+  box-shadow: var(--ombre-affiche);
+  color: var(--theatre-salle);
+}
+.section .stats-panel .pending-requests-section h4 {
+  color: var(--theatre-salle);
+  font-family: var(--font-display);
+  font-weight: 400;
 }
 
 .payment-section {
@@ -676,7 +717,8 @@
     padding: 12px;
   }
 
-  .members-list li,
+  /* Seules les demandes passent en colonne, pour loger leurs deux boutons ;
+     un membre garde son badge « Chef » sur la même ligne que son nom. */
   .requests-list li {
     flex-direction: column;
     align-items: flex-start;
@@ -736,6 +778,10 @@
   text-transform: none;
   color: var(--theatre-coulisse, #6C6459);
   margin-top: 4px;
+  /* Sur une demi-largeur de téléphone, le libellé passe à la ligne entre
+     les mots, et coupe un mot trop long plutôt que de déborder. */
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .stat-jauge {
