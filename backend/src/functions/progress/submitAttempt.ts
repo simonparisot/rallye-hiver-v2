@@ -17,6 +17,7 @@ import { PasswordAttemptLog } from '../../types';
 import { loadAccessContext, evaluateParcoursAccess } from '../../utils/parcoursAccess';
 import { normalizePassword } from '../../utils/password';
 import { getWrongPasswordMessages, pickWrongPasswordMessage } from '../../utils/wrongPasswordMessages';
+import { trouverNearMiss } from '../../utils/nearMisses';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -65,6 +66,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const normalizedInput = normalizePassword(password);
     const normalizedCorrect = normalizePassword(enigma.correctPassword);
     const isCorrect = normalizedInput === normalizedCorrect;
+    // « Presque bon » prévu par l'orga : l'intrigue n'est pas résolue, mais
+    // l'équipe reçoit son message. Le vrai mot de passe passe toujours avant.
+    const nearMiss = isCorrect ? undefined : trouverNearMiss(password, enigma.nearMisses);
 
     // Check if enigma is already solved by this team
     const existingProgress = await getTeamProgress(user.teamId, enigmaId);
@@ -78,6 +82,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       teamEnigmaKey: `${user.teamId}#${enigmaId}`,
       password,
       success: isCorrect,
+      ...(nearMiss ? { nearMiss: true } : {}),
       attemptedAt: now,
       attemptedBy: userId,
       ipAddress: event.requestContext.identity?.sourceIp,
@@ -154,6 +159,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           });
         }
       }
+    }
+
+    if (nearMiss) {
+      return success({ success: false, message: nearMiss.message, nearMiss: true });
     }
 
     // Simple response: just success status and message

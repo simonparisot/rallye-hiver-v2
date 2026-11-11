@@ -5,6 +5,7 @@ import { requireAdmin } from '../../utils/adminAuth';
 import { success, error } from '../../utils/response';
 import { Enigma } from '../../types';
 import { lireReglageIndices } from '../../utils/hintAvailability';
+import { lireNearMisses } from '../../utils/nearMisses';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -26,6 +27,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     const reglage = lireReglageIndices(body);
     if (reglage.erreur) return error(reglage.erreur, 400);
+
+    const presqueBons = lireNearMisses(body.nearMisses ?? [], body.correctPassword);
+    if (presqueBons.erreur) return error(presqueBons.erreur, 400);
 
     const now = new Date().toISOString();
 
@@ -56,6 +60,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       // Fermés par défaut : l'organisateur les ouvre quand il le décide.
       hintsEnabled: reglage.valeurs.hintsEnabled ?? false,
       hintsAvailableFrom: reglage.valeurs.hintsAvailableFrom ?? null,
+      nearMisses: presqueBons.valeur,
       createdAt: now,
       updatedAt: now,
       gameId: body.gameId,

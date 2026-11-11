@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { adminEnigmasAPI, adminUploadAPI } from '../services/adminAPI';
-import { EnigmaWithStats, CreateEnigmaRequest, EnigmaHint } from '../types';
+import { EnigmaWithStats, CreateEnigmaRequest, EnigmaHint, NearMiss } from '../types';
 import './AdminEnigmas.css';
 
 const AdminEnigmas: React.FC = () => {
@@ -19,6 +19,7 @@ const AdminEnigmas: React.FC = () => {
     hints: [],
     hintsEnabled: false,
     hintsAvailableFrom: '',
+    nearMisses: [],
     isActive: true,
   });
   const [uploadingPdf, setUploadingPdf] = useState(false);
@@ -102,6 +103,7 @@ const AdminEnigmas: React.FC = () => {
       hints: [],
       hintsEnabled: false,
       hintsAvailableFrom: '',
+      nearMisses: [],
       isActive: true,
     });
     setEditingEnigma(null);
@@ -119,6 +121,7 @@ const AdminEnigmas: React.FC = () => {
       hints: enigma.hints ? enigma.hints.map((h) => ({ ...h })) : [],
       hintsEnabled: enigma.hintsEnabled === true,
       hintsAvailableFrom: enigma.hintsAvailableFrom || '',
+      nearMisses: enigma.nearMisses ? enigma.nearMisses.map((n) => ({ ...n })) : [],
       isActive: enigma.isActive,
     });
     setShowForm(true);
@@ -213,6 +216,28 @@ const AdminEnigmas: React.FC = () => {
     const [retire] = copie.splice(index, 1);
     copie.splice(cible, 0, retire);
     majIndices(copie);
+  };
+
+  // --- « Presques bons » mots de passe ------------------------------------
+  // Autant de lignes que l'on veut. La liste part entière à chaque
+  // enregistrement du formulaire et remplace l'ancienne côté serveur.
+
+  const presqueBons = formData.nearMisses || [];
+
+  const majPresqueBons = (nouveaux: NearMiss[]) => {
+    setFormData({ ...formData, nearMisses: nouveaux });
+  };
+
+  const ajouterPresqueBon = () => {
+    majPresqueBons([...presqueBons, { password: '', message: '' }]);
+  };
+
+  const modifierPresqueBon = (index: number, champ: keyof NearMiss, valeur: string) => {
+    majPresqueBons(presqueBons.map((n, i) => (i === index ? { ...n, [champ]: valeur } : n)));
+  };
+
+  const supprimerPresqueBon = (index: number) => {
+    majPresqueBons(presqueBons.filter((_, i) => i !== index));
   };
 
   const handleDragEnd = async (result: DropResult) => {
@@ -366,6 +391,72 @@ const AdminEnigmas: React.FC = () => {
                 <small className="form-help">Sélectionnez un fichier PDF à uploader sur S3</small>
               </div>
 
+            </div>
+
+            <div className="form-row">
+              <div className="form-group form-group-full">
+                <label>Presques bons mots de passe</label>
+                <div className="hints-editor" data-testid="admin-enigmas-near-misses-editor">
+                  {presqueBons.length === 0 && (
+                    <p className="hints-empty" data-testid="admin-enigmas-near-misses-empty">
+                      Aucun. Toute mauvaise réponse reçoit un message de refus tiré au hasard.
+                    </p>
+                  )}
+                  {presqueBons.map((presque, index) => (
+                    <div className="hint-row near-miss-row" key={index} data-testid={`admin-enigmas-near-miss-row-${index}`}>
+                      <div className="hint-row-head">
+                        <span className="hint-row-rank">Presque bon {index + 1}</span>
+                        <div className="hint-row-actions">
+                          <button
+                            type="button"
+                            className="btn btn-small btn-danger"
+                            data-testid={`admin-enigmas-near-miss-remove-${index}`}
+                            onClick={() => supprimerPresqueBon(index)}
+                          >
+                            Supprimer
+                          </button>
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        className="near-miss-password"
+                        data-testid={`admin-enigmas-near-miss-password-${index}`}
+                        aria-label={`Mot de passe du presque bon ${index + 1}`}
+                        value={presque.password}
+                        onChange={(e) => modifierPresqueBon(index, 'password', e.target.value)}
+                        maxLength={100}
+                        required
+                        placeholder="Mot de passe presque bon, ex. TOUR EIFFEL"
+                        style={{ fontFamily: 'monospace' }}
+                      />
+                      <textarea
+                        className="hint-row-text"
+                        data-testid={`admin-enigmas-near-miss-message-${index}`}
+                        aria-label={`Message du presque bon ${index + 1}`}
+                        value={presque.message}
+                        onChange={(e) => modifierPresqueBon(index, 'message', e.target.value)}
+                        maxLength={500}
+                        required
+                        rows={2}
+                        placeholder="Message affiché à l'équipe, ex. Vous chauffez : cherchez plutôt son architecte."
+                      />
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    data-testid="admin-enigmas-near-miss-add"
+                    onClick={ajouterPresqueBon}
+                  >
+                    + Ajouter un presque bon
+                  </button>
+                </div>
+                <small className="form-help">
+                  Une équipe qui saisit l'un de ces mots de passe ne résout pas l'intrigue : elle reçoit
+                  votre message à la place du refus habituel. Comme pour la solution, la casse, les
+                  accents, les espaces et la ponctuation ne comptent pas. Jamais montrés aux joueurs.
+                </small>
+              </div>
             </div>
 
             <div className="form-row">
@@ -573,7 +664,7 @@ const AdminEnigmas: React.FC = () => {
 
             {(createMutation.isError || updateMutation.isError) && (
               <div data-testid="admin-enigmas-form-error" className="form-error">
-                Erreur: {(createMutation.error as any)?.response?.data?.error || 'Une erreur est survenue'}
+                Erreur: {((createMutation.error || updateMutation.error) as any)?.response?.data?.error || 'Une erreur est survenue'}
               </div>
             )}
           </form>

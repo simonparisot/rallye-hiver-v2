@@ -147,12 +147,13 @@ export async function getTeamStats(userId: string, teamId: string): Promise<Team
 export async function submitPasswordAttempt(
   enigmaId: string,
   password: string
-): Promise<{ success: boolean; message: string; data?: any }> {
+): Promise<{ success: boolean; message: string; nearMiss?: boolean; data?: any }> {
   try {
     const response = await progressAPI.attemptPassword(enigmaId, password);
     return {
       success: response.success,
       message: response.message,
+      nearMiss: response.nearMiss === true,
       data: response,
     };
   } catch (error: any) {

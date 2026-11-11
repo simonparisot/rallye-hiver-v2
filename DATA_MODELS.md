@@ -1,7 +1,7 @@
 # Data Models
 
 **Last updated by**: backend agent
-**Last updated**: 2025-12-02
+**Last updated**: 2026-11-11
 
 ---
 
@@ -107,6 +107,8 @@ interface Enigma {
                                // (NOT exposed to clients — sert au choix d'indice)
   hints?: EnigmaHint[];        // Indices pré-écrits, ordre croissant
                                // (NOT exposed to clients — seul hintsCount l'est)
+  nearMisses?: NearMiss[];     // « Presques bons » mots de passe (depuis le 2026-11-11)
+                               // (NOT exposed to clients — /admin/enigmas seulement)
   points: number;              // Points awarded when solved
   difficulty?: 'easy' | 'medium' | 'hard';  // Difficulty level
   isActive: boolean;           // Whether enigma is active (default: true)
@@ -133,11 +135,33 @@ interface Enigma {
 }
 ```
 
-**Security Note**: `correctPassword`, `solution` et `hints` ne sont JAMAIS renvoyés
-aux clients. `GET /enigmas` et `GET /enigmas/{enigmaId}` remplacent `hints` par
+**Security Note**: `correctPassword`, `solution`, `hints` et `nearMisses` ne sont
+JAMAIS renvoyés aux clients. `GET /enigmas` et `GET /enigmas/{enigmaId}` remplacent `hints` par
 `hintsCount` (un simple entier), qui suffit au joueur pour savoir s'il peut
 demander un indice. Le texte d'un indice n'atteint une équipe que par
 `POST /hints/{enigmaId}/request`, une fois payé.
+
+---
+
+### NearMiss
+
+Sous-objet du tableau `nearMisses` de l'intrigue (depuis le 2026-11-11), sans
+table à lui. Un « presque bon » mot de passe ne résout pas l'intrigue : l'équipe
+qui le saisit reçoit `message` au lieu du message de refus tiré au hasard.
+
+```typescript
+interface NearMiss {
+  password: string;            // 1 à 100 caractères, rogné ; comparé après
+                               // normalizePassword (casse, accents, espaces et
+                               // ponctuation ignorés), comme correctPassword
+  message: string;             // 1 à 500 caractères, rogné, affiché tel quel
+}
+```
+
+Règles (vérifiées à l'écriture, `utils/nearMisses.ts`) : pas de nombre maximal ;
+aucune forme normalisée égale à celle de `correctPassword` ; pas deux entrées de
+même forme normalisée (refusées, pas fusionnées). Champ absent sur les intrigues
+antérieures : équivaut à une liste vide.
 
 ---
 
@@ -439,6 +463,10 @@ interface PasswordAttemptLog {
   teamEnigmaKey: string;       // Composite: "{teamId}#{enigmaId}" (indexed)
   password: string;            // Password that was attempted
   success: boolean;            // Whether password was correct
+  nearMiss?: boolean;          // true : mauvaise tentative qui égalait un
+                               // « presque bon » de l'intrigue (depuis le
+                               // 2026-11-11). Absent sinon. success reste false :
+                               // les statistiques la comptent comme un échec.
   attemptedAt: string;         // ISO 8601 timestamp (sort key for GSIs)
   attemptedBy?: string;        // User ID who made the attempt
   ipAddress?: string;          // IP address for security tracking
