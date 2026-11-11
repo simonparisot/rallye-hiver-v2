@@ -13,8 +13,8 @@ import FilEvenements from './components/FilEvenements';
 import './OiePage.css';
 
 /**
- * Ce que le bouton du panneau annonce, panneau fermé : la carte d'action vit
- * désormais derrière lui, il doit donc dire s'il y a quelque chose à faire.
+ * Ce que la languette annonce, panneau fermé : la carte d'action vit derrière
+ * elle, elle doit donc dire s'il y a quelque chose à faire.
  */
 function resumeEquipe(me: OieMyView): { texte: string; aAgir: boolean } {
   if (me.finishedAt) return { texte: 'Intrigue résolue', aAgir: false };
@@ -56,17 +56,24 @@ const OiePage: React.FC = () => {
   // Le panneau de l'équipe est masqué par défaut : le plateau prend toute la
   // largeur, et le panneau s'ouvre par-dessus quand on veut agir.
   const [panneauOuvert, setPanneauOuvert] = useState(false);
-  const boutonPanneauRef = useRef<HTMLButtonElement>(null);
+  const languetteRef = useRef<HTMLButtonElement>(null);
   const fermerPanneauRef = useRef<HTMLButtonElement>(null);
+  const rendreLeFocus = useRef(false);
 
   const fermerPanneau = useCallback(() => {
     setPanneauOuvert(false);
-    // Le focus revient là d'où l'on a ouvert, pour le clavier.
-    boutonPanneauRef.current?.focus();
+    rendreLeFocus.current = true;
   }, []);
 
   useEffect(() => {
-    if (!panneauOuvert) return undefined;
+    if (!panneauOuvert) {
+      // Le focus revient à la languette, d'où l'on a ouvert, pour le clavier.
+      // Elle est masquée tant que le panneau est ouvert : on attend qu'elle
+      // réapparaisse.
+      if (rendreLeFocus.current) languetteRef.current?.focus();
+      rendreLeFocus.current = false;
+      return undefined;
+    }
     fermerPanneauRef.current?.focus();
     const echap = (event: KeyboardEvent) => {
       if (event.key === 'Escape') fermerPanneau();
@@ -228,32 +235,13 @@ const OiePage: React.FC = () => {
 
       {plateau && (
         <div className="oie-scene">
-          {/* La barre reste en haut de l'écran pendant qu'on parcourt le
-              plateau : c'est par elle que l'on rejoint la carte d'action. */}
-          <div className="oie-barre">
-            <button
-              type="button"
-              ref={boutonPanneauRef}
-              className={`oie-bouton-panneau ${resumeEquipe(plateau.me).aAgir ? 'oie-bouton-panneau-a-agir' : ''}`}
-              onClick={() => (panneauOuvert ? fermerPanneau() : setPanneauOuvert(true))}
-              aria-expanded={panneauOuvert}
-              aria-controls="oie-panneau"
-              data-testid="oie-bouton-panneau"
-            >
-              <span className="oie-chevron" aria-hidden="true">‹</span>
-              <span className="oie-bouton-panneau-textes">
-                <span className="oie-bouton-panneau-titre">Votre équipe</span>
-                <span className="oie-bouton-panneau-etat" data-testid="oie-etat-equipe">
-                  {resumeEquipe(plateau.me).texte}
-                </span>
-              </span>
-            </button>
-          </div>
-
           {/* La languette, collée au bord droit de l'écran, dit d'un coup d'œil
-              qu'un panneau se déplie de ce côté-là. */}
+              qu'un panneau se déplie de ce côté-là, et ce que l'équipe a à
+              faire : elle remplace le bouton qui le disait au-dessus du
+              plateau, et qui faisait doublon. */}
           <button
             type="button"
+            ref={languetteRef}
             className={`oie-languette ${resumeEquipe(plateau.me).aAgir ? 'oie-languette-a-agir' : ''}`}
             onClick={() => setPanneauOuvert(true)}
             hidden={panneauOuvert}
@@ -263,7 +251,12 @@ const OiePage: React.FC = () => {
             data-testid="oie-languette"
           >
             <span className="oie-chevron" aria-hidden="true">‹</span>
-            <span className="oie-languette-texte" aria-hidden="true">Votre équipe</span>
+            <span className="oie-languette-textes" aria-hidden="true">
+              <span className="oie-languette-texte">Votre équipe</span>
+              <span className="oie-languette-etat" data-testid="oie-etat-equipe">
+                {resumeEquipe(plateau.me).texte}
+              </span>
+            </span>
           </button>
 
           <Plateau

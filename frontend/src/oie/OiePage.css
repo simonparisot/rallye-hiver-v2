@@ -12,8 +12,11 @@
    --------------------------------------------------------------------------- */
 
 .oie-page {
+  /* Largeur de la languette, et gouttière droite qui lui est réservée : collée
+     au bord de l'écran, elle ne doit recouvrir ni case ni commande. */
+  --oie-languette: 44px;
   min-height: 100vh;
-  padding: 24px 16px 48px;
+  padding: 24px calc(var(--oie-languette) + 8px) 48px 16px;
   /* La page était posée sur la scène sombre : son texte était clair. Sur le
      papier de la direction « L'Affiche », il repasse à l'encre. */
   color: var(--theatre-salle);
@@ -72,40 +75,6 @@
   margin: 0 auto;
 }
 
-/* La barre suit le défilement : le bouton du panneau, qui annonce ce que
-   l'équipe a à faire, ne quitte jamais l'écran. */
-.oie-barre {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  justify-content: flex-end;
-  padding: 8px 0;
-  margin-bottom: 8px;
-  background: linear-gradient(var(--theatre-programme) 70%, transparent);
-}
-
-.oie-bouton-panneau {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 16px;
-  border: var(--border-width-thin) var(--border-style) var(--theatre-salle);
-  border-radius: 6px;
-  background: var(--theatre-scene);
-  color: var(--theatre-salle);
-  font: inherit;
-  cursor: pointer;
-  box-shadow: var(--ombre-affiche);
-}
-
-.oie-bouton-panneau-textes {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-}
-
 /* La flèche dit dans quel sens le panneau se déplie. */
 .oie-chevron {
   font-size: 1.6rem;
@@ -113,29 +82,8 @@
   line-height: 1;
 }
 
-.oie-bouton-panneau-titre {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--theatre-coulisse);
-}
-
-.oie-bouton-panneau-etat {
-  font-weight: 600;
-}
-
-/* Une action attend l'équipe : le bouton prend le rouge des gestes du jeu. */
-.oie-bouton-panneau-a-agir {
-  background: var(--theatre-tragedie);
-  border-color: var(--theatre-tragedie-sombre);
-  color: #fff;
-}
-
-.oie-bouton-panneau-a-agir .oie-bouton-panneau-titre { color: #fff; }
-
 /* Languette sur le bord droit de l'écran : toujours visible, elle montre
-   qu'un panneau se déplie de ce côté. */
+   qu'un panneau se déplie de ce côté et dit ce que l'équipe a à faire. */
 .oie-languette {
   position: fixed;
   top: 50%;
@@ -145,7 +93,10 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 14px 8px;
+  width: var(--oie-languette);
+  max-height: calc(100vh - 16px);
+  padding: 14px 0;
+  overflow: hidden;
   border: var(--border-width-thin) var(--border-style) var(--theatre-salle);
   border-right: none;
   border-radius: 10px 0 0 10px;
@@ -155,20 +106,34 @@
   cursor: pointer;
   box-shadow: -4px 0 14px rgba(0, 0, 0, 0.18);
   transform: translateY(-50%);
-  transition: padding-right 0.15s ease;
+  transition: width 0.15s ease;
 }
 
 .oie-languette[hidden] { display: none; }
 
-.oie-languette:hover { padding-right: 14px; }
+.oie-languette:hover { width: calc(var(--oie-languette) + 6px); }
 
-.oie-languette-texte {
+/* Deux lignes verticales, lues de bas en haut : « Votre équipe », puis
+   l'état (« À vous de lancer », « Au fond du puits »...). */
+.oie-languette-textes {
+  display: flex;
+  gap: 2px;
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  font-size: 0.78rem;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.oie-languette-texte {
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.oie-languette-etat {
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .oie-languette-a-agir {
@@ -188,7 +153,6 @@
   .oie-languette { transition: none; }
 }
 
-.oie-bouton-panneau:focus-visible,
 .oie-languette:focus-visible,
 .oie-panneau-fermer:focus-visible {
   outline: 3px solid var(--theatre-dorure);
@@ -454,6 +418,9 @@
   box-shadow: 0 0 0 1px var(--theatre-salle);
 }
 
+/* La pastille qui compte les équipes ne sert que sur téléphone. */
+.oie-pion-compte { display: none; }
+
 .oie-pion-reste {
   background: var(--theatre-coulisse-pale);
   color: var(--theatre-salle);
@@ -552,8 +519,11 @@
 .oie-question-saisie input {
   /* Assez étroit pour que « Répondre » tienne à côté, même en 360 px : le
      clavier virtuel ne le cache plus sous le champ. */
-  flex: 1 1 120px;
+  flex: 1 1 96px;
   min-width: 0;
+  /* Quand le clavier remonte, le navigateur amène le champ au ras de l'écran :
+     cette marge garde un peu d'air sous lui. */
+  scroll-margin-bottom: 16px;
   padding: 10px 12px;
   border: 1px solid var(--theatre-filet);
   border-radius: 6px;
@@ -859,17 +829,41 @@
 @media (max-width: 900px) {
   .oie-plateau { min-width: 420px; --oie-joint: 12px; }
   .oie-case { min-height: 54px; }
+  /* Sous 900 px, les sigles ne tiennent plus côte à côte (« CDR », « WWW »
+     font 35 à 45 px) et débordaient de la case : les noms cèdent la place à
+     une pastille qui compte les équipes de la case, dorée si la mienne en
+     est. Le classement du panneau garde les noms. */
+  .oie-case-pions { display: none; }
+  /* Dans le coin bas droit : un libellé sur deux lignes ne la pousse plus
+     hors de la case. */
+  .oie-case .oie-pion-compte {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    display: inline-block;
+    min-width: 18px;
+    text-align: center;
+  }
+}
+
+/* Tablette : la case a encore la place d'un libellé, mais pas en capitales
+   espacées (« SOUFFLEUR » était coupé). La pastille monte en haut à droite,
+   face au numéro, pour ne pas couvrir un libellé sur deux lignes. */
+@media (min-width: 601px) and (max-width: 900px) {
+  .oie-case-libelle { text-transform: none; letter-spacing: 0; }
+  .oie-case .oie-pion-compte { top: 2px; bottom: auto; }
 }
 
 /* Téléphone : le plateau tient dans la largeur, sans défilement de côté. Une
    colonne coupée ne se devinait pas, et la languette la recouvrait encore. */
 @media (max-width: 600px) {
-  .oie-page { padding: 16px 12px 40px; }
-  /* La languette, collée au bord droit, garde sa gouttière : elle ne cache
-     plus ni le bouton du haut ni la dernière colonne du plateau. */
-  .oie-scene { margin-right: 18px; }
-  .oie-languette { width: 30px; padding: 12px 0; }
-  .oie-languette:hover { padding-right: 0; }
+  .oie-page {
+    --oie-languette: 36px;
+    padding: 16px calc(var(--oie-languette) + 4px) 40px 12px;
+  }
+  .oie-languette { padding: 12px 0; }
+  .oie-languette:hover { width: var(--oie-languette); }
+  .oie-languette-textes { gap: 1px; line-height: 1.1; }
   .oie-plateau-cadre { padding: 6px; }
   /* Le libellé ne tient plus : la couleur et l'info-bulle portent seules la
      nature de la case. */
