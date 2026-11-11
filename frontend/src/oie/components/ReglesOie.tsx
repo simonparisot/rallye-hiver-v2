@@ -30,7 +30,7 @@ const CASES: CaseSpeciale[] = [
     nom: "L'acteur sur son oie",
     effet: (
       <>
-        Pas de question : vous gagnez un lancer supplémentaire, à jouer quand vous voulez.
+        Pas de question : vous gagnez un lancer supplémentaire, à jouer quand vous voulez.
         Il ne compte pas dans le quota du jour et reste permis même si vous l'avez épuisé.
       </>
     ),
@@ -41,7 +41,7 @@ const CASES: CaseSpeciale[] = [
     nom: 'Les ponts',
     effet: (
       <>
-        On ne s'arrête pas sur le pont : vous passez directement sur la case d'en face,
+        On ne s'arrête pas sur le pont : vous passez directement sur la case d'en face,
         dont la question vous attend.
       </>
     ),
@@ -52,7 +52,7 @@ const CASES: CaseSpeciale[] = [
     nom: 'Le souffleur',
     effet: (
       <>
-        La question de la case a un indice. Demandez-le au souffleur quand vous voulez :
+        La question de la case a un indice. Demandez-le au souffleur quand vous voulez :
         c'est gratuit, et les organisateurs savent qui l'a demandé.
       </>
     ),
@@ -63,7 +63,7 @@ const CASES: CaseSpeciale[] = [
     nom: 'La loge',
     effet: (
       <>
-        Vous passez un tour : plus de lancer ce jour-là ni le lendemain. Vous relancez
+        Vous passez un tour : plus de lancer ce jour-là ni le lendemain. Vous relancez
         le surlendemain (tombé un lundi, vous relancez le mercredi).
       </>
     ),
@@ -74,9 +74,9 @@ const CASES: CaseSpeciale[] = [
     nom: 'Le puits',
     effet: (
       <>
-        Vous passez trois tours : vous relancez quatre jours plus tard (tombé un lundi,
+        Vous passez trois tours : vous relancez quatre jours plus tard (tombé un lundi,
         vous relancez le vendredi). Une autre équipe qui arrive sur la case vous en sort
-        plus tôt (voir « Case occupée »).
+        plus tôt (voir « Case occupée »).
       </>
     ),
   },
@@ -86,7 +86,7 @@ const CASES: CaseSpeciale[] = [
     nom: 'La prison',
     effet: (
       <>
-        Vous passez deux tours : vous relancez trois jours plus tard (tombé un lundi, vous
+        Vous passez deux tours : vous relancez trois jours plus tard (tombé un lundi, vous
         relancez le jeudi). Une autre équipe qui arrive sur la case vous en sort plus tôt.
       </>
     ),
@@ -95,7 +95,7 @@ const CASES: CaseSpeciale[] = [
     numeros: '58',
     type: 'mort',
     nom: 'La répétition',
-    effet: <>Tout est à refaire : retour à la case 0.</>,
+    effet: <>Tout est à refaire : retour à la case 0.</>,
   },
   {
     numeros: '63',
@@ -103,9 +103,9 @@ const CASES: CaseSpeciale[] = [
     nom: 'Rideau',
     effet: (
       <>
-        L'arrivée, à atteindre pile (ou par le metteur en scène, voir plus bas). La
-        question finale vous y attend : c'est sa bonne
-        réponse qui fait gagner.
+        L'arrivée, à atteindre pile, ou grâce au metteur en scène (voir « La fin de
+        partie »). La question finale vous y attend : c'est sa bonne réponse qui fait
+        gagner.
       </>
     ),
   },
@@ -145,11 +145,11 @@ const ReglesOieContenu: React.FC<{ lancersParJour: number }> = ({ lancersParJour
         </li>
         <li>
           Les essais sont illimités. Les majuscules, les accents, les espaces et la
-          ponctuation ne comptent pas : « Moliere » vaut « Molière ! ».
+          ponctuation ne comptent pas : « Moliere » vaut « Molière ! ».
         </li>
         <li>
           Pas de question sur la case 0, sur les cases de l'oie, sur les ponts ni sur la
-          répétition : on ne fait qu'y passer.
+          répétition : on ne fait qu'y passer.
         </li>
       </ul>
     </section>
@@ -167,7 +167,7 @@ const ReglesOieContenu: React.FC<{ lancersParJour: number }> = ({ lancersParJour
         ))}
       </ul>
       <p>
-        Une pénalité se compte en jours, à partir du jour où vous tombez sur la case : la
+        Une pénalité se compte en jours, à partir du jour où vous tombez sur la case : la
         carte de votre équipe affiche la date à laquelle vous relancez. Pendant ce temps, vous
         pouvez toujours répondre à la question de votre case.
       </p>
@@ -182,19 +182,19 @@ const ReglesOieContenu: React.FC<{ lancersParJour: number }> = ({ lancersParJour
           ses occupantes reculent elles aussi d'une case, et ainsi de suite.
         </li>
         <li>
-          L'équipe qui recule ne subit pas la case où elle arrive : pas de relance sur une
-          oie, pas de passage sur un pont, pas de chute dans le puits, pas de retour à 0 sur
-          la répétition. Elle reste sur cette case, même une oie, un pont ou la répétition,
-          sans en subir l'effet. Si la case porte une question, elle doit y répondre avant
-          de relancer.
+          L'équipe qui recule reste sur sa nouvelle case sans en subir l'effet, même si c'est
+          une oie, un pont, le puits ou la répétition : pas de lancer supplémentaire, pas de
+          passage du pont, pas de chute dans le puits, pas de retour à 0. Si la case porte une
+          question, elle doit y répondre avant de relancer.
         </li>
         <li>
-          Reculer libère de toute pénalité (loge, puits, prison) : l'équipe repoussée peut
-          relancer dès le jour même, dans la limite de son quota. En revanche, une équipe
+          Reculer libère de toute pénalité (loge, puits, prison) : l'équipe repoussée peut
+          relancer dès le jour même, dans la limite de son quota, une fois répondu à la
+          question de sa nouvelle case s'il y en a une. En revanche, une équipe
           arrêtée sur une oie perd le lancer supplémentaire qui l'attendait.
         </li>
         <li>
-          Seule la case où vous vous arrêtez compte : ni les cases traversées ni la case de
+          Seule la case où vous vous arrêtez compte : ni les cases traversées ni la case de
           départ d'un pont ne délogent personne.
         </li>
         <li>
@@ -209,7 +209,7 @@ const ReglesOieContenu: React.FC<{ lancersParJour: number }> = ({ lancersParJour
       <ul>
         <li>
           Il faut tomber pile sur la case 63. Si les dés vous emmènent plus loin, vous
-          reculez d'autant de cases que vous en avez en trop : de la case 60, un 7 vous mène
+          reculez d'autant de cases que vous en avez en trop : de la case 60, un 7 vous mène
           en 63 puis vous fait reculer en 59. La case où vous arrivez s'applique, oie,
           prison ou répétition comprises.
         </li>
@@ -218,7 +218,7 @@ const ReglesOieContenu: React.FC<{ lancersParJour: number }> = ({ lancersParJour
           metteur en scène vous place directement en case 63.
         </li>
         <li>
-          En case 63, la question finale vous attend. Arriver ne suffit pas : c'est sa bonne
+          En case 63, la question finale vous attend. Arriver ne suffit pas : c'est sa bonne
           réponse qui remporte l'intrigue. Les essais sont illimités.
         </li>
       </ul>
