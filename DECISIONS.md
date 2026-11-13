@@ -205,6 +205,23 @@ This document records architectural decisions, trade-offs, and shared assumption
 
 ---
 
+### Intrigues : dépublier, jamais supprimer
+**Décision** : une intrigue ne se supprime pas ; pour la retirer du jeu, l'orga la dépublie (`isActive: false`)
+**Date** : 2026-11-13 (décision de Simon)
+**Raison** : la suppression n'effaçait que l'intrigue. `Team.solvedEnigmasCount`
+(classement) continuait de la compter, la grille de progression ne la montrait
+plus, et la règle d'accès aux tournées l'ignorait : une tournée pouvait s'ouvrir
+à tous ou se refermer pour une équipe. Dépubliée, l'intrigue disparaît pour les
+équipes et tout reste cohérent : compteurs, classement, accès aux tournées.
+
+**Mise en œuvre** : routes `DELETE /enigmas/{enigmaId}` et
+`DELETE /admin/enigmas/{enigmaId}`, fonction `deleteEnigma` et bouton
+« Supprimer l'intrigue » retirés. Le formulaire d'intrigue garde l'interrupteur
+« Publiée » ; la liste marque « non publiée ». Pour vider tout le contenu d'un
+environnement, `backend/scripts/importer-contenu.mjs --vider` reste l'outil.
+
+---
+
 ### Points System
 **Decision**: Fixed points per enigma, no time bonuses
 **Date**: 2025-11-16
@@ -536,6 +553,7 @@ permission API Gateway) et la pile est plafonnée à 500. Avec les routes
 
 | Date | Decision | Category | Impact |
 |------|----------|----------|--------|
+| 2026-11-13 | Intrigues : dépublier, jamais supprimer | Game Mechanics | Plus de bouton ni de route de suppression |
 | 2025-11-16 | Auto-unlock parcours | Game Mechanics | Frontend needs to show unlock notifications |
 | 2025-11-16 | Log all password attempts | Security | Increased write costs, admin audit capability |
 | 2025-11-16 | Case-insensitive passwords | UX | Simplified user experience |

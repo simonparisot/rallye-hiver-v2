@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { adminEnigmasAPI, adminParcoursAPI, adminUploadAPI } from '../services/adminAPI';
+import { adminEnigmasAPI, adminUploadAPI } from '../services/adminAPI';
 import { EnigmaWithStats, CreateEnigmaRequest, EnigmaHint, NearMiss } from '../types';
 import './AdminEnigmas.css';
 
@@ -86,90 +86,6 @@ const AdminEnigmas: React.FC = () => {
     },
   });
 
-  // Le formulaire reste ouvert tant que la suppression n'a pas réussi : une
-  // erreur du serveur s'affiche à côté du bouton au lieu de passer inaperçue.
-  const [erreurSuppression, setErreurSuppression] = useState('');
-  const deleteMutation = useMutation({
-    mutationFn: adminEnigmasAPI.delete,
-    onMutate: () => setErreurSuppression(''),
-    onSuccess: (_reponse, enigmaId) => {
-      // Retrait immédiat de la liste, puis relecture pour renuméroter et
-      // rafraîchir les statistiques.
-      queryClient.setQueryData<{ enigmas: EnigmaWithStats[]; count: number }>(['adminEnigmas'], (avant) =>
-        avant
-          ? { ...avant, enigmas: avant.enigmas.filter((e) => e.enigmaId !== enigmaId), count: Math.max(0, avant.count - 1) }
-          : avant
-      );
-      queryClient.invalidateQueries({ queryKey: ['adminEnigmas'] });
-      // Les tournées qui l'exigeaient peuvent changer d'état (utils/parcoursAccess).
-      queryClient.invalidateQueries({ queryKey: ['adminParcours'] });
-      resetForm();
-    },
-    onError: (err: any) => {
-      setErreurSuppression(
-        `Impossible de supprimer l'intrigue : ${err?.response?.data?.error || err?.message || 'erreur inconnue'}`
-      );
-    },
-  });
-
-  // Le serveur ne supprime que l'intrigue : la progression des équipes reste,
-  // et le compteur d'intrigues résolues qui sert au classement n'est pas
-  // recalculé. La confirmation dit donc ce que la suppression va fausser.
-  const confirmerSuppression = async (enigma: EnigmaWithStats) => {
-    const lignes = [`Supprimer définitivement l'intrigue n°${enigma.enigmaNumber} « ${enigma.title} » ?`];
-
-    const n = enigma.teamsSolved;
-    if (n > 0 && enigma.isPreliminary) {
-      // Une préliminaire n'est reconnue comme telle que tant qu'elle existe
-      // (utils/gamePhase) : supprimée, sa résolution redevient comptée par les
-      // vues qui recalculent depuis la progression.
-      lignes.push(
-        `⚠️ ${n} équipe${n > 1 ? 's l\'ont' : ' l\'a'} déjà résolue. Une fois supprimée, cette préliminaire ` +
-          `sera comptée comme intrigue résolue dans la liste des équipes de l'administration ` +
-          '(le classement, lui, ne bouge pas).'
-      );
-    } else if (n > 0) {
-      lignes.push(
-        `⚠️ ${n} équipe${n > 1 ? 's l\'ont' : ' l\'a'} déjà résolue. ` +
-          `Le classement et la liste des équipes continueront de la compter pour elle${n > 1 ? 's' : ''}` +
-          ', mais elle disparaîtra de la grille de progression : les deux ne concorderont plus.'
-      );
-    }
-
-    try {
-      const { parcours } = await queryClient.fetchQuery({
-        queryKey: ['adminParcours'],
-        queryFn: adminParcoursAPI.listAll,
-      });
-      const idsRestants = new Set(
-        orderedEnigmas.filter((e) => e.enigmaId !== enigma.enigmaId && !e.isPreliminary).map((e) => e.enigmaId)
-      );
-      const concernees = parcours.filter((p) => (p.requiredEnigmaIds || []).includes(enigma.enigmaId));
-      const ouvertes = concernees.filter((p) => !p.requiredEnigmaIds.some((id) => idsRestants.has(id)));
-      const restreintes = concernees.filter((p) => p.requiredEnigmaIds.some((id) => idsRestants.has(id)));
-      if (ouvertes.length > 0) {
-        lignes.push(
-          `⚠️ Seule intrigue requise par : ${ouvertes.map((p) => p.title).join(', ')}. ` +
-            `Ce${ouvertes.length > 1 ? 's tournées s\'ouvriront' : 'tte tournée s\'ouvrira'} à toutes les équipes.`
-        );
-      }
-      if (restreintes.length > 0) {
-        lignes.push(
-          `⚠️ Requise, avec d'autres intrigues, par : ${restreintes.map((p) => p.title).join(', ')}. ` +
-            "Une équipe qui n'avait résolu que celle-ci parmi les intrigues requises pourra en perdre l'accès."
-        );
-      }
-    } catch {
-      lignes.push('(Liste des tournées indisponible : impossible de dire lesquelles exigent cette intrigue.)');
-    }
-
-    lignes.push('Les tentatives et la progression restent dans l\'historique. Sans retour.');
-
-    if (window.confirm(lignes.join('\n\n'))) {
-      deleteMutation.mutate(enigma.enigmaId);
-    }
-  };
-
   const resetForm = () => {
     setFormData({
       enigmaNumber: orderedEnigmas.length + 1,  // Auto-set to next number
@@ -186,11 +102,9 @@ const AdminEnigmas: React.FC = () => {
     });
     setEditingEnigma(null);
     setShowForm(false);
-    setErreurSuppression('');
   };
 
   const handleEdit = (enigma: EnigmaWithStats) => {
-    setErreurSuppression('');
     setEditingEnigma(enigma);
     setFormData({
       enigmaNumber: enigma.enigmaNumber,
@@ -699,7 +613,10 @@ const AdminEnigmas: React.FC = () => {
                     {formData.isActive ? '✓ Publiée' : '✗ Non publiée'}
                   </span>
                 </div>
-                <small className="form-help">Les intrigues non publiées ne sont pas visibles aux joueurs</small>
+                <small className="form-help">
+                  Les intrigues non publiées ne sont pas visibles aux joueurs. Pour retirer une intrigue du jeu,
+                  dépubliez-la : elle disparaît pour les équipes, et les résultats déjà acquis restent cohérents.
+                </small>
               </div>
             </div>
 
@@ -734,9 +651,6 @@ const AdminEnigmas: React.FC = () => {
               </div>
             )}
 
-            {/* Enregistrer et renoncer vont ensemble ; supprimer n'a rien à
-                faire à côté d'eux — c'est une autre intention, et un clic de
-                travers ne se rattrape pas. Il descend donc sous un filet. */}
             <div className="form-actions">
               <button data-testid="admin-enigmas-submit" type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || uploadingPdf}>
                 {editingEnigma ? '💾 Mettre à jour' : '✨ Créer l\'intrigue'}
@@ -745,28 +659,6 @@ const AdminEnigmas: React.FC = () => {
                 Annuler
               </button>
             </div>
-
-            {editingEnigma && (
-              <div className="form-zone-danger">
-                <div>
-                  <strong>Supprimer cette intrigue</strong>
-                  <p>Son énoncé, ses indices et sa solution disparaissent, ainsi que sa place dans la grille de progression. Les tentatives des équipes restent dans l'historique. Sans retour.</p>
-                  {erreurSuppression && (
-                    <p className="admin-form-error" role="alert" data-testid="admin-enigmas-delete-error">
-                      {erreurSuppression}
-                    </p>
-                  )}
-                </div>
-                <button data-testid="admin-enigmas-delete"
-                  type="button"
-                  className="btn btn-danger"
-                  onClick={() => confirmerSuppression(editingEnigma)}
-                  disabled={deleteMutation.isPending}
-                >
-                  {deleteMutation.isPending ? 'Suppression…' : '🗑️ Supprimer l\'intrigue'}
-                </button>
-              </div>
-            )}
 
             {(createMutation.isError || updateMutation.isError) && (
               <div data-testid="admin-enigmas-form-error" className="form-error">

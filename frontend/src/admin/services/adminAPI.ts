@@ -196,12 +196,6 @@ export const adminEnigmasAPI = {
     return response.data;
   },
 
-  // DELETE /admin/enigmas/{enigmaId} : même fonction que DELETE /enigmas/{enigmaId}.
-  delete: async (enigmaId: string): Promise<{ message: string }> => {
-    const response = await adminApi.delete(`/enigmas/${enigmaId}`);
-    return response.data;
-  },
-
   getByDifficulty: async (forceRefresh?: boolean): Promise<{
     enigmas: Array<{
       enigmaId: string;

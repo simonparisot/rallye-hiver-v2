@@ -283,15 +283,6 @@ export async function updateEnigma(enigmaId: string, updates: any) {
   return result.Attributes;
 }
 
-export async function deleteEnigma(enigmaId: string) {
-  await dynamoDb.send(
-    new DeleteCommand({
-      TableName: ENIGMAS_TABLE,
-      Key: { enigmaId },
-    })
-  );
-}
-
 // ==================== PARCOURS FUNCTIONS ====================
 
 export async function createParcours(parcours: any) {
