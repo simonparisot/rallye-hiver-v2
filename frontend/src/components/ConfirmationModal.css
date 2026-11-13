@@ -88,7 +88,7 @@
 }
 
 .modal-actions .btn-warning:hover {
-  background: #F5B829;
+  background: color-mix(in srgb, var(--theatre-dorure) 92%, var(--theatre-dorure-encre));
 }
 
 .modal-actions .btn-danger {

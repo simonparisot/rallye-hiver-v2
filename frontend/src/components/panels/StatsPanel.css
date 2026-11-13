@@ -93,8 +93,8 @@
 }
 
 .stat-card.highlight {
-  background: linear-gradient(135deg, #fff5e6 0%, #ffe4cc 100%);
-  border-left-color: #ff9500;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theatre-dorure) 12%, var(--theatre-scene)) 0%, color-mix(in srgb, var(--theatre-dorure) 25%, var(--theatre-scene)) 100%);
+  border-left-color: var(--theatre-dorure);
 }
 
 .stat-icon {
@@ -118,7 +118,7 @@
 .stat-value-large {
   font-size: 32px;
   font-weight: 700;
-  color: #ff9500;
+  color: var(--theatre-dorure-encre);
   margin-bottom: 4px;
 }
 
@@ -600,7 +600,7 @@
 
 .payment-section {
   padding: 16px;
-  background: #fff5e6;
+  background: color-mix(in srgb, var(--theatre-dorure) 12%, var(--theatre-scene));
   border-radius: 8px;
   text-align: center;
 }

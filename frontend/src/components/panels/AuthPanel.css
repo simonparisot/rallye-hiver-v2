@@ -136,9 +136,11 @@
    remplir cet emplacement.
    --------------------------------------------------------------------------- */
 .error-message {
-  border-left: 3px solid var(--theatre-tragedie, var(--color-primary-red));
-  background: color-mix(in srgb, var(--theatre-tragedie) 8%, transparent);
-  color: var(--theatre-tragedie-sombre);
+  border-left: 3px solid var(--danger-color);
+  /* Mêmes teintes que .error-message dans App.css, qui arrive après dans le
+     bundle et l'emporterait de toute façon. */
+  background: color-mix(in srgb, var(--danger-color) 10%, var(--theatre-scene));
+  color: color-mix(in srgb, var(--danger-color) 70%, var(--theatre-salle));
   padding: 12px 14px;
   margin-bottom: 16px;
   font-size: 14.5px;
@@ -148,7 +150,7 @@
 
 .success-message {
   border-left: 3px solid var(--theatre-dorure, var(--color-primary-yellow));
-  background: #FFF4D6;
+  background: color-mix(in srgb, var(--theatre-dorure) 20%, var(--theatre-scene));
   color: var(--theatre-dorure-encre);
   padding: 12px 14px;
   margin-bottom: 16px;

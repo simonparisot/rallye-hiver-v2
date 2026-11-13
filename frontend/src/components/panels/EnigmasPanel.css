@@ -24,7 +24,7 @@
 .access-blocked-message {
   padding: 12px;
   margin-bottom: 16px;
-  background-color: #FFF4D6;
+  background-color: color-mix(in srgb, var(--theatre-dorure) 20%, var(--theatre-scene));
   border: 2px solid var(--theatre-dorure);
   border-radius: 6px;
   color: var(--theatre-dorure-encre);
@@ -408,7 +408,7 @@
 }
 
 .attempt-message.attempt-error {
-  background: #FDECEA;
+  background: color-mix(in srgb, var(--theatre-tragedie) 10%, var(--theatre-scene));
   color: var(--theatre-tragedie-sombre);
   font-weight: 600;
 }

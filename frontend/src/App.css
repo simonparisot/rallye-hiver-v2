@@ -67,9 +67,13 @@ body {
   color: var(--danger-color);
 }
 
+/* Teintes dérivées de --danger-color : rouge dans les thèmes officiels, rouge
+   sobre dans l'habillage neutre (où --theatre-tragedie est une sarcelle). Le
+   texte, assombri vers l'encre, garde au moins 5,6:1 sur ce fond dans les
+   trois feuilles. AuthPanel.css reprend les mêmes valeurs. */
 .error-message {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: color-mix(in srgb, var(--danger-color) 10%, var(--theatre-scene));
+  color: color-mix(in srgb, var(--danger-color) 70%, var(--theatre-salle));
   padding: 0.75rem 1rem;
   border-radius: 0.375rem;
   margin-bottom: 1rem;

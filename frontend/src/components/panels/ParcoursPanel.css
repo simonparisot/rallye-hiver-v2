@@ -24,7 +24,7 @@
 .access-blocked-message {
   padding: 12px;
   margin-bottom: 16px;
-  background-color: #FFF4D6;
+  background-color: color-mix(in srgb, var(--theatre-dorure) 20%, var(--theatre-scene));
   border: 2px solid var(--theatre-dorure);
   border-radius: 6px;
   color: var(--theatre-dorure-encre);
@@ -65,7 +65,7 @@
 }
 
 .parcours-item-compact.unlocked {
-  background: #FFF4D6;
+  background: color-mix(in srgb, var(--theatre-dorure) 20%, var(--theatre-scene));
   border-left: 4px solid var(--color-secondary-orange);
 }
 
@@ -164,7 +164,7 @@
   background: var(--color-neutral-white);
   border-color: var(--color-secondary-orange);
   border-width: var(--border-width-medium);
-  box-shadow: 0 4px 12px #FFF4D6;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--theatre-dorure) 20%, var(--theatre-scene));
 }
 
 .parcours-item.completed {
@@ -173,7 +173,7 @@
 }
 
 .parcours-item.unlocked {
-  background: #FFF4D6;
+  background: color-mix(in srgb, var(--theatre-dorure) 20%, var(--theatre-scene));
   border-left: 4px solid var(--color-secondary-orange);
 }
 
