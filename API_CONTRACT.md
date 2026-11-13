@@ -1,7 +1,7 @@
 # API Contract
 
 **Last updated by**: backend agent
-**Last updated**: 2026-11-11
+**Last updated**: 2026-11-12
 **Base URL**: `https://rpg0alko8b.execute-api.eu-west-1.amazonaws.com/prod`
 
 ---
@@ -841,9 +841,12 @@ Même handler que `POST /admin/enigmas`, la route qu'utilise le panneau d'admini
 
 #### DELETE /enigmas/{enigmaId} (Admin Only)
 
-**Status**: ✅ Implemented (2025-11-16)
+**Status**: ✅ Implemented (2025-11-16, updated 2026-11-12)
 **Purpose**: Delete enigma
 **Authentication**: Required (admin only)
+
+Même handler que `DELETE /admin/enigmas/{enigmaId}`, la route qu'utilise le
+panneau d'administration.
 
 **Response** (200):
 ```json
@@ -851,6 +854,30 @@ Même handler que `POST /admin/enigmas`, la route qu'utilise le panneau d'admini
   "message": "Enigma deleted successfully"
 }
 ```
+
+**Errors**:
+- `400`: Missing enigmaId parameter
+- `401`: Authentication required
+- `403`: Admin access required
+- `404`: Enigma not found (y compris déjà supprimée)
+- `500`: erreur DynamoDB (`{ "error": string }`)
+
+**Effet** : seul l'enregistrement de l'intrigue est supprimé. Rien d'autre n'est
+touché :
+- la progression (`team-enigma-progress`), les tentatives (`password-attempts`)
+  et les demandes d'indices (`hint-requests`) gardent leurs lignes ;
+- `Team.solvedEnigmasCount` n'est pas décrémenté : le classement
+  (`GET /admin/leaderboard`) et les comptes recalculés depuis la progression
+  (`GET /admin/teams`, `GET /admin/teams/{id}`, `totalSolved` de `GET /progress`)
+  continuent de compter l'intrigue ; la grille (`GET /admin/teams/progress-grid`)
+  ne la montre plus. Pour une **préliminaire** résolue, c'est l'inverse : une
+  fois supprimée, elle n'est plus reconnue comme préliminaire et entre dans les
+  comptes recalculés (le classement, lui, ne l'a jamais comptée) ;
+- les tournées gardent son id dans `requiredEnigmaIds`, mais la règle d'accès
+  l'ignore : une tournée dont c'était la seule intrigue requise s'ouvre à toutes
+  les équipes ; une équipe qui n'avait résolu qu'elle parmi plusieurs intrigues
+  requises perd l'accès (recalculé à chaque lecture) ;
+- `GET /admin/attempts` affiche ses tentatives sous un titre inconnu.
 
 ---
 
@@ -2061,6 +2088,25 @@ envoyé, conservé si absent, `400` en cas de saisie invalide).
 
 #### Admin Parcours Management
 
+##### DELETE /admin/enigmas/{enigmaId}
+
+**Status**: ✅ Implemented (2026-11-12)
+**Purpose**: Supprimer une intrigue depuis le panneau d'administration
+**Authentication**: Required (admin only)
+
+Même fonction Lambda que `DELETE /enigmas/{enigmaId}` (événement de plus sur
+`deleteEnigma`, comme `POST /admin/enigmas`) : réponses, erreurs et effets sur les
+données y sont décrits. CORS identique à `PUT /admin/enigmas/{enigmaId}`
+(origine du site, `allowCredentials: true`) : le préflight annonce
+`OPTIONS,PUT,DELETE`.
+
+Avant 2026-11-12, le bouton « Supprimer l'intrigue » appelait cette route alors
+qu'elle n'existait pas dans API Gateway : la suppression échouait toujours.
+
+**Response** (200): `{ "message": "Enigma deleted successfully" }`
+
+**Errors**: `400`, `401`, `403`, `404`, `500` (voir `DELETE /enigmas/{enigmaId}`)
+
 ##### GET /admin/parcours
 
 **Status**: ✅ Implemented (2025-11-22, updated 2026-11-11)
@@ -2742,6 +2788,7 @@ L'opération est tracée dans le journal du plateau.
 
 | Date | Endpoint | Change | Type | Impact |
 |------|----------|--------|------|--------|
+| 2026-11-12 | DELETE /admin/enigmas/{enigmaId}, DELETE /enigmas/{enigmaId} | Nouvelle route `DELETE /admin/enigmas/{enigmaId}`, servie par la fonction `deleteEnigma` (pas de nouvelle fonction : 452 → 453 ressources, une Method). Le bouton « Supprimer l'intrigue » de l'admin l'appelait depuis le début sans qu'elle existe. Une erreur DynamoDB répond désormais 500 au lieu de 400. Le frontend retire `adminEnigmasAPI.getById` et `adminParcoursAPI.getById`, qui visaient des routes inexistantes (`GET /admin/enigmas/{id}`, `GET /admin/parcours/{id}`) et ne servaient nulle part | Bug Fix | La suppression ne touche que l'intrigue : progression, tentatives, demandes d'indices et `solvedEnigmasCount` restent. L'admin le signale dans la confirmation (équipes qui l'ont résolue, tournées qui l'exigent) |
 | 2026-11-11 | GET /enigmas/by-difficulty, GET /admin/users/all, GET /admin/teams, GET /admin/teams/{id}, GET /admin/teams/{id}/progress | Avant le lancement, `GET /enigmas/by-difficulty` rend une liste vide sans lire le cache (les titres des vraies intrigues fuyaient). Les tentatives et la progression sur les préliminaires sortent aussi du compte de tentatives par joueur, du nombre de tentatives par équipe et de la progression d'équipe admin | Bug Fix | Seuls les journaux (`/admin/attempts`, `/admin/attempts/team/{id}`, `/admin/attempts/enigma/{id}`) et `GET /admin/enigmas` (statistiques par intrigue, badge « préliminaire ») montrent encore les préliminaires |
 | 2026-11-11 | GET /game/status, GET /admin/game/status, POST /admin/game/start, POST /admin/game/reset, GET /enigmas, GET /enigmas/{id}, POST /progress/attempt, GET /progress, GET /hints/{id}, POST /hints/{id}/request, GET /parcours, GET /parcours/{id}, GET /parcours/{id}/access, POST /parcours/{id}/attempt, GET /progress/parcours, /oie, POST et PUT /enigmas, PUT /admin/enigmas/{id}, POST et PUT /parcours, GET /teams/stats, routes de statistiques admin | **Phase du jeu et intrigues préliminaires** (tâches 6 et 15). La phase (`avant-lancement` / `lance`) est calculée par le serveur : lancé si l'orga l'a lancé ou si `launchAt` (21/12/2026 21 h 50 par défaut) est passé ; équipes bêta toujours lancées. `GET /game/status` rend `phase`, `launchAt`, `themeOfficiel`. Nouveau champ `isPreliminary` sur l'intrigue. Avant le lancement : `/enigmas` ne rend que les préliminaires publiées (sans indice), `/progress/attempt` refuse une vraie intrigue (403), aucune tournée (listes vides, 404 / 403 sinon), plateau de l'oie fermé (403), indices refusés. Après : préliminaires 404 / 403. Une préliminaire résolue pose `Team.themeUnlockedAt` et la réponse porte `themeOfficiel: true` ; elle n'incrémente pas `solvedEnigmasCount`, ne touche pas `lastActivityAt`, n'ouvre aucune tournée, et sort de `totalSolved`, `/teams/stats`, de la difficulté, de la grille, de la vue d'ensemble, de la chronologie et des comptes d'équipes admin (ses tentatives restent journalisées). `requiredEnigmaIds` qui contient une préliminaire : 400 ; une intrigue requise par une tournée ne peut pas devenir préliminaire (400). Nouvelles routes `GET /admin/game/status`, `POST /admin/game/reset` | Feature + **Breaking** | **Breaking** : un joueur non bêta ne voit plus aucune vraie intrigue ni tournée avant le lancement (le serveur ne contrôlait rien jusqu'ici) ; `isStarted` de `GET /game/status` reflète désormais aussi l'heure de lancement. Sur test, `isStarted` vaut `true` : rien ne change tant que l'orga ne revient pas en avant-lancement. Le bloc `caching` de `GET /enigmas` et `GET /parcours` (sans effet faute de plugin) est retiré |
 | 2026-11-11 | GET /parcours/{id}/access, GET /progress/parcours, POST /parcours/{id}/attempt | Une tournée s'ouvre dès que l'équipe a résolu **une** des intrigues requises encore existantes (et non plus toutes) ; `requiredEnigmasCount` n'est plus que le nombre d'intrigues cochées. Messages de `POST /parcours/{id}/attempt` neutres (sans « tournée ») ; corps invalide en 400 « Corps invalide ». `GET /parcours/{id}` renvoie 404 pour une tournée non publiée ; `GET /admin/parcours` renvoie `hasPassword` | **Breaking** | Des tournées verrouillées s'ouvrent pour les équipes qui ont résolu une partie de leurs intrigues ; `isUnlocked` ne se déduit plus de `requiredEnigmas.every(solved)` mais de `some(solved)` |
