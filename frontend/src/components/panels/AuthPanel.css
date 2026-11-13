@@ -149,6 +149,8 @@
 }
 
 .success-message {
+  /* Remplace aussi le cadre vert de la règle plus haut. */
+  border: 2px solid var(--theatre-dorure);
   border-left: 3px solid var(--theatre-dorure, var(--color-primary-yellow));
   background: color-mix(in srgb, var(--theatre-dorure) 20%, var(--theatre-scene));
   color: var(--theatre-dorure-encre);

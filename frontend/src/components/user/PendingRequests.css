@@ -56,7 +56,7 @@
 }
 
 .pending-status {
-  color: #fd7e14;
+  color: var(--theatre-dorure-encre);
   font-size: 0.9rem;
   font-weight: 500;
 }
